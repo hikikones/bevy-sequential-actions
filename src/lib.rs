@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use bevy::prelude::*;
+use bevy_ecs::prelude::*;
 
 mod action_commands;
 mod commands;
