@@ -46,6 +46,9 @@ fn setup(mut commands: Commands) {
         .reverse() // Reverse add order to get increasing wait times
         .submit();
 
+    // Add an action that itself adds multiple actions
+    commands.add_action(id, MultipleWaitActions, AddConfig::default());
+
     // Finally, quit the app
     commands.add_action(id, QuitAction, AddConfig::default());
 
@@ -55,6 +58,10 @@ fn setup(mut commands: Commands) {
     // Wait(3.0)
     // Wait(4.0)
     // Wait(5.0)
+    // Wait(4.0)
+    // Wait(3.0)
+    // Wait(2.0)
+    // Wait(1.0)
     // Quit
 }
 
@@ -86,6 +93,36 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
             commands.next_action(actor);
         }
     }
+}
+
+struct MultipleWaitActions;
+
+impl Action for MultipleWaitActions {
+    fn add(&mut self, actor: Entity, _world: &mut World, commands: &mut ActionCommands) {
+        // This action simply creates new actions to the front of the queue.
+        commands
+            .action_builder(
+                actor,
+                AddConfig {
+                    order: AddOrder::Front,
+                    start: false,
+                    repeat: false,
+                },
+            )
+            .add(WaitAction(4.0))
+            .add(WaitAction(3.0))
+            .add(WaitAction(2.0))
+            .add(WaitAction(1.0))
+            .reverse()
+            .submit();
+
+        // Since this is all that it does, we call next action as it is finished.
+        commands.next_action(actor);
+    }
+
+    fn remove(&mut self, _actor: Entity, _world: &mut World) {}
+
+    fn stop(&mut self, _actor: Entity, _world: &mut World) {}
 }
 
 struct QuitAction;
