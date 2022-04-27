@@ -88,14 +88,14 @@ impl ActionsWorldExt for World {
     }
 }
 
-pub struct ActionWorldBuilder<'a> {
+pub struct ActionWorldBuilder<'w> {
     actor: Entity,
     config: AddConfig,
     actions: Vec<Box<dyn Action>>,
-    world: &'a mut World,
+    world: &'w mut World,
 }
 
-impl<'a> ActionWorldBuilder<'a> {
+impl<'w> ActionWorldBuilder<'w> {
     pub fn add(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
