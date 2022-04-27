@@ -1,6 +1,6 @@
-use bevy::{
-    ecs::system::{Command, CommandQueue},
+use bevy_ecs::{
     prelude::*,
+    system::{Command, CommandQueue},
 };
 
 use crate::{world::ActionsWorldExt, *};
