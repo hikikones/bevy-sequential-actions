@@ -49,7 +49,7 @@ fn setup(mut commands: Commands) {
     // Finally, quit the app
     commands.add_action(id, QuitAction, AddConfig::default());
 
-    // A queue of actions have been added and should execute in the following order:
+    // A list of actions have now been added to the queue, and should execute in the following order:
     // Wait(1.0)
     // Wait(2.0)
     // Wait(3.0)
