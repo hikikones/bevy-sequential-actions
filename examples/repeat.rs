@@ -19,7 +19,7 @@ fn setup(mut commands: Commands) {
         .action_builder(
             id,
             AddConfig {
-                order: AddOrder::Back, // Add it to the back of the queue
+                order: AddOrder::Back, // Add each action to the back of the queue
                 start: true,           // Start action if nothing is currently running
                 repeat: true,          // Repeat each action when it has finished
             },
