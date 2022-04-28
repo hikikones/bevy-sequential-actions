@@ -58,6 +58,7 @@ impl ActionCommands {
         }
     }
 
+    /// Create and return [`ActionCommandBuilder`] for building actions.
     pub fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionCommandBuilder {
         ActionCommandBuilder {
             actor,

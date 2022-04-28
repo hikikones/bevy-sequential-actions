@@ -85,6 +85,7 @@ impl ClearActionsExt for Commands<'_, '_> {
 
 /// Extension trait for `action_builder` method on [`Commands`].
 pub trait ActionBuilderCommandsExt<'w, 's, 'c> {
+    /// Create and return [`ActionBuilderCommands`] for building actions.
     fn action_builder(
         &'c mut self,
         actor: Entity,
