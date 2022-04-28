@@ -83,21 +83,21 @@ impl ClearActionsExt for Commands<'_, '_> {
 // Action builder
 //
 
-pub trait ActionCommandsBuilderExt<'w, 's, 'a> {
+pub trait ActionBuilderCommandsExt<'w, 's, 'c> {
     fn action_builder(
-        &'a mut self,
+        &'c mut self,
         actor: Entity,
         config: AddConfig,
-    ) -> ActionCommandsBuilder<'w, 's, 'a>;
+    ) -> ActionBuilderCommands<'w, 's, 'c>;
 }
 
-impl<'w, 's, 'a> ActionCommandsBuilderExt<'w, 's, 'a> for Commands<'w, 's> {
+impl<'w, 's, 'c> ActionBuilderCommandsExt<'w, 's, 'c> for Commands<'w, 's> {
     fn action_builder(
-        &'a mut self,
+        &'c mut self,
         actor: Entity,
         config: AddConfig,
-    ) -> ActionCommandsBuilder<'w, 's, 'a> {
-        ActionCommandsBuilder {
+    ) -> ActionBuilderCommands<'w, 's, 'c> {
+        ActionBuilderCommands {
             actor,
             config,
             actions: Vec::default(),
@@ -106,14 +106,14 @@ impl<'w, 's, 'a> ActionCommandsBuilderExt<'w, 's, 'a> for Commands<'w, 's> {
     }
 }
 
-pub struct ActionCommandsBuilder<'w, 's, 'a> {
+pub struct ActionBuilderCommands<'w, 's, 'c> {
     actor: Entity,
     config: AddConfig,
     actions: Vec<Box<dyn Action>>,
-    commands: &'a mut Commands<'w, 's>,
+    commands: &'c mut Commands<'w, 's>,
 }
 
-impl<'w, 's, 'a> ActionCommandsBuilder<'w, 's, 'a> {
+impl<'w, 's, 'c> ActionBuilderCommands<'w, 's, 'c> {
     pub fn add(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self

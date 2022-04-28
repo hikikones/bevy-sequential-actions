@@ -7,7 +7,7 @@ pub trait ActionsWorldExt {
     fn stop_action(&mut self, actor: Entity);
     fn next_action(&mut self, actor: Entity);
     fn clear_actions(&mut self, actor: Entity);
-    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionWorldBuilder;
+    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionBuilderWorld;
 }
 
 impl ActionsWorldExt for World {
@@ -78,8 +78,8 @@ impl ActionsWorldExt for World {
         actions.0.clear();
     }
 
-    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionWorldBuilder {
-        ActionWorldBuilder {
+    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionBuilderWorld {
+        ActionBuilderWorld {
             actor,
             config,
             actions: Vec::default(),
@@ -88,14 +88,14 @@ impl ActionsWorldExt for World {
     }
 }
 
-pub struct ActionWorldBuilder<'w> {
+pub struct ActionBuilderWorld<'w> {
     actor: Entity,
     config: AddConfig,
     actions: Vec<Box<dyn Action>>,
     world: &'w mut World,
 }
 
-impl<'w> ActionWorldBuilder<'w> {
+impl<'w> ActionBuilderWorld<'w> {
     pub fn add(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
