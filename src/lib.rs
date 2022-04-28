@@ -1,3 +1,5 @@
+// #![warn(missing_docs)]
+
 use std::collections::VecDeque;
 
 use bevy_ecs::prelude::*;
@@ -6,34 +8,120 @@ mod action_commands;
 mod commands;
 mod traits;
 
+/// Extension methods on [World] for modifying actions.
+///
+/// # Example
+///
+/// ```rust
+/// use bevy_sequential_actions::{*, world::*};
+///
+/// struct EmptyAction;
+///
+/// impl Action for EmptyAction {
+///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         commands.next_action(actor);
+///     }
+///
+///     fn remove(&mut self, actor: Entity, world: &mut World) {}
+///     fn stop(&mut self, actor: Entity, world: &mut World) {}
+/// }
+///
+/// fn exclusive_world(world: &mut World) {
+///     let id = world.spawn().insert_bundle(ActionsBundle::default()).id();
+///     world.add_action(id, EmptyAction, AddConfig::default());
+/// }
+/// ```
+///
+/// # Warning
+///
+/// Should only be used when working exclusively within a [World].
+/// Using the world methods **inside** the implementation of an `Action` is **not** intended to work.
+///
+/// Here is an example of what not to do:
+///
+/// ```rust
+/// use bevy_sequential_actions::{*, world::*};
+///
+/// struct EmptyAction;
+///
+/// impl Action for EmptyAction {
+///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // By using `world` to issue next action, the change happens immediately
+///         // and the current action will not be set.
+///         // See [world.rs] for implementation details.
+///         // Since current action is not set, the `remove` method will never be called.
+///         world.next_action(actor); // <- bad
+///
+///         // You should always use the passed `commands` for issuing commands,
+///         // as they are put in a queue and applied at the end. This ensures that
+///         // the current action is set each time.
+///         commands.next_action(actor); // <- good
+///     }
+///
+///     fn remove(&mut self, actor: Entity, world: &mut World) {}
+///     fn stop(&mut self, actor: Entity, world: &mut World) {}
+/// }
+/// ```
 pub mod world;
 
 pub use action_commands::*;
 pub use commands::*;
 pub use traits::*;
 
+/// The trait that all actions must implement.
+///
+/// # Example
+///
+/// An empty action that does nothing.
+/// All actions must declare when they are done.
+/// This is done by calling the `next_action` method
+/// on the [ActionCommands] struct.
+///
+/// ```rust
+/// struct EmptyAction;
+///
+/// impl Action for EmptyAction {
+///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         commands.next_action(actor);
+///     }
+///
+///     fn remove(&mut self, actor: Entity, world: &mut World) {}
+///     fn stop(&mut self, actor: Entity, world: &mut World) {}
+/// }
+/// ```
 pub trait Action: Send + Sync {
+    /// The method that is called when an `Action` is started.
     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands);
+    /// The method that is called when an `Action` is removed.
     fn remove(&mut self, actor: Entity, world: &mut World);
+    /// The method that is called when an `Action` has been stopped.
     fn stop(&mut self, actor: Entity, world: &mut World);
 }
 
+/// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
     queue: ActionQueue,
     current: CurrentAction,
 }
 
+/// The order for an added `Action`.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
+    /// An `Action` is added to the **back** of the queue.
     Back,
+    /// An `Action` is added to the **front** of the queue.
     Front,
 }
 
+/// Configuration for the `Action` to be added.
 #[derive(Clone, Copy)]
 pub struct AddConfig {
+    /// Specify the order of the `Action`. Either to the back of the queue, or to the front.
     pub order: AddOrder,
+    /// Start the `Action` if nothing is currently running.
     pub start: bool,
+    /// Repeat the `Action` when it has finished. This is done by adding it back to the queue when it is removed.
     pub repeat: bool,
 }
 
