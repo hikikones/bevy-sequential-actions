@@ -106,5 +106,33 @@ mod tests {
         world.next_action(e);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    }
+
+    #[test]
+    fn stop() {
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world.add_action(e, EmptyAction, AddConfig::default());
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world.stop_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+
+        world.next_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world.next_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
     }
 }
