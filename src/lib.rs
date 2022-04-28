@@ -11,7 +11,9 @@ mod traits;
 /// Contains the implementation for scheduling actions.
 ///
 /// The `world` module is not exported by default because of potential misuse.
-/// See warning below.
+/// Typically one should use [`Commands`] and [`ActionCommands`] when modifying actions.
+///
+/// See warning further below.
 ///
 /// # Example
 ///
