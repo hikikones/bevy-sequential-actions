@@ -2,6 +2,10 @@
 
 `bevy_sequential_actions` is a library for the [Bevy game engine](https://bevyengine.org/ "bevy game engine") that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start, and so on until the list is empty.
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/19198785/165729467-3616bb01-ac05-4123-a9cf-8c57836d78f3.gif">
+</p>
+
 ## Getting Started
 
 An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. Each action must signal when they are finished, which is done by calling `next_action` on either `Commands` or `ActionCommands`.
@@ -73,3 +77,5 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
     }
 }
 ```
+
+See the [examples](examples/) for more usage.
