@@ -34,6 +34,7 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(Msaa { samples: 4 })
+        .insert_resource(ClearColor(Color::rgb(0.15, 0.3, 0.35)))
         .add_state(GameState::None)
         .add_plugins(DefaultPlugins)
         .add_plugin(assets::AssetsPlugin)

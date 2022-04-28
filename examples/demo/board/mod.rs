@@ -89,10 +89,10 @@ fn spawn_light(mut commands: Commands) {
     commands.spawn_bundle(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
-            illuminance: 15000.0,
+            illuminance: 25000.0,
             ..Default::default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(10.0, 20.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
 }

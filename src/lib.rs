@@ -6,7 +6,7 @@
 //! that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time,
 //! and when it is done, the next action will start, and so on until the list is empty.
 //!
-//! # Getting Started
+//! ## Getting Started
 //!
 //! An action is anything that implements the [`Action`] trait, and can be added to any [`Entity`] that contains the
 //! [`ActionsBundle`]. Each action must signal when they are finished, which is done by calling `next_action` on either
