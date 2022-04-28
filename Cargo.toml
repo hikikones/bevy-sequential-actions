@@ -18,5 +18,9 @@ name = "stop"
 path = "examples/stop.rs"
 
 [[example]]
+name = "repeat"
+path = "examples/repeat.rs"
+
+[[example]]
 name = "demo"
 path = "examples/demo/main.rs"
