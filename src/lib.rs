@@ -230,6 +230,7 @@ struct ActionConfig {
     repeat: bool,
 }
 
+#[allow(clippy::from_over_into)]
 impl Into<ActionConfig> for AddConfig {
     fn into(self) -> ActionConfig {
         ActionConfig {
