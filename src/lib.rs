@@ -70,7 +70,6 @@ mod tests {
     use crate::{world::*, *};
 
     struct EmptyAction;
-
     impl Action for EmptyAction {
         fn add(&mut self, _actor: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
         fn remove(&mut self, _actor: Entity, _world: &mut World) {}
@@ -131,6 +130,30 @@ mod tests {
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
 
         world.next_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    }
+
+    #[test]
+    fn clear() {
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world
+            .action_builder(e, AddConfig::default())
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .apply();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 4);
+
+        world.clear_actions(e);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
