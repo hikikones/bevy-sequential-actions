@@ -2,6 +2,7 @@ use bevy_ecs::prelude::*;
 
 use crate::*;
 
+/// Conversion into an [Action].
 pub trait IntoAction {
     fn into_boxed(self) -> Box<dyn Action>;
 }
@@ -21,18 +22,22 @@ impl IntoAction for Box<dyn Action> {
     }
 }
 
+/// Extension trait for `add_action` method.
 pub trait AddActionExt {
     fn add_action(&mut self, actor: Entity, action: impl IntoAction, config: AddConfig);
 }
 
+/// Extension trait for `stop_action` method.
 pub trait StopActionExt {
     fn stop_action(&mut self, actor: Entity);
 }
 
+/// Extension trait for `next_action` method.
 pub trait NextActionExt {
     fn next_action(&mut self, actor: Entity);
 }
 
+/// Extension trait for `clear_actions` method.
 pub trait ClearActionsExt {
     fn clear_actions(&mut self, actor: Entity);
 }

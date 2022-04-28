@@ -8,7 +8,7 @@ mod action_commands;
 mod commands;
 mod traits;
 
-/// Extension methods on [World] for modifying actions.
+/// Extension methods on [`World`] for modifying actions.
 ///
 /// # Example
 ///
@@ -34,8 +34,8 @@ mod traits;
 ///
 /// # Warning
 ///
-/// Should only be used when working exclusively within a [World].
-/// Using the world methods **inside** the implementation of an `Action` is **not** intended to work.
+/// Should only be used when working exclusively within a [`World`].
+/// Using the world methods **inside** the implementation of an [`Action`] is **not** intended to work.
 ///
 /// Here is an example of what not to do:
 ///
@@ -74,14 +74,14 @@ pub use traits::*;
 ///
 /// An empty action that does nothing.
 /// All actions must declare when they are done.
-/// This is done by calling the `next_action` method
-/// on the [ActionCommands] struct.
+/// This is done by calling [`ActionCommands::next_action`].
 ///
 /// ```rust
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
 ///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // Action is finished, issue next.
 ///         commands.next_action(actor);
 ///     }
 ///
@@ -90,11 +90,11 @@ pub use traits::*;
 /// }
 /// ```
 pub trait Action: Send + Sync {
-    /// The method that is called when an `Action` is started.
+    /// The method that is called when an [`Action`] is started.
     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands);
-    /// The method that is called when an `Action` is removed.
+    /// The method that is called when an [`Action`] is removed.
     fn remove(&mut self, actor: Entity, world: &mut World);
-    /// The method that is called when an `Action` has been stopped.
+    /// The method that is called when an [`Action`] is stopped.
     fn stop(&mut self, actor: Entity, world: &mut World);
 }
 
@@ -105,23 +105,23 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
-/// The order for an added `Action`.
+/// The order for an added [`Action`].
 #[derive(Clone, Copy)]
 pub enum AddOrder {
-    /// An `Action` is added to the **back** of the queue.
+    /// An [`Action`] is added to the **back** of the queue.
     Back,
-    /// An `Action` is added to the **front** of the queue.
+    /// An [`Action`] is added to the **front** of the queue.
     Front,
 }
 
-/// Configuration for the `Action` to be added.
+/// Configuration for the [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub struct AddConfig {
-    /// Specify the order of the `Action`. Either to the back of the queue, or to the front.
+    /// Specify the order of the [`Action`]. Either to the back of the queue, or to the front.
     pub order: AddOrder,
-    /// Start the `Action` if nothing is currently running.
+    /// Start the [`Action`] if nothing is currently running.
     pub start: bool,
-    /// Repeat the `Action` when it has finished. This is done by adding it back to the queue when it is removed.
+    /// Repeat the [`Action`] when it has finished. This is done by adding it back to the queue when it is removed.
     pub repeat: bool,
 }
 
