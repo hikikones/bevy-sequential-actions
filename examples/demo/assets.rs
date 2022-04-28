@@ -6,7 +6,7 @@ impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Meshes::default())
             .insert_resource(Materials::default())
-            .add_startup_system(load);
+            .add_startup_system_to_stage(StartupStage::PreStartup, load);
     }
 }
 
@@ -50,6 +50,7 @@ impl Meshes {
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub enum MaterialName {
+    None,
     White,
     Black,
     Red,
@@ -61,6 +62,7 @@ pub enum MaterialName {
 impl MaterialName {
     fn color(&self) -> Color {
         match self {
+            MaterialName::None => Color::NONE,
             MaterialName::Black => Color::BLACK,
             MaterialName::White => Color::WHITE,
             MaterialName::Red => Color::RED,
@@ -72,6 +74,7 @@ impl MaterialName {
 
     fn iter() -> impl Iterator<Item = Self> {
         [
+            MaterialName::None,
             MaterialName::White,
             MaterialName::Black,
             MaterialName::Red,
