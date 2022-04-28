@@ -37,10 +37,10 @@ impl Default for Board {
 
         let mut grid: Grid<Tile> = Grid::new(grid_size, cell_size);
 
-        grid.set_tile(SquareCell::new(2, 2, 0), Tile::None);
-        grid.set_tile(SquareCell::new(6, 2, 0), Tile::None);
-        grid.set_tile(SquareCell::new(2, 6, 0), Tile::None);
-        grid.set_tile(SquareCell::new(6, 6, 0), Tile::None);
+        grid.set_tile(SquareCell::new(2, 2, 0), Tile::Blocked);
+        grid.set_tile(SquareCell::new(6, 2, 0), Tile::Blocked);
+        grid.set_tile(SquareCell::new(2, 6, 0), Tile::Blocked);
+        grid.set_tile(SquareCell::new(6, 6, 0), Tile::Blocked);
 
         grid.set_tile(SquareCell::new(4, 2, 0), Tile::Event);
         grid.set_tile(SquareCell::new(2, 4, 0), Tile::Trap);
@@ -66,10 +66,10 @@ fn spawn_board(
         let tile = board.get_tile(cell);
         let translation = cell.as_point(size) + Vec3::new(0.0, -height * 0.5, 0.0);
         let material = match tile {
-            Tile::None => materials.get(MaterialName::None),
+            Tile::Blocked => materials.get(MaterialName::None),
             Tile::Ground => materials.get(MaterialName::DarkGray),
-            Tile::Event => materials.get(MaterialName::White),
-            Tile::Trap => materials.get(MaterialName::Red),
+            Tile::Event => materials.get(MaterialName::Gold),
+            Tile::Trap => materials.get(MaterialName::Maroon),
         };
 
         commands.spawn_bundle(PbrBundle {

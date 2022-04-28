@@ -57,6 +57,10 @@ pub enum MaterialName {
     Silver,
     SeaGreen,
     DarkGray,
+    Maroon,
+    Gold,
+    AliceBlue,
+    AquaMarine,
 }
 
 impl MaterialName {
@@ -69,6 +73,10 @@ impl MaterialName {
             MaterialName::Silver => Color::SILVER,
             MaterialName::SeaGreen => Color::SEA_GREEN,
             MaterialName::DarkGray => Color::DARK_GRAY,
+            MaterialName::Maroon => Color::MAROON,
+            MaterialName::Gold => Color::GOLD,
+            MaterialName::AliceBlue => Color::ALICE_BLUE,
+            MaterialName::AquaMarine => Color::AQUAMARINE,
         }
     }
 
@@ -81,6 +89,10 @@ impl MaterialName {
             MaterialName::Silver,
             MaterialName::SeaGreen,
             MaterialName::DarkGray,
+            MaterialName::Maroon,
+            MaterialName::Gold,
+            MaterialName::AliceBlue,
+            MaterialName::AquaMarine,
         ]
         .into_iter()
     }

@@ -10,7 +10,7 @@ impl Plugin for TilePlugin {
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Tile {
-    None,
+    Blocked,
     Ground,
     Event,
     Trap,
@@ -22,7 +22,7 @@ impl GridTile for Tile {
 
     fn is_walkable(&self) -> bool {
         match self {
-            Tile::None => false,
+            Tile::Blocked => false,
             _ => true,
         }
     }

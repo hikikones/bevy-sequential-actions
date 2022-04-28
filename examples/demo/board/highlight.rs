@@ -60,7 +60,7 @@ impl TileHighlightExt for World {
                         mesh,
                         material,
                         transform: Transform {
-                            translation: cell.as_point(cell_size) + Vec3::Y * 0.02,
+                            translation: cell.as_point(cell_size) + Vec3::Y * 0.01,
                             rotation: Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
                             scale: Vec3::ONE * 0.95,
                         },
@@ -78,7 +78,7 @@ impl TileHighlightExt for World {
                     let current = board.get_cell(focus.translation);
                     let next = current + dpad;
                     if !board.is_cell_outside(next) && current != next {
-                        focus.translation = next.as_point(board.cell_size()) + Vec3::Y * 0.02;
+                        focus.translation = next.as_point(board.cell_size()) + Vec3::Y * 0.01;
                     }
                 });
             }

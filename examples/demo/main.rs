@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use bevy::prelude::*;
 
 mod assets;
@@ -105,15 +107,16 @@ fn on_focus_changed(
             return;
         }
 
-        let path = AStar::new(&**board)
+        let mut path = AStar::new(&**board)
             .find_path(start, target)
             .unwrap_or(vec![]);
+        path.pop();
 
         commands.tile_highlight(TileHighlightAction::Show(path));
 
         let tile = board.get_tile(target);
         let material = match tile {
-            Tile::None => {
+            Tile::Blocked => {
                 valid_target.0 = false;
                 materials.get(MaterialName::Red)
             }
