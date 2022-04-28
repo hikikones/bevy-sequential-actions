@@ -22,9 +22,9 @@ fn setup(mut commands: Commands) {
         .action_builder(
             id,
             AddConfig {
-                order: AddOrder::Back, // Add action to the back of the queue
-                start: false,          // Start the action if nothing is currently running
-                repeat: false, // Repeat the action by adding it back the queue after finishing
+                order: AddOrder::Back, // Add each action to the back of the queue
+                start: false,          // Start action if nothing is currently running
+                repeat: false,         // Repeat the action
             },
         )
         .add(WaitAction(4.0))
@@ -36,14 +36,14 @@ fn setup(mut commands: Commands) {
         .action_builder(
             id,
             AddConfig {
-                order: AddOrder::Front,
+                order: AddOrder::Front, // This time, add each action to the front of the queue
                 start: false,
                 repeat: false,
             },
         )
         .add(WaitAction(2.0))
         .add(WaitAction(3.0))
-        .reverse() // Reverse add order to get increasing wait times
+        .reverse() // Since we are adding to the front, reverse the order to get increasing wait times
         .submit();
 
     // Add an action that itself adds multiple actions
