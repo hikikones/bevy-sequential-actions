@@ -8,3 +8,15 @@ bevy_ecs = "0.7"
 
 [dev-dependencies]
 bevy = "0.7"
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+
+[[example]]
+name = "stop"
+path = "examples/stop.rs"
+
+[[example]]
+name = "demo"
+path = "examples/demo/main.rs"

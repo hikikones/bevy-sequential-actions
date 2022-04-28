@@ -1,0 +1,45 @@
+use bevy::prelude::*;
+
+use bevy_sequential_actions::*;
+
+pub(super) struct WaitActionPlugin;
+
+impl Plugin for WaitActionPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(wait);
+    }
+}
+
+pub struct WaitAction(f32);
+
+impl WaitAction {
+    pub fn new(duration: f32) -> Self {
+        Self(duration)
+    }
+}
+
+impl Action for WaitAction {
+    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(actor).insert(Wait(self.0));
+    }
+
+    fn remove(&mut self, actor: Entity, world: &mut World) {
+        world.entity_mut(actor).remove::<Wait>();
+    }
+
+    fn stop(&mut self, actor: Entity, world: &mut World) {
+        self.remove(actor, world);
+    }
+}
+
+#[derive(Component)]
+struct Wait(f32);
+
+fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
+    for (actor, mut wait) in wait_q.iter_mut() {
+        wait.0 -= time.delta_seconds();
+        if wait.0 <= 0.0 {
+            commands.next_action(actor);
+        }
+    }
+}
