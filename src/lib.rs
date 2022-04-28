@@ -64,3 +64,47 @@ impl Into<ActionConfig> for AddConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{world::*, *};
+
+    struct EmptyAction;
+
+    impl Action for EmptyAction {
+        fn add(&mut self, _actor: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
+        fn remove(&mut self, _actor: Entity, _world: &mut World) {}
+        fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+    }
+
+    #[test]
+    fn add() {
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world
+            .action_builder(e, AddConfig::default())
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .apply();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 2);
+
+        world.next_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+
+        world.next_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world.next_action(e);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+    }
+}
