@@ -8,7 +8,10 @@ mod action_commands;
 mod commands;
 mod traits;
 
-/// Extension methods on [`World`] for modifying actions.
+/// Contains the implementation for scheduling actions.
+///
+/// The `world` module is not exported by default because of potential misuse.
+/// See warning below.
 ///
 /// # Example
 ///
@@ -35,7 +38,7 @@ mod traits;
 /// # Warning
 ///
 /// Should only be used when working exclusively within a [`World`].
-/// Using the world methods **inside** the implementation of an [`Action`] is **not** intended to work.
+/// Using the world extension methods **inside** the implementation of an [`Action`] is **not** intended to work.
 ///
 /// Here is an example of what not to do:
 ///
@@ -117,7 +120,7 @@ pub enum AddOrder {
 /// Configuration for the [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub struct AddConfig {
-    /// Specify the order of the [`Action`]. Either to the back of the queue, or to the front.
+    /// Specify the [`AddOrder`] of the [`Action`]. Either to the back of the queue, or to the front.
     pub order: AddOrder,
     /// Start the [`Action`] if nothing is currently running.
     pub start: bool,

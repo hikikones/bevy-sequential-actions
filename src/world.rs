@@ -2,6 +2,7 @@ use bevy_ecs::prelude::*;
 
 use crate::*;
 
+/// Extension trait methods on [`World`] for modifying actions.
 pub trait ActionsWorldExt {
     fn add_action(&mut self, actor: Entity, action: impl IntoAction, config: AddConfig);
     fn stop_action(&mut self, actor: Entity);
@@ -88,6 +89,7 @@ impl ActionsWorldExt for World {
     }
 }
 
+/// [`Action`] builder struct for [`World`].
 pub struct ActionBuilderWorld<'w> {
     actor: Entity,
     config: AddConfig,
@@ -96,16 +98,20 @@ pub struct ActionBuilderWorld<'w> {
 }
 
 impl<'w> ActionBuilderWorld<'w> {
+    /// Push an [`Action`] to the builder list.
+    /// No [`Action`] will be applied until [`ActionBuilderWorld::apply`] is called.
     pub fn add(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
     }
 
+    /// Reverse the order for the currently pushed actions.
     pub fn reverse(mut self) -> Self {
         self.actions.reverse();
         self
     }
 
+    /// Apply the pushed actions.
     pub fn apply(self) {
         for action in self.actions {
             self.world.add_action(self.actor, action, self.config);

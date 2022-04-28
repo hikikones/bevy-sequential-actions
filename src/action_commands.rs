@@ -2,6 +2,7 @@ use bevy_ecs::prelude::*;
 
 use crate::{world::ActionsWorldExt, *};
 
+/// Commands for modifying actions in the [`Action`] trait.
 #[derive(Default)]
 pub struct ActionCommands(Vec<ActionCommand>);
 
@@ -67,6 +68,7 @@ impl ActionCommands {
     }
 }
 
+/// [`Action`] builder struct for [`ActionCommands`].
 pub struct ActionCommandBuilder<'a> {
     actor: Entity,
     config: AddConfig,
@@ -75,16 +77,20 @@ pub struct ActionCommandBuilder<'a> {
 }
 
 impl<'a> ActionCommandBuilder<'a> {
+    /// Push an [`Action`] to the builder list.
+    /// No [`Action`] will be applied until [`ActionCommandBuilder::submit`] is called.
     pub fn add(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
     }
 
+    /// Reverse the order for the currently pushed actions.
     pub fn reverse(mut self) -> Self {
         self.actions.reverse();
         self
     }
 
+    /// Submit the pushed actions.
     pub fn submit(self) {
         for action in self.actions {
             self.commands
