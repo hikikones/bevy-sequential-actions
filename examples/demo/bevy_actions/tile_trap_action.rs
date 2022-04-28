@@ -16,7 +16,7 @@ pub struct TileTrapAction;
 impl Action for TileTrapAction {
     fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("\n---------- Tile Trap Event! ----------");
-        println!("Press 'Space' to continue.\n");
+        println!("Press 'Enter' to continue.\n");
 
         world.entity_mut(actor).insert(TrapMarker);
         let mut state = world.get_resource_mut::<State<StopState>>().unwrap();

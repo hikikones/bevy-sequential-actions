@@ -35,7 +35,17 @@ impl Default for Board {
         let grid_size = GridSize::new(9, 9, 1);
         let cell_size: f32 = 1.0;
 
-        let grid: Grid<Tile> = Grid::new(grid_size, cell_size);
+        let mut grid: Grid<Tile> = Grid::new(grid_size, cell_size);
+
+        grid.set_tile(SquareCell::new(2, 2, 0), Tile::None);
+        grid.set_tile(SquareCell::new(6, 2, 0), Tile::None);
+        grid.set_tile(SquareCell::new(2, 6, 0), Tile::None);
+        grid.set_tile(SquareCell::new(6, 6, 0), Tile::None);
+
+        grid.set_tile(SquareCell::new(4, 2, 0), Tile::Event);
+        grid.set_tile(SquareCell::new(2, 4, 0), Tile::Trap);
+        grid.set_tile(SquareCell::new(6, 4, 0), Tile::Trap);
+        grid.set_tile(SquareCell::new(4, 6, 0), Tile::Event);
 
         Self(grid)
     }

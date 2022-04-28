@@ -1,5 +1,7 @@
 use bevy::{ecs::system::Command, math::const_vec3, prelude::*};
 
+use crate::board::*;
+
 pub(super) struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
@@ -28,11 +30,17 @@ impl Command for CameraCommand {
     }
 }
 
-fn spawn_camera(mut commands: Commands) {
+fn spawn_camera(board: Res<Board>, mut commands: Commands) {
+    let center = board.get_cell_at(GridLocation::Center, 0);
+    let pos = center.as_point(board.cell_size());
+
     commands
         .spawn()
         .insert(GlobalTransform::identity())
-        .insert(Transform::identity())
+        .insert(Transform {
+            translation: pos,
+            ..default()
+        })
         .insert(CameraPivot)
         .with_children(|child| {
             child

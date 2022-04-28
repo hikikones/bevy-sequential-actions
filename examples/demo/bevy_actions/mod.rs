@@ -3,6 +3,7 @@ use bevy::prelude::*;
 mod camera_action;
 mod lerp_action;
 mod move_action;
+mod set_state_action;
 mod tile_event_action;
 mod tile_trap_action;
 mod wait_action;
@@ -10,6 +11,7 @@ mod wait_action;
 pub use camera_action::{CameraAction, PanTarget};
 pub use lerp_action::{LerpAction, LerpType};
 pub use move_action::MoveAction;
+pub use set_state_action::SetStateAction;
 pub use tile_event_action::TileEventAction;
 pub use tile_trap_action::TileTrapAction;
 pub use wait_action::WaitAction;
@@ -23,6 +25,7 @@ impl Plugin for ActionsPlugin {
             .add_plugin(move_action::MoveActionPlugin)
             .add_plugin(camera_action::CameraActionPlugin)
             .add_plugin(tile_event_action::TileEventActionPlugin)
-            .add_plugin(tile_trap_action::TileTrapActionPlugin);
+            .add_plugin(tile_trap_action::TileTrapActionPlugin)
+            .add_plugin(set_state_action::SetStateActionPlugin);
     }
 }
