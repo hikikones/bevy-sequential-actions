@@ -2,6 +2,13 @@
 name = "bevy-sequential-actions"
 version = "0.1.0"
 edition = "2021"
+authors = ["hikikones"]
+description = "A bevy library for executing actions in a sequence"
+keywords = ["bevy", "action", "sequence", "command"]
+homepage = "https://github.com/hikikones/bevy-sequential-actions"
+repository = "https://github.com/hikikones/bevy-sequential-actions"
+license-file = "LICENSE"
+readme = "README.md"
 
 [lib]
 doctest = false
