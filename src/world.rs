@@ -2,12 +2,66 @@ use bevy_ecs::prelude::*;
 
 use crate::*;
 
+/// Extension trait methods on [`World`] for modifying actions.
 pub trait ActionsWorldExt {
+    /// Add `action` to entity `actor` with the configuration `config`.
     fn add_action(&mut self, actor: Entity, action: impl IntoAction, config: AddConfig);
+
+    /// Stop the current action for entity `actor`. This is done by removing the currently running action,
+    /// and pushing it to the **front** of the queue again.
+    ///
+    /// **Note**: when stopping an action, you need to manually resume the actions.
+    /// This can be done by calling `next_action`, which will resume the same action that was stopped,
+    /// or you could add a new action to the **front** of the queue beforehand.
+    /// When adding a new action, either specify in [`AddConfig`] that the action should start,
+    /// or manually call `next_action` afterwards, but not both, as that will trigger two
+    /// consecutive `next_action` calls.
+    ///
+    /// # Example
+    ///
+    /// Stopping an [`Action`] and adding a new one with `start: true` in [`AddConfig`]:
+    ///
+    /// ```rust
+    /// world.stop_action(actor);
+    /// world.add_action(
+    ///     actor,
+    ///     MyAction,
+    ///     AddConfig {
+    ///         order: AddOrder::Front,
+    ///         start: true,
+    ///         repeat: false,
+    ///     },
+    /// );
+    /// // No need to call next_action here
+    /// ```
+    ///
+    /// Stopping an [`Action`] and manually calling `next_action`:
+    ///
+    /// ```rust
+    /// world.stop_action(actor);
+    /// world.add_action(
+    ///     actor,
+    ///     MyAction,
+    ///     AddConfig {
+    ///         order: AddOrder::Front,
+    ///         start: false,
+    ///         repeat: false,
+    ///     },
+    /// );
+    /// // Must call next_action here
+    /// world.next_action(actor);
+    /// ```
     fn stop_action(&mut self, actor: Entity);
+
+    /// Start next action for entity `actor`. This is done by removing the currently running action,
+    /// and retrieving the next action in the queue list.
     fn next_action(&mut self, actor: Entity);
+
+    /// Remove the currently running action for entity `actor`, and clear any remaining.
     fn clear_actions(&mut self, actor: Entity);
-    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionWorldBuilder;
+
+    /// Create and return [`ActionBuilderWorld`] for building actions.
+    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionBuilderWorld;
 }
 
 impl ActionsWorldExt for World {
@@ -78,8 +132,8 @@ impl ActionsWorldExt for World {
         actions.0.clear();
     }
 
-    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionWorldBuilder {
-        ActionWorldBuilder {
+    fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionBuilderWorld {
+        ActionBuilderWorld {
             actor,
             config,
             actions: Vec::default(),
@@ -88,24 +142,29 @@ impl ActionsWorldExt for World {
     }
 }
 
-pub struct ActionWorldBuilder<'w> {
+/// [`Action`] builder struct for [`World`].
+pub struct ActionBuilderWorld<'w> {
     actor: Entity,
     config: AddConfig,
     actions: Vec<Box<dyn Action>>,
     world: &'w mut World,
 }
 
-impl<'w> ActionWorldBuilder<'w> {
-    pub fn add(mut self, action: impl IntoAction) -> Self {
+impl<'w> ActionBuilderWorld<'w> {
+    /// Push an [`Action`] to the builder list.
+    /// No [`Action`] will be applied until [`ActionBuilderWorld::apply`] is called.
+    pub fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
     }
 
+    /// Reverse the order for the currently pushed actions.
     pub fn reverse(mut self) -> Self {
         self.actions.reverse();
         self
     }
 
+    /// Apply the pushed actions.
     pub fn apply(self) {
         for action in self.actions {
             self.world.add_action(self.actor, action, self.config);

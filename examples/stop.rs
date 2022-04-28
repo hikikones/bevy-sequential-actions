@@ -30,8 +30,8 @@ fn setup(mut commands: Commands) {
     // Add count and quit action with default config
     commands
         .action_builder(id, AddConfig::default())
-        .add(CountAction::default())
-        .add(QuitAction)
+        .push(CountAction::default())
+        .push(QuitAction)
         .submit();
 }
 
@@ -76,7 +76,8 @@ fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
                 InterruptAction,
                 AddConfig {
                     order: AddOrder::Front,
-                    ..default()
+                    start: true,
+                    repeat: false,
                 },
             );
         } else if count.0 == 20 {

@@ -22,13 +22,13 @@ fn setup(mut commands: Commands) {
         .action_builder(
             id,
             AddConfig {
-                order: AddOrder::Back, // Add action to the back of the queue
-                start: false,          // Start the action if nothing is currently running
-                repeat: false, // Repeat the action by adding it back the queue after finishing
+                order: AddOrder::Back, // Add each action to the back of the queue
+                start: false,          // Start action if nothing is currently running
+                repeat: false,         // Repeat the action
             },
         )
-        .add(WaitAction(4.0))
-        .add(WaitAction(5.0))
+        .push(WaitAction(4.0))
+        .push(WaitAction(5.0))
         .submit();
 
     // Add multiple actions again but to the front of the queue
@@ -36,14 +36,14 @@ fn setup(mut commands: Commands) {
         .action_builder(
             id,
             AddConfig {
-                order: AddOrder::Front,
+                order: AddOrder::Front, // This time, add each action to the front of the queue
                 start: false,
                 repeat: false,
             },
         )
-        .add(WaitAction(2.0))
-        .add(WaitAction(3.0))
-        .reverse() // Reverse add order to get increasing wait times
+        .push(WaitAction(2.0))
+        .push(WaitAction(3.0))
+        .reverse() // Since we are adding to the front, reverse the order to get increasing wait times
         .submit();
 
     // Add an action that itself adds multiple actions
@@ -109,10 +109,10 @@ impl Action for MultipleWaitActions {
                     repeat: false,
                 },
             )
-            .add(WaitAction(4.0))
-            .add(WaitAction(3.0))
-            .add(WaitAction(2.0))
-            .add(WaitAction(1.0))
+            .push(WaitAction(4.0))
+            .push(WaitAction(3.0))
+            .push(WaitAction(2.0))
+            .push(WaitAction(1.0))
             .reverse()
             .submit();
 

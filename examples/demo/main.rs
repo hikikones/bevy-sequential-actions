@@ -149,12 +149,12 @@ fn on_input(
                 let cell = board.get_cell(focus.1.translation);
                 commands
                     .action_builder(player, AddConfig::default())
-                    .add(SetStateAction::new(GameState::None))
-                    .add(CameraAction::Pan(PanTarget::Entity(player), 1.0))
-                    .add(CameraAction::Follow(player))
-                    .add(MoveAction::new(cell))
-                    .add(TileEventAction)
-                    .add(SetStateAction::new(GameState::Play))
+                    .push(SetStateAction::new(GameState::None))
+                    .push(CameraAction::Pan(PanTarget::Entity(player), 1.0))
+                    .push(CameraAction::Follow(player))
+                    .push(MoveAction::new(cell))
+                    .push(TileEventAction)
+                    .push(SetStateAction::new(GameState::Play))
                     .submit();
             }
             InputEvent::Dpad(dpad) => {

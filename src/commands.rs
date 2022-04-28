@@ -83,21 +83,23 @@ impl ClearActionsExt for Commands<'_, '_> {
 // Action builder
 //
 
-pub trait ActionCommandsBuilderExt<'w, 's, 'a> {
+/// Extension trait for `action_builder` method on [`Commands`].
+pub trait ActionBuilderCommandsExt<'w, 's, 'c> {
+    /// Create and return [`ActionBuilderCommands`] for building actions.
     fn action_builder(
-        &'a mut self,
+        &'c mut self,
         actor: Entity,
         config: AddConfig,
-    ) -> ActionCommandsBuilder<'w, 's, 'a>;
+    ) -> ActionBuilderCommands<'w, 's, 'c>;
 }
 
-impl<'w, 's, 'a> ActionCommandsBuilderExt<'w, 's, 'a> for Commands<'w, 's> {
+impl<'w, 's, 'c> ActionBuilderCommandsExt<'w, 's, 'c> for Commands<'w, 's> {
     fn action_builder(
-        &'a mut self,
+        &'c mut self,
         actor: Entity,
         config: AddConfig,
-    ) -> ActionCommandsBuilder<'w, 's, 'a> {
-        ActionCommandsBuilder {
+    ) -> ActionBuilderCommands<'w, 's, 'c> {
+        ActionBuilderCommands {
             actor,
             config,
             actions: Vec::default(),
@@ -106,24 +108,29 @@ impl<'w, 's, 'a> ActionCommandsBuilderExt<'w, 's, 'a> for Commands<'w, 's> {
     }
 }
 
-pub struct ActionCommandsBuilder<'w, 's, 'a> {
+/// [`Action`] builder struct for [`Commands`].
+pub struct ActionBuilderCommands<'w, 's, 'c> {
     actor: Entity,
     config: AddConfig,
     actions: Vec<Box<dyn Action>>,
-    commands: &'a mut Commands<'w, 's>,
+    commands: &'c mut Commands<'w, 's>,
 }
 
-impl<'w, 's, 'a> ActionCommandsBuilder<'w, 's, 'a> {
-    pub fn add(mut self, action: impl IntoAction) -> Self {
+impl<'w, 's, 'c> ActionBuilderCommands<'w, 's, 'c> {
+    /// Push an [`Action`] to the builder list.
+    /// No [`Action`] will be applied until [`ActionBuilderCommands::submit`] is called.
+    pub fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
     }
 
+    /// Reverse the order for the currently pushed actions.
     pub fn reverse(mut self) -> Self {
         self.actions.reverse();
         self
     }
 
+    /// Submit the pushed actions.
     pub fn submit(self) {
         self.commands.add(SubmitActions {
             actor: self.actor,
