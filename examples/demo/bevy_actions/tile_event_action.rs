@@ -36,15 +36,15 @@ impl Action for TileEventAction {
                         repeat: false,
                     },
                 )
-                .add(CameraAction::Pan(PanTarget::Entity(actor), 0.5))
-                .add(LerpAction::new(
+                .push(CameraAction::Pan(PanTarget::Entity(actor), 0.5))
+                .push(LerpAction::new(
                     camera,
                     LerpType::Position(CAMERA_OFFSET * 0.5),
                     1.0,
                 ))
-                .add(LerpAction::new(actor, LerpType::Face(camera), 1.0))
-                .add(WaitAction::new(1.0))
-                .add(LerpAction::new(
+                .push(LerpAction::new(actor, LerpType::Face(camera), 1.0))
+                .push(WaitAction::new(1.0))
+                .push(LerpAction::new(
                     camera,
                     LerpType::Position(CAMERA_OFFSET),
                     1.0,

@@ -79,7 +79,7 @@ pub struct ActionCommandBuilder<'a> {
 impl<'a> ActionCommandBuilder<'a> {
     /// Push an [`Action`] to the builder list.
     /// No [`Action`] will be applied until [`ActionCommandBuilder::submit`] is called.
-    pub fn add(mut self, action: impl IntoAction) -> Self {
+    pub fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push(action.into_boxed());
         self
     }

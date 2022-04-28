@@ -27,8 +27,8 @@ fn setup(mut commands: Commands) {
                 repeat: false,         // Repeat the action
             },
         )
-        .add(WaitAction(4.0))
-        .add(WaitAction(5.0))
+        .push(WaitAction(4.0))
+        .push(WaitAction(5.0))
         .submit();
 
     // Add multiple actions again but to the front of the queue
@@ -41,8 +41,8 @@ fn setup(mut commands: Commands) {
                 repeat: false,
             },
         )
-        .add(WaitAction(2.0))
-        .add(WaitAction(3.0))
+        .push(WaitAction(2.0))
+        .push(WaitAction(3.0))
         .reverse() // Since we are adding to the front, reverse the order to get increasing wait times
         .submit();
 
@@ -109,10 +109,10 @@ impl Action for MultipleWaitActions {
                     repeat: false,
                 },
             )
-            .add(WaitAction(4.0))
-            .add(WaitAction(3.0))
-            .add(WaitAction(2.0))
-            .add(WaitAction(1.0))
+            .push(WaitAction(4.0))
+            .push(WaitAction(3.0))
+            .push(WaitAction(2.0))
+            .push(WaitAction(1.0))
             .reverse()
             .submit();
 

@@ -175,9 +175,9 @@ mod tests {
 
         world
             .action_builder(e, AddConfig::default())
-            .add(EmptyAction)
-            .add(EmptyAction)
-            .add(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
             .apply();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
@@ -234,11 +234,11 @@ mod tests {
 
         world
             .action_builder(e, AddConfig::default())
-            .add(EmptyAction)
-            .add(EmptyAction)
-            .add(EmptyAction)
-            .add(EmptyAction)
-            .add(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
             .apply();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
