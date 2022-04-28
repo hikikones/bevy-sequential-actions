@@ -3,6 +3,9 @@ name = "bevy-sequential-actions"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+doctest = false
+
 [dependencies]
 bevy_ecs = "0.7"
 
