@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy::utils::HashSet;
 
-use crate::bevy_grid::*;
+use crate::*;
 
 use super::is_connected;
 
@@ -17,18 +17,14 @@ impl<'a, T: GridTile> Bfs<'a, T> {
 }
 
 impl<'a, T: GridTile> Bfs<'a, T> {
-    pub fn flood_fill(&self, start: T::Cell, max: usize) -> Vec<T::Cell> {
+    pub fn fill(&self, start: T::Cell, max_cost: usize, edge_weight: EdgeWeight) -> Vec<T::Cell> {
         let mut queue: VecDeque<(T::Cell, usize)> = VecDeque::default();
         let mut visited: HashSet<T::Cell> = HashSet::default();
 
-        queue.push_back((start, max));
+        queue.push_back((start, 0));
         visited.insert(start);
 
-        while let Some((cell, length)) = queue.pop_front() {
-            if length == 0 {
-                continue;
-            }
-
+        while let Some((cell, current_cost)) = queue.pop_front() {
             let tile = self.grid.get_tile(cell);
             for neighbor_cell in tile.neighbors(cell) {
                 if let Some(neighbor) = self.grid.try_get_tile(neighbor_cell) {
@@ -40,9 +36,16 @@ impl<'a, T: GridTile> Bfs<'a, T> {
                         continue;
                     }
 
+                    let edge_cost = edge_weight.cost(tile, cell, neighbor_cell, self.grid);
+                    let next_cost = current_cost + edge_cost;
+
+                    if next_cost > max_cost {
+                        continue;
+                    }
+
                     if !visited.contains(&neighbor_cell) {
                         visited.insert(neighbor_cell);
-                        queue.push_back((neighbor_cell, length - 1));
+                        queue.push_back((neighbor_cell, next_cost));
                     }
                 }
             }

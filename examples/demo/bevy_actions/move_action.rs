@@ -27,7 +27,7 @@ impl Action for MoveAction {
         let start = board.get_cell(world.get::<Transform>(actor).unwrap().translation);
         let goal = self.0;
         let path = AStar::new(&**board)
-            .find_path(start, goal)
+            .search(start, goal, EdgeWeight::Custom)
             .unwrap()
             .iter()
             .map(|c| c.as_point(board.cell_size()))

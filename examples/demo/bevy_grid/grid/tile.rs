@@ -1,4 +1,4 @@
-use crate::bevy_grid::*;
+use crate::{Grid, GridCell};
 
 pub trait GridTile: Default {
     type Cell: GridCell;
@@ -8,15 +8,15 @@ pub trait GridTile: Default {
     fn neighbors(&self, cell: Self::Cell) -> Self::Neighbors;
 
     // Default impls
-    fn edge_weight(&self, _cell: Self::Cell, _neighbor: Self::Cell, _grid: &Grid<Self>) -> usize {
+    fn edge_cost(&self) -> usize {
+        1
+    }
+
+    fn edge_cost_custom(&self, _cell: Self::Cell, _other: Self::Cell, _grid: &Grid<Self>) -> usize {
         1
     }
 
     fn heuristic(&self, cell: Self::Cell, goal: Self::Cell) -> usize {
         cell.distance(goal)
-    }
-
-    fn move_cost(&self) -> usize {
-        1
     }
 }

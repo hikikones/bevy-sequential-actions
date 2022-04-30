@@ -109,7 +109,7 @@ fn on_focus_changed(
         }
 
         let mut path = AStar::new(&**board)
-            .find_path(start, target)
+            .search(start, target, EdgeWeight::Custom)
             .unwrap_or(vec![]);
         path.pop();
 
