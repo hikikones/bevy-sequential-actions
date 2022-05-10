@@ -113,8 +113,9 @@ impl ActionsWorldExt for World {
         let mut commands = ActionCommands::default();
         if let Some((mut action, cfg)) = next {
             action.add(actor, self, &mut commands);
-            let mut current = self.get_mut::<CurrentAction>(actor).unwrap();
-            current.0 = Some((action, cfg));
+            if let Some(mut current) = self.get_mut::<CurrentAction>(actor) {
+                current.0 = Some((action, cfg));
+            }
         }
 
         commands.apply(self);
