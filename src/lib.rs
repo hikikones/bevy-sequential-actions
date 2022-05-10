@@ -362,4 +362,24 @@ mod tests {
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
     }
+
+    #[test]
+    fn despawn() {
+        struct DespawnAction;
+        impl Action for DespawnAction {
+            fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+                world.despawn(actor);
+            }
+            fn remove(&mut self, _actor: Entity, _world: &mut World) {}
+            fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+        }
+
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world.add_action(e, DespawnAction, AddConfig::default());
+
+        assert!(world.get_entity(e).is_none());
+    }
 }
