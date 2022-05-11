@@ -25,8 +25,8 @@ pub struct EntityActions<'w, 's, 'a> {
 }
 
 impl<'w, 's, 'a> ActionsExt for EntityActions<'w, 's, 'a> {
-    fn config(mut self, cfg: AddConfig) -> Self {
-        self.config = cfg;
+    fn config(mut self, config: AddConfig) -> Self {
+        self.config = config;
         self
     }
 

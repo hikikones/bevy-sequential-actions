@@ -29,7 +29,7 @@ impl Action for CameraAction {
         match *self {
             CameraAction::Follow(target) => {
                 world.camera(CameraCommand::Follow(target));
-                commands.next_action(actor);
+                commands.action(actor).next();
             }
             CameraAction::Pan(target, duration) => {
                 world.camera(CameraCommand::Stop);
@@ -53,16 +53,15 @@ impl Action for CameraAction {
 
                 let lerp = LerpAction::new(camera, LerpType::Position(target_pos), duration);
 
-                commands.add_action(
-                    actor,
-                    lerp,
-                    AddConfig {
+                commands
+                    .action(actor)
+                    .config(AddConfig {
                         order: AddOrder::Front,
                         start: false,
                         repeat: false,
-                    },
-                );
-                commands.next_action(actor);
+                    })
+                    .add(lerp)
+                    .next();
             }
         }
     }

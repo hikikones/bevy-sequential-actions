@@ -6,35 +6,78 @@ use crate::{world::ActionsWorldExt, *};
 #[derive(Default)]
 pub struct ActionCommands(Vec<ActionCommand>);
 
+impl ActionCommands {
+    pub fn action(&mut self, entity: Entity) -> EntityActionCommands {
+        EntityActionCommands {
+            entity,
+            config: AddConfig::default(),
+            actions: Vec::new(),
+            commands: self,
+        }
+    }
+}
+
+pub struct EntityActionCommands<'a> {
+    entity: Entity,
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    commands: &'a mut ActionCommands,
+}
+
 enum ActionCommand {
     Add(Entity, Box<dyn Action>, AddConfig),
-    Stop(Entity),
     Next(Entity),
+    Stop(Entity),
     Clear(Entity),
 }
 
-impl AddActionExt for ActionCommands {
-    fn add_action(&mut self, actor: Entity, action: impl IntoAction, config: AddConfig) {
-        self.0
-            .push(ActionCommand::Add(actor, action.into_boxed(), config));
+impl<'a> ActionsExt for EntityActionCommands<'a> {
+    fn config(mut self, config: AddConfig) -> Self {
+        self.config = config;
+        self
     }
-}
 
-impl StopActionExt for ActionCommands {
-    fn stop_action(&mut self, actor: Entity) {
-        self.0.push(ActionCommand::Stop(actor));
+    fn add(self, action: impl IntoAction) -> Self {
+        self.commands.0.push(ActionCommand::Add(
+            self.entity,
+            action.into_boxed(),
+            self.config,
+        ));
+        self
     }
-}
 
-impl NextActionExt for ActionCommands {
-    fn next_action(&mut self, actor: Entity) {
-        self.0.push(ActionCommand::Next(actor));
+    fn next(self) -> Self {
+        self.commands.0.push(ActionCommand::Next(self.entity));
+        self
     }
-}
 
-impl ClearActionsExt for ActionCommands {
-    fn clear_actions(&mut self, actor: Entity) {
-        self.0.push(ActionCommand::Clear(actor));
+    fn stop(self) -> Self {
+        self.commands.0.push(ActionCommand::Stop(self.entity));
+        self
+    }
+
+    fn clear(self) -> Self {
+        self.commands.0.push(ActionCommand::Clear(self.entity));
+        self
+    }
+
+    fn push(mut self, action: impl IntoAction) -> Self {
+        self.actions.push((action.into_boxed(), self.config));
+        self
+    }
+
+    fn reverse(mut self) -> Self {
+        self.actions.reverse();
+        self
+    }
+
+    fn submit(mut self) -> Self {
+        for (action, config) in self.actions.drain(..) {
+            self.commands
+                .0
+                .push(ActionCommand::Add(self.entity, action, config));
+        }
+        self
     }
 }
 
@@ -55,48 +98,6 @@ impl ActionCommands {
                     world.clear_actions(actor);
                 }
             }
-        }
-    }
-
-    /// Create and return [`ActionCommandBuilder`] for building actions.
-    pub fn action_builder(&mut self, actor: Entity, config: AddConfig) -> ActionCommandBuilder {
-        ActionCommandBuilder {
-            actor,
-            config,
-            actions: Vec::default(),
-            commands: self,
-        }
-    }
-}
-
-/// [`Action`] builder struct for [`ActionCommands`].
-pub struct ActionCommandBuilder<'a> {
-    actor: Entity,
-    config: AddConfig,
-    actions: Vec<Box<dyn Action>>,
-    commands: &'a mut ActionCommands,
-}
-
-impl<'a> ActionCommandBuilder<'a> {
-    /// Push an [`Action`] to the builder list.
-    /// No [`Action`] will be applied until [`ActionCommandBuilder::submit`] is called.
-    pub fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push(action.into_boxed());
-        self
-    }
-
-    /// Reverse the order for the currently pushed actions.
-    pub fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    /// Submit the pushed actions.
-    pub fn submit(self) {
-        for action in self.actions {
-            self.commands
-                .0
-                .push(ActionCommand::Add(self.actor, action, self.config));
         }
     }
 }

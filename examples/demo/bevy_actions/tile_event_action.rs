@@ -28,14 +28,12 @@ impl Action for TileEventAction {
                 .unwrap();
 
             commands
-                .action_builder(
-                    actor,
-                    AddConfig {
-                        order: AddOrder::Front,
-                        start: false,
-                        repeat: false,
-                    },
-                )
+                .action(actor)
+                .config(AddConfig {
+                    order: AddOrder::Front,
+                    start: false,
+                    repeat: false,
+                })
                 .push(CameraAction::Pan(PanTarget::Entity(actor), 0.5))
                 .push(LerpAction::new(
                     camera,
@@ -53,10 +51,9 @@ impl Action for TileEventAction {
                 .submit();
         }
 
-        commands.next_action(actor);
+        commands.action(actor).next();
     }
 
     fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-
     fn stop(&mut self, _actor: Entity, _world: &mut World) {}
 }

@@ -26,8 +26,8 @@ impl IntoAction for Box<dyn Action> {
 pub trait ActionsExt {
     fn config(self, config: AddConfig) -> Self;
     fn add(self, action: impl IntoAction) -> Self;
-    fn stop(self) -> Self;
     fn next(self) -> Self;
+    fn stop(self) -> Self;
     fn clear(self) -> Self;
     fn push(self, action: impl IntoAction) -> Self;
     fn reverse(self) -> Self;

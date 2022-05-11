@@ -59,7 +59,7 @@ impl Action for LerpAction {
                 let dir = b.translation - a.translation;
 
                 if dir == Vec3::ZERO {
-                    commands.next_action(actor);
+                    commands.action(actor).next();
                     return;
                 }
 

@@ -97,23 +97,19 @@ impl Action for MultipleWaitActions {
     fn add(&mut self, actor: Entity, _world: &mut World, commands: &mut ActionCommands) {
         // This action simply creates new actions to the front of the queue.
         commands
-            .action_builder(
-                actor,
-                AddConfig {
-                    order: AddOrder::Front,
-                    start: false,
-                    repeat: false,
-                },
-            )
+            .action(actor)
+            .config(AddConfig {
+                order: AddOrder::Front,
+                start: false,
+                repeat: false,
+            })
             .push(WaitAction(4.0))
             .push(WaitAction(3.0))
             .push(WaitAction(2.0))
             .push(WaitAction(1.0))
             .reverse()
-            .submit();
-
-        // Since this is all that it does, we call next action as it is finished.
-        commands.next_action(actor);
+            .submit()
+            .next(); // Since this is all that it does, we call next action as it is finished.
     }
 
     fn remove(&mut self, _actor: Entity, _world: &mut World) {}
