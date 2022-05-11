@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::*;
 
-use crate::{world::ActionsWorldExt, *};
+use crate::{world::EntityWorldActionsExt, *};
 
 /// Commands for modifying actions in the [`Action`] trait.
 #[derive(Default)]
@@ -31,7 +31,7 @@ enum ActionCommand {
     Clear(Entity),
 }
 
-impl<'a> ActionsExt for EntityActionCommands<'a> {
+impl ActionsExt for EntityActionCommands<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -86,16 +86,16 @@ impl ActionCommands {
         for cmd in self.0 {
             match cmd {
                 ActionCommand::Add(actor, action, config) => {
-                    world.add_action(actor, action, config);
-                }
-                ActionCommand::Stop(actor) => {
-                    world.stop_action(actor);
+                    world.action(actor).config(config).add(action);
                 }
                 ActionCommand::Next(actor) => {
-                    world.next_action(actor);
+                    world.action(actor).next();
+                }
+                ActionCommand::Stop(actor) => {
+                    world.action(actor).stop();
                 }
                 ActionCommand::Clear(actor) => {
-                    world.clear_actions(actor);
+                    world.action(actor).clear();
                 }
             }
         }

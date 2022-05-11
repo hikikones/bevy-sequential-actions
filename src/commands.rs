@@ -1,13 +1,13 @@
 use bevy_ecs::{prelude::*, system::Command};
 
-use crate::{world::ActionsWorldExt, *};
+use crate::{world::EntityWorldActionsExt, *};
 
 pub trait EntityActionsExt<'w, 's> {
-    fn action<'a>(&'a mut self, entity: Entity) -> EntityActions<'w, 's, 'a>;
+    fn action(&mut self, entity: Entity) -> EntityActions<'w, 's, '_>;
 }
 
 impl<'w, 's> EntityActionsExt<'w, 's> for Commands<'w, 's> {
-    fn action<'a>(&'a mut self, entity: Entity) -> EntityActions<'w, 's, 'a> {
+    fn action(&mut self, entity: Entity) -> EntityActions<'w, 's, '_> {
         EntityActions {
             entity,
             config: AddConfig::default(),
@@ -24,7 +24,7 @@ pub struct EntityActions<'w, 's, 'a> {
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's, 'a> ActionsExt for EntityActions<'w, 's, 'a> {
+impl<'w, 's> ActionsExt for EntityActions<'w, 's, '_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -82,11 +82,11 @@ struct AddAction {
     action: Box<dyn Action>,
 }
 
-struct StopAction {
+struct NextAction {
     actor: Entity,
 }
 
-struct NextAction {
+struct StopAction {
     actor: Entity,
 }
 
@@ -96,24 +96,27 @@ struct ClearActions {
 
 impl Command for AddAction {
     fn write(self, world: &mut World) {
-        world.add_action(self.actor, self.action, self.config);
-    }
-}
-
-impl Command for StopAction {
-    fn write(self, world: &mut World) {
-        world.stop_action(self.actor);
+        world
+            .action(self.actor)
+            .config(self.config)
+            .add(self.action);
     }
 }
 
 impl Command for NextAction {
     fn write(self, world: &mut World) {
-        world.next_action(self.actor);
+        world.action(self.actor).next();
+    }
+}
+
+impl Command for StopAction {
+    fn write(self, world: &mut World) {
+        world.action(self.actor).stop();
     }
 }
 
 impl Command for ClearActions {
     fn write(self, world: &mut World) {
-        world.clear_actions(self.actor);
+        world.action(self.actor).clear();
     }
 }
