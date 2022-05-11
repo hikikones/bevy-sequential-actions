@@ -5,6 +5,26 @@ use crate::*;
 /// Extension method on [`World`] for modifying actions.
 pub trait EntityWorldActionsExt {
     /// Returns an [`EntityWorldActions`] for the requested [`Entity`].
+    ///
+    /// ## Warning
+    ///
+    /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
+    /// Actions need to be properly queued, which is what [`ActionCommands`] does.
+    /// ```rust
+    /// struct UselessAction;
+    /// impl Action for UselessAction {
+    ///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    ///         // Bad
+    ///         world.action(actor).next();
+    ///
+    ///         // Good
+    ///         commands.action(actor).next();
+    ///     }
+    ///
+    ///     fn remove(&mut self, actor: Entity, world: &mut World) {}
+    ///     fn stop(&mut self, actor: Entity, world: &mut World) {}
+    /// }
+    ///```
     fn action(&mut self, entity: Entity) -> EntityWorldActions;
 }
 
