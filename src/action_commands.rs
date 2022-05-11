@@ -1,14 +1,15 @@
 use bevy_ecs::prelude::*;
 
-use crate::{world::EntityWorldActionsExt, *};
+use crate::*;
 
-/// Commands for modifying actions in the [`Action`] trait.
+/// Commands for modifying actions inside the [`Action`] trait.
 #[derive(Default)]
 pub struct ActionCommands(Vec<ActionCommand>);
 
 impl ActionCommands {
-    pub fn action(&mut self, entity: Entity) -> EntityActionCommands {
-        EntityActionCommands {
+    /// Returns an [`EntityActions`] for the requested [`Entity`].
+    pub fn action(&mut self, entity: Entity) -> EntityActions {
+        EntityActions {
             entity,
             config: AddConfig::default(),
             actions: Vec::new(),
@@ -17,7 +18,8 @@ impl ActionCommands {
     }
 }
 
-pub struct EntityActionCommands<'a> {
+/// Modify actions using [`ActionCommands`].
+pub struct EntityActions<'a> {
     entity: Entity,
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,
@@ -31,7 +33,7 @@ enum ActionCommand {
     Clear(Entity),
 }
 
-impl ActionsExt for EntityActionCommands<'_> {
+impl ModifyActionsExt for EntityActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

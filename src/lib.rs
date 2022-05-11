@@ -1,4 +1,4 @@
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 
 //! # Bevy Sequential Actions
 //!
@@ -9,12 +9,10 @@
 //! ## Getting Started
 //!
 //! An action is anything that implements the [`Action`] trait, and can be added to any [`Entity`] that contains the
-//! [`ActionsBundle`]. Each action must signal when they are finished, which is done by calling `next_action` on either
-//! [`Commands`] or [`ActionCommands`].
+//! [`ActionsBundle`]. Each action must signal when they are finished, which is done by calling the [`next`](ModifyActionsExt::next) method.
 //!
 //! ```rust
 //! use bevy::prelude::*;
-//!
 //! use bevy_sequential_actions::*;
 //!
 //! fn main() {
@@ -27,24 +25,22 @@
 //!
 //! fn setup(mut commands: Commands) {
 //!     // Create entity with ActionsBundle
-//!     let id = commands.spawn_bundle(ActionsBundle::default()).id();
+//!     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
 //!
 //!     // Add a single action with default config
-//!     commands.add_action(id, WaitAction(1.0), AddConfig::default());
+//!     commands.action(entity).add(WaitAction(1.0));
 //!
 //!     // Add multiple actions with custom config
 //!     commands
-//!         .action_builder(
-//!             id,
-//!             AddConfig {
-//!                 // Add each action to the back of the queue
-//!                 order: AddOrder::Back,
-//!                 // Start action if nothing is currently running
-//!                 start: false,
-//!                 // Repeat the action         
-//!                 repeat: false,
-//!             },
-//!         )
+//!         .action(entity)
+//!         .config(AddConfig {
+//!             // Add each action to the back of the queue
+//!             order: AddOrder::Back,
+//!             // Start action if nothing is currently running
+//!             start: false,
+//!             // Repeat the action
+//!             repeat: false,
+//!         })
 //!         .push(WaitAction(2.0))
 //!         .push(WaitAction(3.0))
 //!         .submit();
@@ -74,7 +70,7 @@
 //!         wait.0 -= time.delta_seconds();
 //!         if wait.0 <= 0.0 {
 //!             // Action is finished, issue next.
-//!             commands.next_action(actor);
+//!             commands.action(actor).next();
 //!         }
 //!     }
 //! }
@@ -89,101 +85,10 @@ mod commands;
 mod traits;
 mod world;
 
-// /// Contains the implementation for scheduling actions.
-// ///
-// /// The `world` module is not exported by default because of potential misuse.
-// /// Typically one should use [`Commands`] and [`ActionCommands`] when modifying actions.
-// ///
-// /// See warning further below.
-// ///
-// /// # Example
-// ///
-// /// ```rust
-// /// use bevy_sequential_actions::{*, world::*};
-// ///
-// /// struct EmptyAction;
-// ///
-// /// impl Action for EmptyAction {
-// ///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-// ///         commands.next_action(actor);
-// ///     }
-// ///
-// ///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-// ///     fn stop(&mut self, actor: Entity, world: &mut World) {}
-// /// }
-// ///
-// /// fn exclusive_world(world: &mut World) {
-// ///     let id = world.spawn().insert_bundle(ActionsBundle::default()).id();
-// ///     world.add_action(id, EmptyAction, AddConfig::default());
-// /// }
-// /// ```
-// ///
-// /// # Warning
-// ///
-// /// Should only be used when working exclusively within a [`World`].
-// /// Using the world extension methods **inside** the implementation of an [`Action`] is **not** intended to work.
-// ///
-// /// Here is an example of what not to do:
-// ///
-// /// ```rust
-// /// use bevy_sequential_actions::{*, world::*};
-// ///
-// /// struct EmptyAction;
-// ///
-// /// impl Action for EmptyAction {
-// ///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-// ///         // By using `world` to issue next action, the change happens immediately
-// ///         // and the current action will not be set.
-// ///         // See [world.rs] for implementation details.
-// ///         // Since current action is not set, the `remove` method will never be called.
-// ///         world.next_action(actor); // <- bad
-// ///
-// ///         // You should always use the passed `commands` for issuing commands,
-// ///         // as they are put in a queue and applied at the end. This ensures that
-// ///         // the current action is set each time.
-// ///         commands.next_action(actor); // <- good
-// ///     }
-// ///
-// ///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-// ///     fn stop(&mut self, actor: Entity, world: &mut World) {}
-// /// }
-// /// ```
-// pub mod world;
-
 pub use action_commands::*;
 pub use commands::*;
 pub use traits::*;
 pub use world::*;
-
-/// The trait that all actions must implement.
-///
-/// # Example
-///
-/// An empty action that does nothing.
-/// All actions must declare when they are done.
-/// This is done by calling [`ActionCommands::next_action`].
-///
-/// ```rust
-/// struct EmptyAction;
-///
-/// impl Action for EmptyAction {
-///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished, issue next.
-///         commands.next_action(actor);
-///     }
-///
-///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-///     fn stop(&mut self, actor: Entity, world: &mut World) {}
-/// }
-/// ```
-pub trait Action: Send + Sync {
-    /// The method that is called when an [`Action`] is started.
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands);
-    /// The method that is called when an [`Action`] is removed.
-    fn remove(&mut self, actor: Entity, world: &mut World);
-    /// The method that is called when an [`Action`] is stopped.
-    fn stop(&mut self, actor: Entity, world: &mut World);
-}
 
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
@@ -192,23 +97,23 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
-/// The order for an added [`Action`].
+/// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
-    /// An [`Action`] is added to the **back** of the queue.
+    /// An [`action`](Action) is added to the **back** of the queue.
     Back,
-    /// An [`Action`] is added to the **front** of the queue.
+    /// An [`action`](Action) is added to the **front** of the queue.
     Front,
 }
 
-/// Configuration for the [`Action`] to be added.
+/// Configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub struct AddConfig {
-    /// Specify the [`AddOrder`] of the [`Action`]. Either to the back of the queue, or to the front.
+    /// Specify the queue order for the [`action`](Action) to be added.
     pub order: AddOrder,
-    /// Start the [`Action`] if nothing is currently running.
+    /// Start the [`action`](Action) if nothing is currently running.
     pub start: bool,
-    /// Repeat the [`Action`] when it has finished. This is done by adding it back to the queue when it is removed.
+    /// Repeat the [`action`](Action) when it has finished. This is done by adding it back to the queue when it is removed.
     pub repeat: bool,
 }
 

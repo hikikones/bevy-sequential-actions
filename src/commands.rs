@@ -2,13 +2,15 @@ use bevy_ecs::{prelude::*, system::Command};
 
 use crate::{world::EntityWorldActionsExt, *};
 
-pub trait EntityActionsExt<'w, 's> {
-    fn action(&mut self, entity: Entity) -> EntityActions<'w, 's, '_>;
+/// Extension method on [`Commands`] for modifying actions.
+pub trait EntityCommandsActionsExt<'w, 's> {
+    /// Returns an [`EntityCommandsActions`] for the requested [`Entity`].
+    fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_>;
 }
 
-impl<'w, 's> EntityActionsExt<'w, 's> for Commands<'w, 's> {
-    fn action(&mut self, entity: Entity) -> EntityActions<'w, 's, '_> {
-        EntityActions {
+impl<'w, 's> EntityCommandsActionsExt<'w, 's> for Commands<'w, 's> {
+    fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_> {
+        EntityCommandsActions {
             entity,
             config: AddConfig::default(),
             actions: Vec::new(),
@@ -17,14 +19,15 @@ impl<'w, 's> EntityActionsExt<'w, 's> for Commands<'w, 's> {
     }
 }
 
-pub struct EntityActions<'w, 's, 'a> {
+/// Modify actions using [`Commands`].
+pub struct EntityCommandsActions<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's> ActionsExt for EntityActions<'w, 's, '_> {
+impl<'w, 's> ModifyActionsExt for EntityCommandsActions<'w, 's, '_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

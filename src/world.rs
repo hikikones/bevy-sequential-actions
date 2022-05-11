@@ -2,7 +2,9 @@ use bevy_ecs::{prelude::*, system::CommandQueue};
 
 use crate::*;
 
+/// Extension method on [`World`] for modifying actions.
 pub trait EntityWorldActionsExt {
+    /// Returns an [`EntityWorldActions`] for the requested [`Entity`].
     fn action(&mut self, entity: Entity) -> EntityWorldActions;
 }
 
@@ -17,6 +19,7 @@ impl EntityWorldActionsExt for World {
     }
 }
 
+/// Modify actions using [`World`].
 pub struct EntityWorldActions<'a> {
     entity: Entity,
     config: AddConfig,
@@ -24,7 +27,7 @@ pub struct EntityWorldActions<'a> {
     world: &'a mut World,
 }
 
-impl ActionsExt for EntityWorldActions<'_> {
+impl ModifyActionsExt for EntityWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
