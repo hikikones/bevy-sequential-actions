@@ -137,10 +137,10 @@ fn lerp(
             }
 
             if timer.0.finished() {
-                commands.next_action(actor.0);
+                commands.action(actor.0).next();
             }
         } else {
-            commands.next_action(actor.0);
+            commands.action(actor.0).next();
         }
     }
 }

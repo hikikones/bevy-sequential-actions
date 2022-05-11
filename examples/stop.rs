@@ -29,7 +29,7 @@ fn setup(mut commands: Commands) {
 
     // Add count and quit action with default config
     commands
-        .action_builder(id, AddConfig::default())
+        .action(id)
         .push(CountAction::default())
         .push(QuitAction)
         .submit();
@@ -70,19 +70,18 @@ fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
 
         if count.0 == 10 {
             // Stop current action and add InterruptAction to the front.
-            commands.stop_action(actor);
-            commands.add_action(
-                actor,
-                InterruptAction,
-                AddConfig {
+            commands
+                .action(actor)
+                .stop()
+                .config(AddConfig {
                     order: AddOrder::Front,
                     start: true,
                     repeat: false,
-                },
-            );
+                })
+                .add(InterruptAction);
         } else if count.0 == 20 {
             // Count has finished. Issue next action.
-            commands.next_action(actor);
+            commands.action(actor).next();
         }
     }
 }
@@ -141,6 +140,6 @@ fn on_interrupt_update(
     *timer += time.delta_seconds();
 
     if *timer >= 3.0 {
-        commands.next_action(actor_q.single());
+        commands.action(actor_q.single()).next();
     }
 }

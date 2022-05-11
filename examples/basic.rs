@@ -15,42 +15,38 @@ fn setup(mut commands: Commands) {
     let id = commands.spawn_bundle(ActionsBundle::default()).id();
 
     // Add a single action with default config
-    commands.add_action(id, WaitAction(1.0), AddConfig::default());
+    commands.action(id).add(WaitAction(1.0));
 
     // Add multiple actions with custom config
     commands
-        .action_builder(
-            id,
-            AddConfig {
-                order: AddOrder::Back, // Add each action to the back of the queue
-                start: false,          // Start action if nothing is currently running
-                repeat: false,         // Repeat the action
-            },
-        )
+        .action(id)
+        .config(AddConfig {
+            order: AddOrder::Back, // Add each action to the back of the queue
+            start: false,          // Start action if nothing is currently running
+            repeat: false,         // Repeat the action
+        })
         .push(WaitAction(4.0))
         .push(WaitAction(5.0))
         .submit();
 
     // Add multiple actions again but to the front of the queue
     commands
-        .action_builder(
-            id,
-            AddConfig {
-                order: AddOrder::Front, // This time, add each action to the front of the queue
-                start: false,
-                repeat: false,
-            },
-        )
+        .action(id)
+        .config(AddConfig {
+            order: AddOrder::Front, // This time, add each action to the front of the queue
+            start: false,
+            repeat: false,
+        })
         .push(WaitAction(2.0))
         .push(WaitAction(3.0))
         .reverse() // Since we are adding to the front, reverse the order to get increasing wait times
         .submit();
 
     // Add an action that itself adds multiple actions
-    commands.add_action(id, MultipleWaitActions, AddConfig::default());
+    commands.action(id).add(MultipleWaitActions);
 
     // Finally, quit the app
-    commands.add_action(id, QuitAction, AddConfig::default());
+    commands.action(id).add(QuitAction);
 
     // A list of actions have now been added to the queue, and should execute in the following order:
     // Wait(1.0)
@@ -90,7 +86,7 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
             // To signal that an action has finished, the next action method must be called.
-            commands.next_action(actor);
+            commands.action(actor).next();
         }
     }
 }

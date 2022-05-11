@@ -16,14 +16,12 @@ fn setup(mut commands: Commands) {
 
     // Add three wait actions with custom config
     commands
-        .action_builder(
-            id,
-            AddConfig {
-                order: AddOrder::Back, // Add each action to the back of the queue
-                start: true,           // Start action if nothing is currently running
-                repeat: true,          // Repeat each action when it has finished
-            },
-        )
+        .action(id)
+        .config(AddConfig {
+            order: AddOrder::Back, // Add each action to the back of the queue
+            start: true,           // Start action if nothing is currently running
+            repeat: true,          // Repeat each action when it has finished
+        })
         .push(WaitAction(1.0))
         .push(WaitAction(2.0))
         .push(WaitAction(3.0))
@@ -57,7 +55,7 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
             // To signal that an action has finished, the next action method must be called.
-            commands.next_action(actor);
+            commands.action(actor).next();
         }
     }
 }

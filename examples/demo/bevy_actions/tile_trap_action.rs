@@ -49,6 +49,6 @@ fn on_stop_update(
     mut commands: Commands,
 ) {
     if keyboard.just_pressed(KeyCode::Return) {
-        commands.next_action(actor_q.single());
+        commands.action(actor_q.single()).next();
     }
 }
