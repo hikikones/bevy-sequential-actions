@@ -25,11 +25,11 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     // Create entity with ActionsBundle
-    let id = commands.spawn_bundle(ActionsBundle::default()).id();
+    let entity = commands.spawn_bundle(ActionsBundle::default()).id();
 
     // Add count and quit action with default config
     commands
-        .action(id)
+        .action(entity)
         .push(CountAction::default())
         .push(QuitAction)
         .submit();
@@ -41,21 +41,21 @@ struct CountAction {
 }
 
 impl Action for CountAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let count = self.current_count.unwrap_or(0);
-        world.entity_mut(actor).insert(Count(count));
+        world.entity_mut(entity).insert(Count(count));
     }
 
-    fn remove(&mut self, actor: Entity, world: &mut World) {
-        world.entity_mut(actor).remove::<Count>();
+    fn remove(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove::<Count>();
     }
 
-    fn stop(&mut self, actor: Entity, world: &mut World) {
+    fn stop(&mut self, entity: Entity, world: &mut World) {
         // When stop is called, we need to store the current count progress.
         // This is so we can continue the count when add() is called again.
-        let count = world.get::<Count>(actor).unwrap();
+        let count = world.get::<Count>(entity).unwrap();
         self.current_count = Some(count.0);
-        self.remove(actor, world);
+        self.remove(entity, world);
     }
 }
 
@@ -63,7 +63,7 @@ impl Action for CountAction {
 struct Count(usize);
 
 fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
-    for (actor, mut count) in count_q.iter_mut() {
+    for (entity, mut count) in count_q.iter_mut() {
         count.0 += 1;
 
         println!("Count: {}", count.0);
@@ -71,7 +71,7 @@ fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
         if count.0 == 10 {
             // Stop current action and add InterruptAction to the front.
             commands
-                .action(actor)
+                .action(entity)
                 .stop()
                 .config(AddConfig {
                     order: AddOrder::Front,
@@ -81,7 +81,7 @@ fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
                 .add(InterruptAction);
         } else if count.0 == 20 {
             // Count has finished. Issue next action.
-            commands.action(actor).next();
+            commands.action(entity).next();
         }
     }
 }
@@ -89,36 +89,35 @@ fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
 struct QuitAction;
 
 impl Action for QuitAction {
-    fn add(&mut self, _actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn add(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let mut app_exit_ev = world.resource_mut::<Events<AppExit>>();
         app_exit_ev.send(AppExit);
     }
 
-    fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-
-    fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+    fn remove(&mut self, _entity: Entity, _world: &mut World) {}
+    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }
 
 struct InterruptAction;
 
 impl Action for InterruptAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("\n---------- Interrupt event! ----------");
         println!("Just wait a few seconds and actions will continue again.\n");
 
-        world.entity_mut(actor).insert(InterruptMarker);
+        world.entity_mut(entity).insert(InterruptMarker);
         let mut state = world.resource_mut::<State<InterruptState>>();
         state.set(InterruptState::Active).unwrap();
     }
 
-    fn remove(&mut self, actor: Entity, world: &mut World) {
-        world.entity_mut(actor).remove::<InterruptMarker>();
+    fn remove(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove::<InterruptMarker>();
         let mut state = world.resource_mut::<State<InterruptState>>();
         state.set(InterruptState::None).unwrap();
     }
 
-    fn stop(&mut self, actor: Entity, world: &mut World) {
-        self.remove(actor, world);
+    fn stop(&mut self, entity: Entity, world: &mut World) {
+        self.remove(entity, world);
     }
 }
 
@@ -134,12 +133,12 @@ enum InterruptState {
 fn on_interrupt_update(
     mut timer: Local<f32>,
     time: Res<Time>,
-    actor_q: Query<Entity, With<InterruptMarker>>,
+    entity_q: Query<Entity, With<InterruptMarker>>,
     mut commands: Commands,
 ) {
     *timer += time.delta_seconds();
 
     if *timer >= 3.0 {
-        commands.action(actor_q.single()).next();
+        commands.action(entity_q.single()).next();
     }
 }

@@ -87,17 +87,17 @@ impl ActionCommands {
     pub(super) fn apply(self, world: &mut World) {
         for cmd in self.0 {
             match cmd {
-                ActionCommand::Add(actor, action, config) => {
-                    world.action(actor).config(config).add(action);
+                ActionCommand::Add(entity, action, config) => {
+                    world.action(entity).config(config).add(action);
                 }
-                ActionCommand::Next(actor) => {
-                    world.action(actor).next();
+                ActionCommand::Next(entity) => {
+                    world.action(entity).next();
                 }
-                ActionCommand::Stop(actor) => {
-                    world.action(actor).stop();
+                ActionCommand::Stop(entity) => {
+                    world.action(entity).stop();
                 }
-                ActionCommand::Clear(actor) => {
-                    world.action(actor).clear();
+                ActionCommand::Clear(entity) => {
+                    world.action(entity).clear();
                 }
             }
         }

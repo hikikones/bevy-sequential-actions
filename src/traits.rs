@@ -12,22 +12,22 @@ use crate::*;
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn add(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
-///         commands.action(actor).next();
+///         commands.action(entity).next();
 ///     }
 ///
-///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-///     fn stop(&mut self, actor: Entity, world: &mut World) {}
+///     fn remove(&mut self, entity: Entity, world: &mut World) {}
+///     fn stop(&mut self, entity: Entity, world: &mut World) {}
 /// }
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an [`action`](Action) is started.
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn add(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
     /// The method that is called when an [`action`](Action) is removed.
-    fn remove(&mut self, actor: Entity, world: &mut World);
+    fn remove(&mut self, entity: Entity, world: &mut World);
     /// The method that is called when an [`action`](Action) is stopped.
-    fn stop(&mut self, actor: Entity, world: &mut World);
+    fn stop(&mut self, entity: Entity, world: &mut World);
 }
 
 /// Conversion into an [`Action`].
@@ -66,7 +66,7 @@ pub trait ModifyActionsExt {
     /// Stops the current [`action`](Action). This is done by [`removing`](Action::remove) the currently running action,
     /// and adding it to the **front** of the queue again.
     ///
-    /// **Note**: when stopping an action, you need to manually resume the actions.
+    /// **Note:** when stopping an action, you need to manually resume again.
     /// This can be done by calling [`next`](Self::next), which will resume the same action that was stopped,
     /// or you could add a new action to the **front** of the queue beforehand.
     /// When adding a new action, either specify in [`config`](AddConfig) that the action should [`start`](AddConfig::start),

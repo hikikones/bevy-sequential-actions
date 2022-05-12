@@ -13,16 +13,16 @@ pub trait EntityWorldActionsExt {
     /// ```rust
     /// struct UselessAction;
     /// impl Action for UselessAction {
-    ///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    ///     fn add(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
     ///         // Bad
-    ///         world.action(actor).next();
+    ///         world.action(entity).next();
     ///
     ///         // Good
-    ///         commands.action(actor).next();
+    ///         commands.action(entity).next();
     ///     }
     ///
-    ///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-    ///     fn stop(&mut self, actor: Entity, world: &mut World) {}
+    ///     fn remove(&mut self, entity: Entity, world: &mut World) {}
+    ///     fn stop(&mut self, entity: Entity, world: &mut World) {}
     /// }
     ///```
     fn action(&mut self, entity: Entity) -> EntityWorldActions;

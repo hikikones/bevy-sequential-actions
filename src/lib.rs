@@ -49,16 +49,16 @@
 //! struct WaitAction(f32);
 //!
 //! impl Action for WaitAction {
-//!     fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
-//!         world.entity_mut(actor).insert(Wait(self.0));
+//!     fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+//!         world.entity_mut(entity).insert(Wait(self.0));
 //!     }
 //!
-//!     fn remove(&mut self, actor: Entity, world: &mut World) {
-//!         world.entity_mut(actor).remove::<Wait>();
+//!     fn remove(&mut self, entity: Entity, world: &mut World) {
+//!         world.entity_mut(entity).remove::<Wait>();
 //!     }
 //!
-//!     fn stop(&mut self, actor: Entity, world: &mut World) {
-//!         self.remove(actor, world);
+//!     fn stop(&mut self, entity: Entity, world: &mut World) {
+//!         self.remove(entity, world);
 //!     }
 //! }
 //!
@@ -66,11 +66,11 @@
 //! struct Wait(f32);
 //!
 //! fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-//!     for (actor, mut wait) in wait_q.iter_mut() {
+//!     for (entity, mut wait) in wait_q.iter_mut() {
 //!         wait.0 -= time.delta_seconds();
 //!         if wait.0 <= 0.0 {
 //!             // Action is finished, issue next.
-//!             commands.action(actor).next();
+//!             commands.action(entity).next();
 //!         }
 //!     }
 //! }
@@ -152,9 +152,9 @@ mod tests {
 
     struct EmptyAction;
     impl Action for EmptyAction {
-        fn add(&mut self, _actor: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
-        fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-        fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+        fn add(&mut self, _entity: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
+        fn remove(&mut self, _entity: Entity, _world: &mut World) {}
+        fn stop(&mut self, _entity: Entity, _world: &mut World) {}
     }
 
     #[test]
@@ -273,11 +273,11 @@ mod tests {
     fn despawn() {
         struct DespawnAction;
         impl Action for DespawnAction {
-            fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
-                world.despawn(actor);
+            fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+                world.despawn(entity);
             }
-            fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-            fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+            fn remove(&mut self, _entity: Entity, _world: &mut World) {}
+            fn stop(&mut self, _entity: Entity, _world: &mut World) {}
         }
 
         let mut world = World::new();
