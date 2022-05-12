@@ -1,6 +1,6 @@
 use bevy_ecs::{prelude::*, system::Command};
 
-use crate::{world::EntityWorldActionsExt, *};
+use crate::*;
 
 /// Extension method on [`Commands`] for modifying actions.
 pub trait EntityCommandsActionsExt<'w, 's> {
