@@ -38,7 +38,7 @@ pub enum LerpType {
 }
 
 impl Action for LerpAction {
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
         let lerp = match self.lerp_type {
             LerpType::Position(target) => {
                 let start = world.get::<Transform>(self.target).unwrap().translation;
@@ -59,7 +59,7 @@ impl Action for LerpAction {
                 let dir = b.translation - a.translation;
 
                 if dir == Vec3::ZERO {
-                    commands.next_action(actor);
+                    commands.action(actor).next();
                     return;
                 }
 
@@ -137,10 +137,10 @@ fn lerp(
             }
 
             if timer.0.finished() {
-                commands.next_action(actor.0);
+                commands.action(actor.0).next();
             }
         } else {
-            commands.next_action(actor.0);
+            commands.action(actor.0).next();
         }
     }
 }

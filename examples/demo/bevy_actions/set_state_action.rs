@@ -19,13 +19,11 @@ impl<T: BevyState> SetStateAction<T> {
 }
 
 impl<T: BevyState> Action for SetStateAction<T> {
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-        let mut state = world.get_resource_mut::<State<T>>().unwrap();
-        state.set(self.0).unwrap();
-        commands.next_action(actor);
+    fn start(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+        world.set_state(self.0);
+        commands.action(actor).next();
     }
 
     fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-
     fn stop(&mut self, _actor: Entity, _world: &mut World) {}
 }

@@ -149,7 +149,7 @@ fn on_input(
                 let focus = focus_q.single();
                 let cell = board.get_cell(focus.1.translation);
                 commands
-                    .action_builder(player, AddConfig::default())
+                    .action(player)
                     .push(SetStateAction::new(GameState::None))
                     .push(CameraAction::Pan(PanTarget::Entity(player), 1.0))
                     .push(CameraAction::Follow(player))

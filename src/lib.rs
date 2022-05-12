@@ -1,4 +1,4 @@
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 
 //! # Bevy Sequential Actions
 //!
@@ -8,13 +8,13 @@
 //!
 //! ## Getting Started
 //!
-//! An action is anything that implements the [`Action`] trait, and can be added to any [`Entity`] that contains the
-//! [`ActionsBundle`]. Each action must signal when they are finished, which is done by calling `next_action` on either
-//! [`Commands`] or [`ActionCommands`].
+//! An action is anything that implements the [`Action`] trait,
+//! and can be added to any [`Entity`] that contains the [`ActionsBundle`].
+//! Each action must signal when they are finished,
+//! which is done by calling the [`next`](ModifyActionsExt::next) method.
 //!
 //! ```rust
 //! use bevy::prelude::*;
-//!
 //! use bevy_sequential_actions::*;
 //!
 //! fn main() {
@@ -27,42 +27,39 @@
 //!
 //! fn setup(mut commands: Commands) {
 //!     // Create entity with ActionsBundle
-//!     let id = commands.spawn_bundle(ActionsBundle::default()).id();
+//!     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
 //!
 //!     // Add a single action with default config
-//!     commands.add_action(id, WaitAction(1.0), AddConfig::default());
+//!     commands.action(entity).add(WaitAction(1.0));
 //!
 //!     // Add multiple actions with custom config
 //!     commands
-//!         .action_builder(
-//!             id,
-//!             AddConfig {
-//!                 // Add each action to the back of the queue
-//!                 order: AddOrder::Back,
-//!                 // Start action if nothing is currently running
-//!                 start: false,
-//!                 // Repeat the action         
-//!                 repeat: false,
-//!             },
-//!         )
-//!         .push(WaitAction(2.0))
-//!         .push(WaitAction(3.0))
-//!         .submit();
+//!         .action(entity)
+//!         .config(AddConfig {
+//!             // Add each action to the back of the queue
+//!             order: AddOrder::Back,
+//!             // Start action if nothing is currently running
+//!             start: false,
+//!             // Repeat the action
+//!             repeat: false,
+//!         })
+//!         .add(WaitAction(2.0))
+//!         .add(WaitAction(3.0));
 //! }
 //!
 //! struct WaitAction(f32);
 //!
 //! impl Action for WaitAction {
-//!     fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
-//!         world.entity_mut(actor).insert(Wait(self.0));
+//!     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+//!         world.entity_mut(entity).insert(Wait(self.0));
 //!     }
 //!
-//!     fn remove(&mut self, actor: Entity, world: &mut World) {
-//!         world.entity_mut(actor).remove::<Wait>();
+//!     fn remove(&mut self, entity: Entity, world: &mut World) {
+//!         world.entity_mut(entity).remove::<Wait>();
 //!     }
 //!
-//!     fn stop(&mut self, actor: Entity, world: &mut World) {
-//!         self.remove(actor, world);
+//!     fn stop(&mut self, entity: Entity, world: &mut World) {
+//!         self.remove(entity, world);
 //!     }
 //! }
 //!
@@ -70,11 +67,11 @@
 //! struct Wait(f32);
 //!
 //! fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-//!     for (actor, mut wait) in wait_q.iter_mut() {
+//!     for (entity, mut wait) in wait_q.iter_mut() {
 //!         wait.0 -= time.delta_seconds();
 //!         if wait.0 <= 0.0 {
 //!             // Action is finished, issue next.
-//!             commands.next_action(actor);
+//!             commands.action(entity).next();
 //!         }
 //!     }
 //! }
@@ -87,101 +84,12 @@ use bevy_ecs::prelude::*;
 mod action_commands;
 mod commands;
 mod traits;
-
-/// Contains the implementation for scheduling actions.
-///
-/// The `world` module is not exported by default because of potential misuse.
-/// Typically one should use [`Commands`] and [`ActionCommands`] when modifying actions.
-///
-/// See warning further below.
-///
-/// # Example
-///
-/// ```rust
-/// use bevy_sequential_actions::{*, world::*};
-///
-/// struct EmptyAction;
-///
-/// impl Action for EmptyAction {
-///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         commands.next_action(actor);
-///     }
-///
-///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-///     fn stop(&mut self, actor: Entity, world: &mut World) {}
-/// }
-///
-/// fn exclusive_world(world: &mut World) {
-///     let id = world.spawn().insert_bundle(ActionsBundle::default()).id();
-///     world.add_action(id, EmptyAction, AddConfig::default());
-/// }
-/// ```
-///
-/// # Warning
-///
-/// Should only be used when working exclusively within a [`World`].
-/// Using the world extension methods **inside** the implementation of an [`Action`] is **not** intended to work.
-///
-/// Here is an example of what not to do:
-///
-/// ```rust
-/// use bevy_sequential_actions::{*, world::*};
-///
-/// struct EmptyAction;
-///
-/// impl Action for EmptyAction {
-///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // By using `world` to issue next action, the change happens immediately
-///         // and the current action will not be set.
-///         // See [world.rs] for implementation details.
-///         // Since current action is not set, the `remove` method will never be called.
-///         world.next_action(actor); // <- bad
-///
-///         // You should always use the passed `commands` for issuing commands,
-///         // as they are put in a queue and applied at the end. This ensures that
-///         // the current action is set each time.
-///         commands.next_action(actor); // <- good
-///     }
-///
-///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-///     fn stop(&mut self, actor: Entity, world: &mut World) {}
-/// }
-/// ```
-pub mod world;
+mod world;
 
 pub use action_commands::*;
 pub use commands::*;
 pub use traits::*;
-
-/// The trait that all actions must implement.
-///
-/// # Example
-///
-/// An empty action that does nothing.
-/// All actions must declare when they are done.
-/// This is done by calling [`ActionCommands::next_action`].
-///
-/// ```rust
-/// struct EmptyAction;
-///
-/// impl Action for EmptyAction {
-///     fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished, issue next.
-///         commands.next_action(actor);
-///     }
-///
-///     fn remove(&mut self, actor: Entity, world: &mut World) {}
-///     fn stop(&mut self, actor: Entity, world: &mut World) {}
-/// }
-/// ```
-pub trait Action: Send + Sync {
-    /// The method that is called when an [`Action`] is started.
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands);
-    /// The method that is called when an [`Action`] is removed.
-    fn remove(&mut self, actor: Entity, world: &mut World);
-    /// The method that is called when an [`Action`] is stopped.
-    fn stop(&mut self, actor: Entity, world: &mut World);
-}
+pub use world::*;
 
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
@@ -190,23 +98,23 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
-/// The order for an added [`Action`].
+/// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
-    /// An [`Action`] is added to the **back** of the queue.
+    /// An [`action`](Action) is added to the **back** of the queue.
     Back,
-    /// An [`Action`] is added to the **front** of the queue.
+    /// An [`action`](Action) is added to the **front** of the queue.
     Front,
 }
 
-/// Configuration for the [`Action`] to be added.
+/// Configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub struct AddConfig {
-    /// Specify the [`AddOrder`] of the [`Action`]. Either to the back of the queue, or to the front.
+    /// Specify the queue order for the [`action`](Action) to be added.
     pub order: AddOrder,
-    /// Start the [`Action`] if nothing is currently running.
+    /// Start the [`action`](Action) if nothing is currently running.
     pub start: bool,
-    /// Repeat the [`Action`] when it has finished. This is done by adding it back to the queue when it is removed.
+    /// Repeat the [`action`](Action) when it has finished. This is done by adding it back to the queue when it is removed.
     pub repeat: bool,
 }
 
@@ -241,13 +149,13 @@ impl Into<ActionConfig> for AddConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::{world::*, *};
+    use crate::*;
 
     struct EmptyAction;
     impl Action for EmptyAction {
-        fn add(&mut self, _actor: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
-        fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-        fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+        fn start(&mut self, _entity: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
+        fn remove(&mut self, _entity: Entity, _world: &mut World) {}
+        fn stop(&mut self, _entity: Entity, _world: &mut World) {}
     }
 
     #[test]
@@ -257,26 +165,66 @@ mod tests {
         let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
 
         world
-            .action_builder(e, AddConfig::default())
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .apply();
+            .action(e)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 2);
 
-        world.next_action(e);
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
 
-        world.next_action(e);
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
 
-        world.next_action(e);
+        world.action(e).next();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    }
+
+    #[test]
+    fn push() {
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world
+            .action(e)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world
+            .action(e)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .submit();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 2);
+
+        world.action(e).next();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+
+        world.action(e).next();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
@@ -288,22 +236,22 @@ mod tests {
 
         let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
 
-        world.add_action(e, EmptyAction, AddConfig::default());
+        world.action(e).add(EmptyAction);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
 
-        world.stop_action(e);
+        world.action(e).stop();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
 
-        world.next_action(e);
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
 
-        world.next_action(e);
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
@@ -316,18 +264,17 @@ mod tests {
         let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
 
         world
-            .action_builder(e, AddConfig::default())
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .apply();
+            .action(e)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 4);
 
-        world.clear_actions(e);
+        world.action(e).clear();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
@@ -339,25 +286,24 @@ mod tests {
 
         let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
 
-        world.add_action(
-            e,
-            EmptyAction,
-            AddConfig {
+        world
+            .action(e)
+            .config(AddConfig {
                 order: AddOrder::Back,
                 start: true,
                 repeat: true,
-            },
-        );
+            })
+            .add(EmptyAction);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
 
-        world.next_action(e);
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
 
-        world.next_action(e);
+        world.action(e).next();
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
@@ -367,18 +313,18 @@ mod tests {
     fn despawn() {
         struct DespawnAction;
         impl Action for DespawnAction {
-            fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
-                world.despawn(actor);
+            fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+                world.despawn(entity);
             }
-            fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-            fn stop(&mut self, _actor: Entity, _world: &mut World) {}
+            fn remove(&mut self, _entity: Entity, _world: &mut World) {}
+            fn stop(&mut self, _entity: Entity, _world: &mut World) {}
         }
 
         let mut world = World::new();
 
         let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
 
-        world.add_action(e, DespawnAction, AddConfig::default());
+        world.action(e).add(DespawnAction);
 
         assert!(world.get_entity(e).is_none());
     }

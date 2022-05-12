@@ -1,6 +1,34 @@
-use bevy_ecs::prelude::*;
-
 use crate::*;
+
+/// The trait that all actions must implement.
+///
+/// # Example
+///
+/// An empty action that does nothing.
+/// All actions must declare when they are done.
+/// This is done by calling [`next`](ModifyActionsExt::next) from either [`ActionCommands`] or [`Commands`].
+///
+/// ```rust
+/// struct EmptyAction;
+///
+/// impl Action for EmptyAction {
+///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // Action is finished, issue next.
+///         commands.action(entity).next();
+///     }
+///
+///     fn remove(&mut self, entity: Entity, world: &mut World) {}
+///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+/// }
+/// ```
+pub trait Action: Send + Sync {
+    /// The method that is called when an [`action`](Action) is started.
+    fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+    /// The method that is called when an [`action`](Action) is removed.
+    fn remove(&mut self, entity: Entity, world: &mut World);
+    /// The method that is called when an [`action`](Action) is stopped.
+    fn stop(&mut self, entity: Entity, world: &mut World);
+}
 
 /// Conversion into an [`Action`].
 pub trait IntoAction {
@@ -23,70 +51,39 @@ impl IntoAction for Box<dyn Action> {
     }
 }
 
-/// Extension trait for `add_action` method on [`ActionCommands`] and [`Commands`].
-pub trait AddActionExt {
-    /// Add `action` to entity `actor` with the configuration `config`.
-    fn add_action(&mut self, actor: Entity, action: impl IntoAction, config: AddConfig);
-}
+/// Extension methods for modifying actions.
+pub trait ModifyActionsExt {
+    /// Sets the current [`config`](AddConfig) for actions to be added.
+    fn config(self, config: AddConfig) -> Self;
 
-/// Extension trait for `stop_action` method on [`ActionCommands`] and [`Commands`].
-pub trait StopActionExt {
-    /// Stop the current action for entity `actor`. This is done by removing the currently running action,
-    /// and pushing it to the **front** of the queue again.
-    ///
-    /// **Note**: when stopping an action, you need to manually resume the actions.
-    /// This can be done by calling `next_action`, which will resume the same action that was stopped,
-    /// or you could add a new action to the **front** of the queue beforehand.
-    /// When adding a new action, either specify in [`AddConfig`] that the action should start,
-    /// or manually call `next_action` afterwards, but not both, as that will trigger two
-    /// consecutive `next_action` calls.
-    ///
-    /// # Example
-    ///
-    /// Stopping an [`Action`] and adding a new one with `start: true` in [`AddConfig`]:
-    ///
-    /// ```rust
-    /// commands.stop_action(actor);
-    /// commands.add_action(
-    ///     actor,
-    ///     MyAction,
-    ///     AddConfig {
-    ///         order: AddOrder::Front,
-    ///         start: true,
-    ///         repeat: false,
-    ///     },
-    /// );
-    /// // No need to call next_action here
-    /// ```
-    ///
-    /// Stopping an [`Action`] and manually calling `next_action`:
-    ///
-    /// ```rust
-    /// commands.stop_action(actor);
-    /// commands.add_action(
-    ///     actor,
-    ///     MyAction,
-    ///     AddConfig {
-    ///         order: AddOrder::Front,
-    ///         start: false,
-    ///         repeat: false,
-    ///     },
-    /// );
-    /// // Must call next_action here
-    /// commands.next_action(actor);
-    /// ```
-    fn stop_action(&mut self, actor: Entity);
-}
+    /// Adds an [`action`](Action) with the current [`config`](AddConfig).
+    fn add(self, action: impl IntoAction) -> Self;
 
-/// Extension trait for `next_action` method on [`ActionCommands`] and [`Commands`].
-pub trait NextActionExt {
-    /// Start next action for entity `actor`. This is done by removing the currently running action,
+    /// Starts the next [`action`](Action) in the queue. This is done by [`removing`](Action::remove) the currently running action,
     /// and retrieving the next action in the queue list.
-    fn next_action(&mut self, actor: Entity);
-}
+    fn next(self) -> Self;
 
-/// Extension trait for `clear_actions` method on [`ActionCommands`] and [`Commands`].
-pub trait ClearActionsExt {
-    /// Remove the currently running action for entity `actor`, and clear any remaining.
-    fn clear_actions(&mut self, actor: Entity);
+    /// Stops the current [`action`](Action). This is done by [`removing`](Action::remove) the currently running action,
+    /// and adding it to the **front** of the queue again.
+    ///
+    /// **Note:** when stopping an action, you need to manually resume again.
+    /// This can be done by calling [`next`](Self::next), which will resume the same action that was stopped,
+    /// or you could add a new action to the **front** of the queue beforehand.
+    /// When adding a new action, either specify in [`config`](AddConfig) that the action should [`start`](AddConfig::start),
+    /// or manually call [`next`](Self::next) afterwards, __but not both__, as that will trigger two
+    /// consecutive [`next`](Self::next) calls.
+    fn stop(self) -> Self;
+
+    /// [`Removes`](Action::remove) the currently running action, and clears any remaining.
+    fn clear(self) -> Self;
+
+    /// Push an [`action`](Action) to a list with the current [`config`](AddConfig).
+    /// Pushed actions __will not__ be added to the queue until [`submit`](Self::submit) is called.
+    fn push(self, action: impl IntoAction) -> Self;
+
+    /// Reverse the order of the [`pushed`](Self::push) actions.
+    fn reverse(self) -> Self;
+
+    /// Submit the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
+    fn submit(self) -> Self;
 }

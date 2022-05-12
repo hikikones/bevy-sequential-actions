@@ -14,7 +14,7 @@ impl Plugin for TileTrapActionPlugin {
 pub struct TileTrapAction;
 
 impl Action for TileTrapAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("\n---------- Tile Trap Event! ----------");
         println!("Press 'Enter' to continue.\n");
 
@@ -49,6 +49,6 @@ fn on_stop_update(
     mut commands: Commands,
 ) {
     if keyboard.just_pressed(KeyCode::Return) {
-        commands.next_action(actor_q.single());
+        commands.action(actor_q.single()).next();
     }
 }

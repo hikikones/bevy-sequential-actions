@@ -22,7 +22,7 @@ impl MoveAction {
 }
 
 impl Action for MoveAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let board = world.get_resource::<Board>().unwrap();
         let start = board.get_cell(world.get::<Transform>(actor).unwrap().translation);
         let goal = self.0;
@@ -74,7 +74,7 @@ fn move_action(
     for (actor, mut transform, mut index, path, speed) in q.iter_mut() {
         if transform.move_towards(path.0[index.0], speed.0 * time.delta_seconds()) {
             if index.0 == path.0.len() - 1 {
-                commands.next_action(actor);
+                commands.action(actor).next();
                 continue;
             }
 
@@ -84,17 +84,15 @@ fn move_action(
                 let tile = board.get_tile(cell);
 
                 if Tile::Trap == *tile {
-                    commands.stop_action(actor);
-                    commands.add_action(
-                        actor,
-                        TileTrapAction,
-                        AddConfig {
+                    commands
+                        .action(actor)
+                        .stop()
+                        .config(AddConfig {
                             order: AddOrder::Front,
-                            start: false,
+                            start: true,
                             repeat: false,
-                        },
-                    );
-                    commands.next_action(actor);
+                        })
+                        .add(TileTrapAction);
                     continue;
                 }
             }
