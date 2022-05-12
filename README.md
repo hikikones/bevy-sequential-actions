@@ -87,4 +87,4 @@ See the [examples](examples/) for more usage. Each example can be run with `carg
 
 | bevy | bevy_sequential_actions |
 | ---- | ----------------------- |
-| 0.7  | 0.1                     |
+| 0.7  | 0.1 — 0.2               |
