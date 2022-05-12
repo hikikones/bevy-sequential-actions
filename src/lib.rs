@@ -166,6 +166,46 @@ mod tests {
 
         world
             .action(e)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 2);
+
+        world.action(e).next();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+
+        world.action(e).next();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world.action(e).next();
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    }
+
+    #[test]
+    fn push() {
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world
+            .action(e)
+            .push(EmptyAction)
+            .push(EmptyAction)
+            .push(EmptyAction);
+
+        assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
+        assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+
+        world
+            .action(e)
             .push(EmptyAction)
             .push(EmptyAction)
             .push(EmptyAction)
@@ -225,12 +265,11 @@ mod tests {
 
         world
             .action(e)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .push(EmptyAction)
-            .submit();
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction)
+            .add(EmptyAction);
 
         assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
         assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 4);
