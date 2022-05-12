@@ -14,7 +14,7 @@ impl Plugin for TileTrapActionPlugin {
 pub struct TileTrapAction;
 
 impl Action for TileTrapAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("\n---------- Tile Trap Event! ----------");
         println!("Press 'Enter' to continue.\n");
 

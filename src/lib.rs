@@ -50,7 +50,7 @@
 //! struct WaitAction(f32);
 //!
 //! impl Action for WaitAction {
-//!     fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+//!     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
 //!         world.entity_mut(entity).insert(Wait(self.0));
 //!     }
 //!
@@ -153,7 +153,7 @@ mod tests {
 
     struct EmptyAction;
     impl Action for EmptyAction {
-        fn add(&mut self, _entity: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
+        fn start(&mut self, _entity: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
         fn remove(&mut self, _entity: Entity, _world: &mut World) {}
         fn stop(&mut self, _entity: Entity, _world: &mut World) {}
     }
@@ -274,7 +274,7 @@ mod tests {
     fn despawn() {
         struct DespawnAction;
         impl Action for DespawnAction {
-            fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
                 world.despawn(entity);
             }
             fn remove(&mut self, _entity: Entity, _world: &mut World) {}

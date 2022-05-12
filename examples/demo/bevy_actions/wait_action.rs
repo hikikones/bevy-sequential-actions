@@ -19,7 +19,7 @@ impl WaitAction {
 }
 
 impl Action for WaitAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
         world.entity_mut(actor).insert(Wait(self.0));
     }
 

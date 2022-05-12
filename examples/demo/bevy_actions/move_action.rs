@@ -22,7 +22,7 @@ impl MoveAction {
 }
 
 impl Action for MoveAction {
-    fn add(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let board = world.get_resource::<Board>().unwrap();
         let start = board.get_cell(world.get::<Transform>(actor).unwrap().translation);
         let goal = self.0;

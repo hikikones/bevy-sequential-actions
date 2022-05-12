@@ -38,7 +38,7 @@ pub enum LerpType {
 }
 
 impl Action for LerpAction {
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
         let lerp = match self.lerp_type {
             LerpType::Position(target) => {
                 let start = world.get::<Transform>(self.target).unwrap().translation;

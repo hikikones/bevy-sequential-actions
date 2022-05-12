@@ -19,7 +19,7 @@ impl<T: BevyState> SetStateAction<T> {
 }
 
 impl<T: BevyState> Action for SetStateAction<T> {
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
         world.set_state(self.0);
         commands.action(actor).next();
     }

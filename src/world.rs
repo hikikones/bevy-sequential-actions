@@ -11,9 +11,10 @@ pub trait EntityWorldActionsExt {
     /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
     /// Actions need to be properly queued, which is what [`ActionCommands`] does.
     /// ```rust
-    /// struct UselessAction;
-    /// impl Action for UselessAction {
-    ///     fn add(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+    /// struct EmptyAction;
+    ///
+    /// impl Action for EmptyAction {
+    ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
     ///         // Bad
     ///         world.action(entity).next();
     ///
@@ -109,7 +110,7 @@ impl ModifyActionsExt for EntityWorldActions<'_> {
         // Set next action
         let mut commands = ActionCommands::default();
         if let Some((mut action, cfg)) = next {
-            action.add(self.entity, self.world, &mut commands);
+            action.start(self.entity, self.world, &mut commands);
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
                 current.0 = Some((action, cfg));
             }

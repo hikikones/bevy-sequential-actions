@@ -25,7 +25,7 @@ pub enum PanTarget {
 }
 
 impl Action for CameraAction {
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
         match *self {
             CameraAction::Follow(target) => {
                 world.camera(CameraCommand::Follow(target));

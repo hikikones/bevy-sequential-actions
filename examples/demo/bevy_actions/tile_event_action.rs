@@ -14,7 +14,7 @@ impl Plugin for TileEventActionPlugin {
 pub struct TileEventAction;
 
 impl Action for TileEventAction {
-    fn add(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn start(&mut self, actor: Entity, world: &mut World, commands: &mut ActionCommands) {
         let pos = world.get::<Transform>(actor).unwrap().translation;
         let board = world.resource::<Board>();
         let cell = board.get_cell(pos);

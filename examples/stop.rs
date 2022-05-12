@@ -41,7 +41,7 @@ struct CountAction {
 }
 
 impl Action for CountAction {
-    fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let count = self.current_count.unwrap_or(0);
         world.entity_mut(entity).insert(Count(count));
     }
@@ -52,7 +52,7 @@ impl Action for CountAction {
 
     fn stop(&mut self, entity: Entity, world: &mut World) {
         // When stop is called, we need to store the current count progress.
-        // This is so we can continue the count when add() is called again.
+        // This is so we can continue the count when start() is called again.
         let count = world.get::<Count>(entity).unwrap();
         self.current_count = Some(count.0);
         self.remove(entity, world);
@@ -89,7 +89,7 @@ fn count(mut count_q: Query<(Entity, &mut Count)>, mut commands: Commands) {
 struct QuitAction;
 
 impl Action for QuitAction {
-    fn add(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let mut app_exit_ev = world.resource_mut::<Events<AppExit>>();
         app_exit_ev.send(AppExit);
     }
@@ -101,7 +101,7 @@ impl Action for QuitAction {
 struct InterruptAction;
 
 impl Action for InterruptAction {
-    fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("\n---------- Interrupt event! ----------");
         println!("Just wait a few seconds and actions will continue again.\n");
 

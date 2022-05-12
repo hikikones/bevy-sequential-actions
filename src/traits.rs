@@ -12,7 +12,7 @@ use crate::*;
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn add(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
 ///         commands.action(entity).next();
 ///     }
@@ -23,7 +23,7 @@ use crate::*;
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an [`action`](Action) is started.
-    fn add(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
     /// The method that is called when an [`action`](Action) is removed.
     fn remove(&mut self, entity: Entity, world: &mut World);
     /// The method that is called when an [`action`](Action) is stopped.

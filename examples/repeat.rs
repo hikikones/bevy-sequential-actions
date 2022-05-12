@@ -33,7 +33,7 @@ fn setup(mut commands: Commands) {
 struct WaitAction(f32);
 
 impl Action for WaitAction {
-    fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("Wait({})", self.0);
         world.entity_mut(entity).insert(Wait(self.0));
     }

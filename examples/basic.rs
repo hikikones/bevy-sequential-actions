@@ -63,7 +63,7 @@ fn setup(mut commands: Commands) {
 struct WaitAction(f32);
 
 impl Action for WaitAction {
-    fn add(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("Wait({})", self.0);
         world.entity_mut(entity).insert(Wait(self.0));
     }
@@ -93,7 +93,7 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
 struct MultipleWaitActions;
 
 impl Action for MultipleWaitActions {
-    fn add(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
+    fn start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
         // This action simply creates new actions to the front of the queue.
         commands
             .action(entity)
@@ -118,7 +118,7 @@ impl Action for MultipleWaitActions {
 struct QuitAction;
 
 impl Action for QuitAction {
-    fn add(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         println!("Quit");
         let mut app_exit_ev = world.resource_mut::<Events<AppExit>>();
         app_exit_ev.send(AppExit);
