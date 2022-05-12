@@ -56,7 +56,7 @@ pub trait ModifyActionsExt {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 
-    /// Adds an [`action`](Action) with the current [`config`](AddConfig).
+    /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
     /// Starts the next [`action`](Action) in the queue. This is done by [`removing`](Action::remove) the currently running action,
@@ -77,11 +77,11 @@ pub trait ModifyActionsExt {
     /// [`Removes`](Action::remove) the currently running action, and clears any remaining.
     fn clear(self) -> Self;
 
-    /// Push an [`action`](Action) to a list with the current [`config`](AddConfig).
+    /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
     /// Pushed actions __will not__ be added to the queue until [`submit`](Self::submit) is called.
     fn push(self, action: impl IntoAction) -> Self;
 
-    /// Reverse the order of the [`pushed`](Self::push) actions.
+    /// Reverses the order of the [`pushed`](Self::push) actions.
     fn reverse(self) -> Self;
 
     /// Submit the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
