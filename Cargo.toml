@@ -2,10 +2,11 @@
 name = "bevy-sequential-actions"
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license = "MIT OR Apache-2.0"
 authors = ["hikikones"]
-description = "A bevy library for executing actions in a sequence."
+description = "A Bevy library for executing actions in a sequence."
 repository = "https://github.com/hikikones/bevy-sequential-actions"
+homepage = "https://github.com/hikikones/bevy-sequential-actions"
 keywords = ["bevy", "action", "sequence", "command"]
 categories = ["game-development", "gamedev"]
 readme = "README.md"
