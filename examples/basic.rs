@@ -25,22 +25,21 @@ fn setup(mut commands: Commands) {
             start: false,          // Start action if nothing is currently running
             repeat: false,         // Repeat the action
         })
-        .push(WaitAction(4.0))
-        .push(WaitAction(5.0))
-        .submit();
+        .add(WaitAction(4.0))
+        .add(WaitAction(5.0));
 
-    // Add multiple actions again but to the front of the queue
+    // Push multiple actions to the front and reverse order before submitting
     commands
         .action(entity)
         .config(AddConfig {
-            order: AddOrder::Front, // This time, add each action to the front of the queue
+            order: AddOrder::Front, // This time, add each action to the front
             start: false,
             repeat: false,
         })
         .push(WaitAction(2.0))
         .push(WaitAction(3.0))
-        .reverse() // Since we are adding to the front, reverse the order to get increasing wait times
-        .submit();
+        .reverse() // Reverse the order to get increasing wait times
+        .submit(); // When pushing, actions are not queued until submit is called.
 
     // Add an action that itself adds multiple actions
     commands.action(entity).add(MultipleWaitActions);

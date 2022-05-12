@@ -41,9 +41,8 @@
 //!             // Repeat the action
 //!             repeat: false,
 //!         })
-//!         .push(WaitAction(2.0))
-//!         .push(WaitAction(3.0))
-//!         .submit();
+//!         .add(WaitAction(2.0))
+//!         .add(WaitAction(3.0));
 //! }
 //!
 //! struct WaitAction(f32);

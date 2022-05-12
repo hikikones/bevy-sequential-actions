@@ -77,7 +77,7 @@ pub trait ModifyActionsExt {
     /// [`Removes`](Action::remove) the currently running action, and clears any remaining.
     fn clear(self) -> Self;
 
-    /// Push an [`action`](Action) with the current [`config`](AddConfig) to a list.
+    /// Push an [`action`](Action) to a list with the current [`config`](AddConfig).
     /// Pushed actions __will not__ be added to the queue until [`submit`](Self::submit) is called.
     fn push(self, action: impl IntoAction) -> Self;
 
