@@ -22,12 +22,14 @@ fn setup(mut commands: Commands) {
 type CallbackFn = fn(entity: Entity, success: bool, commands: &mut ActionCommands);
 
 fn callback(entity: Entity, success: bool, commands: &mut ActionCommands) {
+    // Quit app if success
     if success {
         println!("Success!");
         commands.action(entity).add(QuitAction);
         return;
     }
 
+    // Guess again
     commands
         .action(entity)
         .add(GuessAction::new(Some(callback)));
