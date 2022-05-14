@@ -22,10 +22,9 @@ fn setup(mut commands: Commands) {
             start: true,           // Start action if nothing is currently running
             repeat: true,          // Repeat each action when it has finished
         })
-        .push(WaitAction(1.0))
-        .push(WaitAction(2.0))
-        .push(WaitAction(3.0))
-        .submit();
+        .add(WaitAction(1.0))
+        .add(WaitAction(2.0))
+        .add(WaitAction(3.0));
 
     // These three wait actions will now basically loop forever in the added order.
 }

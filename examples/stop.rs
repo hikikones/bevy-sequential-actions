@@ -30,9 +30,8 @@ fn setup(mut commands: Commands) {
     // Add count and quit action with default config
     commands
         .action(entity)
-        .push(CountAction::default())
-        .push(QuitAction)
-        .submit();
+        .add(CountAction::default())
+        .add(QuitAction);
 }
 
 #[derive(Default)]

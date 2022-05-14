@@ -8,7 +8,7 @@ description = "A Bevy library for executing actions in a sequence."
 repository = "https://github.com/hikikones/bevy-sequential-actions"
 homepage = "https://github.com/hikikones/bevy-sequential-actions"
 keywords = ["bevy", "action", "sequence", "command"]
-categories = ["game-development", "gamedev"]
+categories = ["game-development"]
 readme = "README.md"
 
 [lib]
@@ -19,6 +19,7 @@ bevy_ecs = "0.7"
 
 [dev-dependencies]
 bevy = "0.7"
+fastrand = "1.7"
 
 [profile.dev]
 opt-level = 1

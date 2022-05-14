@@ -76,12 +76,13 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
 
 See the [examples](examples/) for more usage. Each example can be run with `cargo run --example <example>`.
 
-| Example  | Description                                                                                                                                                                            |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `basic`  | Shows the basic usage of the library by adding a bunch of actions.                                                                                                                     |
-| `stop`   | Shows how to stop a running action, and then add a new action to the front of the queue.                                                                                               |
-| `repeat` | Shows how to add actions that basically loop forever in the added order.                                                                                                               |
-| `demo`   | A more comprehensive and practical example showcasing how this library can be used in a turn-based board game. Includes lots of custom actions that can be reused throughout the game. |
+| Example    | Description                                                                                                                                                                            |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `basic`    | Shows the basic usage of the library by adding a bunch of actions.                                                                                                                     |
+| `stop`     | Shows how to stop a running action, and then add a new action to the front of the queue.                                                                                               |
+| `repeat`   | Shows how to add actions that basically loop forever in the added order.                                                                                                               |
+| `callback` | Shows an action with a callback.                                                                                                                                                       |
+| `demo`     | A more comprehensive and practical example showcasing how this library can be used in a turn-based board game. Includes lots of custom actions that can be reused throughout the game. |
 
 ## Compatibility
 
