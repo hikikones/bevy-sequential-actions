@@ -328,4 +328,82 @@ mod tests {
 
         assert!(world.get_entity(e).is_none());
     }
+
+    #[test]
+    fn order() {
+        #[derive(Component)]
+        struct A;
+        #[derive(Component)]
+        struct B;
+        #[derive(Component)]
+        struct C;
+
+        impl Action for A {
+            fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+                world.entity_mut(entity).insert(A);
+            }
+            fn remove(&mut self, entity: Entity, world: &mut World) {
+                world.entity_mut(entity).remove::<A>();
+            }
+            fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+        }
+        impl Action for B {
+            fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+                world.entity_mut(entity).insert(B);
+            }
+            fn remove(&mut self, entity: Entity, world: &mut World) {
+                world.entity_mut(entity).remove::<B>();
+            }
+            fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+        }
+        impl Action for C {
+            fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+                world.entity_mut(entity).insert(C);
+            }
+            fn remove(&mut self, entity: Entity, world: &mut World) {
+                world.entity_mut(entity).remove::<C>();
+            }
+            fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+        }
+
+        let mut world = World::new();
+
+        let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+        world.action(e).add(A).add(B).add(C);
+
+        assert!(world.entity(e).contains::<A>());
+
+        world.action(e).next();
+
+        assert!(world.entity(e).contains::<B>());
+
+        world.action(e).next();
+
+        assert!(world.entity(e).contains::<C>());
+
+        world
+            .action(e)
+            .clear()
+            .config(AddConfig {
+                order: AddOrder::Front,
+                start: false,
+                repeat: false,
+            })
+            .push(A)
+            .push(B)
+            .push(C)
+            .submit()
+            .next();
+
+        assert!(world.entity(e).contains::<C>());
+
+        world.action(e).next();
+
+        assert!(world.entity(e).contains::<B>());
+
+        world.action(e).next();
+
+        assert!(world.entity(e).contains::<A>());
+    }
 }
