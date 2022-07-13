@@ -23,12 +23,8 @@ impl Action for WaitAction {
         world.entity_mut(actor).insert(Wait(self.0));
     }
 
-    fn remove(&mut self, actor: Entity, world: &mut World) {
-        world.entity_mut(actor).remove::<Wait>();
-    }
-
     fn stop(&mut self, actor: Entity, world: &mut World) {
-        self.remove(actor, world);
+        world.entity_mut(actor).remove::<Wait>();
     }
 }
 

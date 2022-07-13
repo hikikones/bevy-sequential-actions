@@ -68,12 +68,8 @@ impl Action for WaitAction {
         world.entity_mut(entity).insert(Wait(self.0));
     }
 
-    fn remove(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Wait>();
-    }
-
     fn stop(&mut self, entity: Entity, world: &mut World) {
-        self.remove(entity, world);
+        world.entity_mut(entity).remove::<Wait>();
     }
 }
 
@@ -111,7 +107,6 @@ impl Action for MultipleWaitActions {
             .next(); // Since this is all that it does, we call next action as it is finished.
     }
 
-    fn remove(&mut self, _entity: Entity, _world: &mut World) {}
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }
 
@@ -124,6 +119,5 @@ impl Action for QuitAction {
         app_exit_ev.send(AppExit);
     }
 
-    fn remove(&mut self, _entity: Entity, _world: &mut World) {}
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }

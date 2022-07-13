@@ -80,14 +80,10 @@ impl Action for LerpAction {
         self.executor = Some(executor);
     }
 
-    fn remove(&mut self, _actor: Entity, world: &mut World) {
+    fn stop(&mut self, _actor: Entity, world: &mut World) {
         if let Some(executor) = self.executor {
             world.despawn(executor);
         }
-    }
-
-    fn stop(&mut self, _actor: Entity, _world: &mut World) {
-        todo!()
     }
 }
 

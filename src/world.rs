@@ -91,7 +91,7 @@ impl ModifyActionsExt for EntityWorldActions<'_> {
 
         // Remove current action
         if let Some((mut action, cfg)) = current {
-            action.remove(self.entity, self.world);
+            action.stop(self.entity, self.world);
             if cfg.repeat {
                 // Add action to back of queue again if repeat
                 let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
@@ -152,7 +152,7 @@ impl ModifyActionsExt for EntityWorldActions<'_> {
 
         // Remove current action
         if let Some((mut action, _)) = current {
-            action.remove(self.entity, self.world);
+            action.stop(self.entity, self.world);
         }
 
         // Clear remaining

@@ -23,14 +23,10 @@ impl Action for TileTrapAction {
         state.set(StopState::Active).unwrap();
     }
 
-    fn remove(&mut self, actor: Entity, world: &mut World) {
+    fn stop(&mut self, actor: Entity, world: &mut World) {
         world.entity_mut(actor).remove::<TrapMarker>();
         let mut state = world.get_resource_mut::<State<StopState>>().unwrap();
         state.set(StopState::None).unwrap();
-    }
-
-    fn stop(&mut self, actor: Entity, world: &mut World) {
-        self.remove(actor, world);
     }
 }
 

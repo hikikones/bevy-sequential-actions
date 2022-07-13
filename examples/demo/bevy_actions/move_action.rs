@@ -40,12 +40,8 @@ impl Action for MoveAction {
         });
     }
 
-    fn remove(&mut self, actor: Entity, world: &mut World) {
-        world.entity_mut(actor).remove_bundle::<MoveBundle>();
-    }
-
     fn stop(&mut self, actor: Entity, world: &mut World) {
-        self.remove(actor, world);
+        world.entity_mut(actor).remove_bundle::<MoveBundle>();
     }
 }
 
