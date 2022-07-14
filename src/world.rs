@@ -22,7 +22,6 @@ pub trait EntityWorldActionsExt {
     ///         commands.action(entity).next();
     ///     }
     ///
-    ///     fn remove(&mut self, entity: Entity, world: &mut World) {}
     ///     fn stop(&mut self, entity: Entity, world: &mut World) {}
     /// }
     ///```

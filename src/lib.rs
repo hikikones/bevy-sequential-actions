@@ -54,12 +54,8 @@
 //!         world.entity_mut(entity).insert(Wait(self.0));
 //!     }
 //!
-//!     fn remove(&mut self, entity: Entity, world: &mut World) {
-//!         world.entity_mut(entity).remove::<Wait>();
-//!     }
-//!
 //!     fn stop(&mut self, entity: Entity, world: &mut World) {
-//!         self.remove(entity, world);
+//!         world.entity_mut(entity).remove::<Wait>();
 //!     }
 //! }
 //!
