@@ -18,6 +18,7 @@ doctest = false
 bevy_ecs = "0.7"
 
 [dev-dependencies]
+shared = { path = "examples/shared" }
 bevy = "0.7"
 fastrand = "1.7"
 
