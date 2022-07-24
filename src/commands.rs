@@ -2,14 +2,27 @@ use bevy_ecs::{prelude::*, system::Command};
 
 use crate::*;
 
-/// Extension method on [`Commands`] for modifying actions.
-pub trait EntityCommandsActionsExt<'w, 's> {
-    /// Returns an [`EntityCommandsActions`] for the requested [`Entity`].
-    fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_>;
-}
+// /// Extension method on [`Commands`] for modifying actions.
+// pub trait EntityCommandsActionsExt<'w, 's> {
+//     /// Returns an [`EntityCommandsActions`] for the requested [`Entity`].
+//     fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_>;
+// }
 
-impl<'w, 's> EntityCommandsActionsExt<'w, 's> for Commands<'w, 's> {
-    fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_> {
+// impl<'w, 's> EntityCommandsActionsExt<'w, 's> for Commands<'w, 's> {
+//     fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_> {
+//         EntityCommandsActions {
+//             entity,
+//             config: AddConfig::default(),
+//             actions: Vec::new(),
+//             commands: self,
+//         }
+//     }
+// }
+
+impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
+    type Builder = EntityCommandsActions<'w, 's, 'a>;
+
+    fn action(&'a mut self, entity: Entity) -> EntityCommandsActions<'w, 's, 'a> {
         EntityCommandsActions {
             entity,
             config: AddConfig::default(),

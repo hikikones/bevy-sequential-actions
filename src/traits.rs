@@ -53,59 +53,61 @@ pub trait Proxy<'a> {
     fn action(&'a mut self, entity: Entity) -> Self::Builder;
 }
 
-pub struct Yoyo<'w, 's, 'a> {
-    entity: Entity,
-    config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
-    commands: &'a mut Commands<'w, 's>,
-}
+// pub struct Yoyo<'w, 's, 'a> {
+//     entity: Entity,
+//     config: AddConfig,
+//     actions: Vec<(Box<dyn Action>, AddConfig)>,
+//     commands: &'a mut Commands<'w, 's>,
+// }
 
-impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
-    type Builder = Yoyo<'w, 's, 'a>;
+// impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
+//     type Builder = Yoyo<'w, 's, 'a>;
 
-    fn action(&'a mut self, entity: Entity) -> Yoyo<'w, 's, 'a> {
-        Yoyo {
-            entity,
-            config: AddConfig::default(),
-            actions: Vec::new(),
-            commands: self,
-        }
-    }
-}
+//     fn action(&'a mut self, entity: Entity) -> Yoyo<'w, 's, 'a> {
+//         Yoyo {
+//             entity,
+//             config: AddConfig::default(),
+//             actions: Vec::new(),
+//             commands: self,
+//         }
+//     }
+// }
 
-impl<'w, 's, 'a> ModifyActionsExt for Yoyo<'w, 's, 'a> {
-    fn config(self, config: AddConfig) -> Self {
-        todo!()
-    }
+// impl<'w, 's, 'a> ModifyActionsExt for Yoyo<'w, 's, 'a> {
+//     fn config(self, config: AddConfig) -> Self {
+//         todo!()
+//     }
 
-    fn add(self, action: impl IntoAction) -> Self {
-        todo!()
-    }
+//     fn add(self, action: impl IntoAction) -> Self {
+//         todo!()
+//     }
 
-    fn next(self) -> Self {
-        todo!()
-    }
+//     fn next(self) -> Self {
+//         todo!()
+//     }
 
-    fn stop(self) -> Self {
-        todo!()
-    }
+//     fn stop(self) -> Self {
+//         todo!()
+//     }
 
-    fn clear(self) -> Self {
-        todo!()
-    }
+//     fn clear(self) -> Self {
+//         todo!()
+//     }
 
-    fn push(self, action: impl IntoAction) -> Self {
-        todo!()
-    }
+//     fn push(self, action: impl IntoAction) -> Self {
+//         todo!()
+//     }
 
-    fn reverse(self) -> Self {
-        todo!()
-    }
+//     fn reverse(self) -> Self {
+//         todo!()
+//     }
 
-    fn submit(self) -> Self {
-        todo!()
-    }
-}
+//     fn submit(self) -> Self {
+//         todo!()
+//     }
+// }
+
+///////////////////////////////
 
 // pub trait Proxy<'a> {
 //     type Builder: ModifyActionsExt;
