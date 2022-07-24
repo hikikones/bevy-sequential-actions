@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::*, system::Command};
+use bevy_ecs::prelude::*;
 
 use crate::*;
 
@@ -30,31 +30,30 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
     }
 
     fn add(self, action: impl IntoAction) -> Self {
-        self.commands.add(AddAction {
-            entity: self.entity,
-            config: self.config,
-            action: action.into_boxed(),
+        let action = action.into_boxed();
+        self.commands.add(move |world: &mut World| {
+            world.action(self.entity).config(self.config).add(action);
         });
         self
     }
 
     fn next(self) -> Self {
-        self.commands.add(NextAction {
-            entity: self.entity,
+        self.commands.add(move |world: &mut World| {
+            world.action(self.entity).next();
         });
         self
     }
 
     fn stop(self) -> Self {
-        self.commands.add(StopAction {
-            entity: self.entity,
+        self.commands.add(move |world: &mut World| {
+            world.action(self.entity).stop();
         });
         self
     }
 
     fn clear(self) -> Self {
-        self.commands.add(ClearActions {
-            entity: self.entity,
+        self.commands.add(move |world: &mut World| {
+            world.action(self.entity).clear();
         });
         self
     }
@@ -71,57 +70,10 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
 
     fn submit(mut self) -> Self {
         for (action, config) in self.actions.drain(..) {
-            self.commands.add(AddAction {
-                entity: self.entity,
-                config,
-                action,
+            self.commands.add(move |world: &mut World| {
+                world.action(self.entity).config(config).add(action);
             });
         }
         self
-    }
-}
-
-struct AddAction {
-    entity: Entity,
-    config: AddConfig,
-    action: Box<dyn Action>,
-}
-
-struct NextAction {
-    entity: Entity,
-}
-
-struct StopAction {
-    entity: Entity,
-}
-
-struct ClearActions {
-    entity: Entity,
-}
-
-impl Command for AddAction {
-    fn write(self, world: &mut World) {
-        world
-            .action(self.entity)
-            .config(self.config)
-            .add(self.action);
-    }
-}
-
-impl Command for NextAction {
-    fn write(self, world: &mut World) {
-        world.action(self.entity).next();
-    }
-}
-
-impl Command for StopAction {
-    fn write(self, world: &mut World) {
-        world.action(self.entity).stop();
-    }
-}
-
-impl Command for ClearActions {
-    fn write(self, world: &mut World) {
-        world.action(self.entity).clear();
     }
 }
