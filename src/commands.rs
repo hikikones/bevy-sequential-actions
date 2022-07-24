@@ -32,8 +32,8 @@ use crate::*;
 //     }
 // }
 
-impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
-    type Builder = EntityCommandsActions<'w, 's, 'a>;
+impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
+    type Modifier = EntityCommandsActions<'w, 's, 'a>;
 
     fn action(&'a mut self, entity: Entity) -> EntityCommandsActions<'w, 's, 'a> {
         EntityCommandsActions {
@@ -53,7 +53,7 @@ pub struct EntityCommandsActions<'w, 's, 'a> {
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's> ModifyActionsExt for EntityCommandsActions<'w, 's, '_> {
+impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

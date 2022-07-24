@@ -6,7 +6,7 @@ use crate::*;
 ///
 /// An empty action that does nothing.
 /// All actions must declare when they are done.
-/// This is done by calling [`next`](ModifyActionsExt::next) from either [`ActionCommands`] or [`Commands`].
+/// This is done by calling [`next`](ModifyActions::next) from either [`ActionCommands`] or [`Commands`].
 ///
 /// ```rust
 /// struct EmptyAction;
@@ -48,13 +48,13 @@ impl IntoAction for Box<dyn Action> {
     }
 }
 
-/// Proxy method for returning a type that implements [`ModifyActionsExt`].
-pub trait Proxy<'a> {
-    /// Action builder.
-    type Builder: ModifyActionsExt;
+/// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
+pub trait ActionsProxy<'a> {
+    /// The type returned for modifying actions.
+    type Modifier: ModifyActions;
 
-    /// Returns [`Self::Builder`] for specified [`Entity`].
-    fn action(&'a mut self, entity: Entity) -> Self::Builder;
+    /// Returns [`Self::Modifier`] for specified [`Entity`].
+    fn action(&'a mut self, entity: Entity) -> Self::Modifier;
 }
 
 // pub struct Yoyo<'w, 's, 'a> {
@@ -172,8 +172,8 @@ pub trait Proxy<'a> {
 //     }
 // }
 
-/// Extension methods for modifying actions.
-pub trait ModifyActionsExt {
+/// Methods for modifying actions.
+pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 

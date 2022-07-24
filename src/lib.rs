@@ -11,7 +11,7 @@
 //! An action is anything that implements the [`Action`] trait,
 //! and can be added to any [`Entity`] that contains the [`ActionsBundle`].
 //! Each action must signal when they are finished,
-//! which is done by calling the [`next`](ModifyActionsExt::next) method.
+//! which is done by calling the [`next`](ModifyActions::next) method.
 //!
 //! ```rust
 //! use bevy::prelude::*;

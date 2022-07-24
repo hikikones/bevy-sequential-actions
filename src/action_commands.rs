@@ -18,8 +18,8 @@ pub struct ActionCommands(Vec<ActionCommand>);
 //     }
 // }
 
-impl<'a> Proxy<'a> for ActionCommands {
-    type Builder = EntityActions<'a>;
+impl<'a> ActionsProxy<'a> for ActionCommands {
+    type Modifier = EntityActions<'a>;
 
     fn action(&'a mut self, entity: Entity) -> EntityActions<'a> {
         EntityActions {
@@ -46,7 +46,7 @@ enum ActionCommand {
     Clear(Entity),
 }
 
-impl ModifyActionsExt for EntityActions<'_> {
+impl ModifyActions for EntityActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

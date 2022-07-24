@@ -39,8 +39,8 @@ use crate::*;
 //     }
 // }
 
-impl<'a> Proxy<'a> for World {
-    type Builder = EntityWorldActions<'a>;
+impl<'a> ActionsProxy<'a> for World {
+    type Modifier = EntityWorldActions<'a>;
 
     fn action(&'a mut self, entity: Entity) -> EntityWorldActions<'a> {
         EntityWorldActions {
@@ -60,7 +60,7 @@ pub struct EntityWorldActions<'a> {
     world: &'a mut World,
 }
 
-impl ModifyActionsExt for EntityWorldActions<'_> {
+impl ModifyActions for EntityWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
