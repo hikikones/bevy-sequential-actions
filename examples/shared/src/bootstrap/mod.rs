@@ -8,9 +8,9 @@ mod player;
 pub use camera::*;
 pub use player::*;
 
-pub struct PlaygroundPlugin;
+pub struct BootstrapPlugin;
 
-impl Plugin for PlaygroundPlugin {
+impl Plugin for BootstrapPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(assets::MyAssets::default())
             .add_startup_system_set_to_stage(
