@@ -19,6 +19,19 @@ use crate::*;
 //     }
 // }
 
+// pub trait Proxy2 {
+//     type Builder: ModifyActionsExt;
+//     fn action<'a>(&'a mut self, entity: Entity) -> Self::Builder;
+// }
+
+// impl<'w: 'b, 's: 'b, 'b> Proxy2 for Commands<'w, 's> {
+//     type Builder = EntityCommandsActions<'w, 's, 'b>;
+
+//     fn action<'a>(&'a mut self, entity: Entity) -> Self::Builder {
+//         todo!()
+//     }
+// }
+
 impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
     type Builder = EntityCommandsActions<'w, 's, 'a>;
 
