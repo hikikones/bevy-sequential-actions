@@ -1,12 +1,14 @@
-use bevy::{app::AppExit, ecs::event::Events, prelude::*};
-
+use bevy::prelude::*;
 use bevy_sequential_actions::*;
+
+use shared::actions::{QuitAction, WaitAction, WaitActionPlugin};
 
 fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
+        .add_plugin(WaitActionPlugin)
         .add_startup_system(setup)
-        .add_system(wait)
+        // .add_system(wait)
         .run();
 }
 
@@ -15,7 +17,7 @@ fn setup(mut commands: Commands) {
     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
 
     // Add a single action with default config
-    commands.action(entity).add(WaitAction(1.0));
+    commands.action(entity).add(WaitAction::new(1.0));
 
     // Add multiple actions with custom config
     commands
@@ -25,8 +27,8 @@ fn setup(mut commands: Commands) {
             start: false,          // Start action if nothing is currently running
             repeat: false,         // Repeat the action
         })
-        .add(WaitAction(4.0))
-        .add(WaitAction(5.0));
+        .add(WaitAction::new(4.0))
+        .add(WaitAction::new(5.0));
 
     // Push multiple actions to the front and reverse order before submitting
     commands
@@ -36,8 +38,8 @@ fn setup(mut commands: Commands) {
             start: false,
             repeat: false,
         })
-        .push(WaitAction(2.0))
-        .push(WaitAction(3.0))
+        .push(WaitAction::new(2.0))
+        .push(WaitAction::new(3.0))
         .reverse() // Reverse the order to get increasing wait times
         .submit(); // When pushing, actions are not queued until submit is called.
 
@@ -45,7 +47,7 @@ fn setup(mut commands: Commands) {
     commands.action(entity).add(MultipleWaitActions);
 
     // Finally, quit the app
-    commands.action(entity).add(QuitAction);
+    commands.action(entity).add(QuitAction::new());
 
     // A list of actions have now been added to the queue, and should execute in the following order:
     // Wait(1.0)
@@ -60,31 +62,31 @@ fn setup(mut commands: Commands) {
     // Quit
 }
 
-struct WaitAction(f32);
+// struct WaitAction(f32);
 
-impl Action for WaitAction {
-    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        println!("Wait({})", self.0);
-        world.entity_mut(entity).insert(Wait(self.0));
-    }
+// impl Action for WaitAction {
+//     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+//         println!("Wait({})", self.0);
+//         world.entity_mut(entity).insert(Wait(self.0));
+//     }
 
-    fn stop(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Wait>();
-    }
-}
+//     fn stop(&mut self, entity: Entity, world: &mut World) {
+//         world.entity_mut(entity).remove::<Wait>();
+//     }
+// }
 
-#[derive(Component)]
-struct Wait(f32);
+// #[derive(Component)]
+// struct Wait(f32);
 
-fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-    for (entity, mut wait) in wait_q.iter_mut() {
-        wait.0 -= time.delta_seconds();
-        if wait.0 <= 0.0 {
-            // To signal that an action has finished, the next action method must be called.
-            commands.action(entity).next();
-        }
-    }
-}
+// fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
+//     for (entity, mut wait) in wait_q.iter_mut() {
+//         wait.0 -= time.delta_seconds();
+//         if wait.0 <= 0.0 {
+//             // To signal that an action has finished, the next action method must be called.
+//             commands.action(entity).next();
+//         }
+//     }
+// }
 
 struct MultipleWaitActions;
 
@@ -98,10 +100,10 @@ impl Action for MultipleWaitActions {
                 start: false,
                 repeat: false,
             })
-            .push(WaitAction(4.0))
-            .push(WaitAction(3.0))
-            .push(WaitAction(2.0))
-            .push(WaitAction(1.0))
+            .push(WaitAction::new(4.0))
+            .push(WaitAction::new(3.0))
+            .push(WaitAction::new(2.0))
+            .push(WaitAction::new(1.0))
             .reverse()
             .submit()
             .next(); // Since this is all that it does, we call next action as it is finished.
@@ -110,14 +112,14 @@ impl Action for MultipleWaitActions {
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }
 
-struct QuitAction;
+// struct QuitAction;
 
-impl Action for QuitAction {
-    fn start(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        println!("Quit");
-        let mut app_exit_ev = world.resource_mut::<Events<AppExit>>();
-        app_exit_ev.send(AppExit);
-    }
+// impl Action for QuitAction {
+//     fn start(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+//         println!("Quit");
+//         let mut app_exit_ev = world.resource_mut::<Events<AppExit>>();
+//         app_exit_ev.send(AppExit);
+//     }
 
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
-}
+//     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+// }

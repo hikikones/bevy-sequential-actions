@@ -19,6 +19,7 @@ impl WaitAction {
 
 impl Action for WaitAction {
     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        println!("Wait({})", self.0);
         world.entity_mut(entity).insert(Wait(self.0));
     }
 
@@ -34,6 +35,7 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
     for (actor, mut wait) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
+            // Action is finished, issue next.
             commands.action(actor).next();
         }
     }
