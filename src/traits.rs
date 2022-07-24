@@ -48,8 +48,12 @@ impl IntoAction for Box<dyn Action> {
     }
 }
 
+/// Proxy method for returning a type that implements [`ModifyActionsExt`].
 pub trait Proxy<'a> {
+    /// Action builder.
     type Builder: ModifyActionsExt;
+
+    /// Returns [`Self::Builder`] for specified [`Entity`].
     fn action(&'a mut self, entity: Entity) -> Self::Builder;
 }
 
