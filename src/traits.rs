@@ -10,7 +10,6 @@ use crate::*;
 ///
 /// ```rust
 /// struct EmptyAction;
-///
 /// impl Action for EmptyAction {
 ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
@@ -49,6 +48,26 @@ impl IntoAction for Box<dyn Action> {
 }
 
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
+///
+/// # Warning
+///
+/// Do not modify actions using [`World`] inside the implementation of an [`Action`].
+/// Actions need to be properly queued, which is what [`ActionCommands`] does.
+///
+/// ```rust
+/// struct EmptyAction;
+/// impl Action for EmptyAction {
+///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // Bad
+///         world.action(entity).next();
+///
+///         // Good
+///         commands.action(entity).next();
+///     }
+///
+///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+/// }
+///```
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
     type Modifier: ModifyActions;
@@ -56,121 +75,6 @@ pub trait ActionsProxy<'a> {
     /// Returns [`Self::Modifier`] for specified [`Entity`].
     fn action(&'a mut self, entity: Entity) -> Self::Modifier;
 }
-
-// pub struct Yoyo<'w, 's, 'a> {
-//     entity: Entity,
-//     config: AddConfig,
-//     actions: Vec<(Box<dyn Action>, AddConfig)>,
-//     commands: &'a mut Commands<'w, 's>,
-// }
-
-// impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
-//     type Builder = Yoyo<'w, 's, 'a>;
-
-//     fn action(&'a mut self, entity: Entity) -> Yoyo<'w, 's, 'a> {
-//         Yoyo {
-//             entity,
-//             config: AddConfig::default(),
-//             actions: Vec::new(),
-//             commands: self,
-//         }
-//     }
-// }
-
-// impl<'w, 's, 'a> ModifyActionsExt for Yoyo<'w, 's, 'a> {
-//     fn config(self, config: AddConfig) -> Self {
-//         todo!()
-//     }
-
-//     fn add(self, action: impl IntoAction) -> Self {
-//         todo!()
-//     }
-
-//     fn next(self) -> Self {
-//         todo!()
-//     }
-
-//     fn stop(self) -> Self {
-//         todo!()
-//     }
-
-//     fn clear(self) -> Self {
-//         todo!()
-//     }
-
-//     fn push(self, action: impl IntoAction) -> Self {
-//         todo!()
-//     }
-
-//     fn reverse(self) -> Self {
-//         todo!()
-//     }
-
-//     fn submit(self) -> Self {
-//         todo!()
-//     }
-// }
-
-///////////////////////////////
-
-// pub trait Proxy<'a> {
-//     type Builder: ModifyActionsExt;
-//     fn action(&mut self, entity: Entity) -> Self::Builder;
-// }
-
-// pub struct Yoyo<'w, 's, 'a> {
-//     entity: Entity,
-//     config: AddConfig,
-//     actions: Vec<(Box<dyn Action>, AddConfig)>,
-//     commands: &'a mut Commands<'w, 's>,
-// }
-
-// impl<'w: 'a, 's: 'a, 'a> Proxy<'a> for Commands<'w, 's> {
-//     type Builder = Yoyo<'w, 's, 'a>;
-
-//     fn action(&mut self, entity: Entity) -> Yoyo<'w, 's, 'a> {
-//         Yoyo {
-//             entity,
-//             config: AddConfig::default(),
-//             actions: Vec::new(),
-//             commands: self,
-//         }
-//     }
-// }
-
-// impl<'w, 's, 'a> ModifyActionsExt for Yoyo<'w, 's, 'a> {
-//     fn config(self, config: AddConfig) -> Self {
-//         todo!()
-//     }
-
-//     fn add(self, action: impl IntoAction) -> Self {
-//         todo!()
-//     }
-
-//     fn next(self) -> Self {
-//         todo!()
-//     }
-
-//     fn stop(self) -> Self {
-//         todo!()
-//     }
-
-//     fn clear(self) -> Self {
-//         todo!()
-//     }
-
-//     fn push(self, action: impl IntoAction) -> Self {
-//         todo!()
-//     }
-
-//     fn reverse(self) -> Self {
-//         todo!()
-//     }
-
-//     fn submit(self) -> Self {
-//         todo!()
-//     }
-// }
 
 /// Methods for modifying actions.
 pub trait ModifyActions {

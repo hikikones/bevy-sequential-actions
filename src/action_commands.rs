@@ -6,18 +6,6 @@ use crate::*;
 #[derive(Default)]
 pub struct ActionCommands(Vec<ActionCommand>);
 
-// impl ActionCommands {
-//     /// Returns an [`EntityActions`] for the requested [`Entity`].
-//     pub fn action(&mut self, entity: Entity) -> EntityActions {
-//         EntityActions {
-//             entity,
-//             config: AddConfig::default(),
-//             actions: Vec::new(),
-//             commands: self,
-//         }
-//     }
-// }
-
 impl<'a> ActionsProxy<'a> for ActionCommands {
     type Modifier = EntityActions<'a>;
 
