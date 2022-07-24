@@ -39,17 +39,15 @@ impl ModifyActions for EntityWorldActions<'_> {
         }
 
         // Start next action if nothing is currently running
-        if self.config.start {
-            let has_current = self
+        if self.config.start
+            && self
                 .world
                 .get::<CurrentAction>(self.entity)
                 .unwrap()
                 .0
-                .is_some();
-
-            if !has_current {
-                return self.next();
-            }
+                .is_none()
+        {
+            return self.next();
         }
 
         self
@@ -64,11 +62,11 @@ impl ModifyActions for EntityWorldActions<'_> {
             .0
             .take();
 
-        // Remove current action
+        // Stop current action
         if let Some((mut action, cfg)) = current {
             action.stop(self.entity, self.world);
             if cfg.repeat {
-                // Add action to back of queue again if repeat
+                // Add action back to queue again if repeat
                 let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                 actions.0.push_back((action, cfg));
             }
@@ -82,16 +80,15 @@ impl ModifyActions for EntityWorldActions<'_> {
             .0
             .pop_front();
 
-        // Set next action
-        let mut commands = ActionCommands::default();
+        // Start and set current action
         if let Some((mut action, cfg)) = next {
+            let mut commands = ActionCommands::default();
             action.start(self.entity, self.world, &mut commands);
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
                 current.0 = Some((action, cfg));
             }
+            commands.apply(self.world);
         }
-
-        commands.apply(self.world);
 
         self
     }
@@ -105,7 +102,7 @@ impl ModifyActions for EntityWorldActions<'_> {
             .0
             .take();
 
-        // Remove current action
+        // Stop current action
         if let Some((mut action, cfg)) = current {
             action.stop(self.entity, self.world);
             let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
@@ -125,7 +122,7 @@ impl ModifyActions for EntityWorldActions<'_> {
             .0
             .take();
 
-        // Remove current action
+        // Stop current action
         if let Some((mut action, _)) = current {
             action.stop(self.entity, self.world);
         }
