@@ -20,23 +20,23 @@ fn add() {
         .add(EmptyAction)
         .add(EmptyAction);
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 2);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 2);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 }
 
 #[test]
@@ -51,8 +51,8 @@ fn push() {
         .push(EmptyAction)
         .push(EmptyAction);
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world
         .action(e)
@@ -61,23 +61,23 @@ fn push() {
         .push(EmptyAction)
         .submit();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 2);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 2);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 }
 
 #[test]
@@ -88,23 +88,23 @@ fn stop() {
 
     world.action(e).add(EmptyAction);
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world.action(e).stop();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 1);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 }
 
 #[test]
@@ -121,13 +121,13 @@ fn clear() {
         .add(EmptyAction)
         .add(EmptyAction);
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 4);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 4);
 
     world.action(e).clear();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 }
 
 #[test]
@@ -145,18 +145,18 @@ fn repeat() {
         })
         .add(EmptyAction);
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
     world.action(e).next();
 
-    assert!(world.get::<CurrentAction>(e).unwrap().0.is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().0.len() == 0);
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 }
 
 #[test]

@@ -34,8 +34,8 @@ impl ModifyActions for EntityWorldActions<'_> {
         let action_tuple = (action.into_boxed(), self.config.into());
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         match self.config.order {
-            AddOrder::Front => actions.0.push_front(action_tuple),
-            AddOrder::Back => actions.0.push_back(action_tuple),
+            AddOrder::Front => actions.push_front(action_tuple),
+            AddOrder::Back => actions.push_back(action_tuple),
         }
 
         // Start next action if nothing is currently running
@@ -44,7 +44,6 @@ impl ModifyActions for EntityWorldActions<'_> {
                 .world
                 .get::<CurrentAction>(self.entity)
                 .unwrap()
-                .0
                 .is_none()
         {
             return self.next();
@@ -59,7 +58,6 @@ impl ModifyActions for EntityWorldActions<'_> {
             .world
             .get_mut::<CurrentAction>(self.entity)
             .unwrap()
-            .0
             .take();
 
         // Stop current action
@@ -68,7 +66,7 @@ impl ModifyActions for EntityWorldActions<'_> {
             if cfg.repeat {
                 // Add action back to queue again if repeat
                 let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                actions.0.push_back((action, cfg));
+                actions.push_back((action, cfg));
             }
         }
 
@@ -77,7 +75,6 @@ impl ModifyActions for EntityWorldActions<'_> {
             .world
             .get_mut::<ActionQueue>(self.entity)
             .unwrap()
-            .0
             .pop_front();
 
         // Start and set current action
@@ -85,7 +82,7 @@ impl ModifyActions for EntityWorldActions<'_> {
             let mut commands = ActionCommands::default();
             action.start(self.entity, self.world, &mut commands);
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
-                current.0 = Some((action, cfg));
+                **current = Some((action, cfg));
             }
             commands.apply(self.world);
         }
@@ -99,7 +96,6 @@ impl ModifyActions for EntityWorldActions<'_> {
             .world
             .get_mut::<CurrentAction>(self.entity)
             .unwrap()
-            .0
             .take();
 
         // Stop current action
@@ -107,7 +103,7 @@ impl ModifyActions for EntityWorldActions<'_> {
             action.stop(self.entity, self.world);
             let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
             // Push stopped action to front so it runs again when next action is called
-            actions.0.push_front((action, cfg));
+            actions.push_front((action, cfg));
         }
 
         self
@@ -119,7 +115,6 @@ impl ModifyActions for EntityWorldActions<'_> {
             .world
             .get_mut::<CurrentAction>(self.entity)
             .unwrap()
-            .0
             .take();
 
         // Stop current action
@@ -129,7 +124,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
         // Clear remaining
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-        actions.0.clear();
+        actions.clear();
 
         self
     }

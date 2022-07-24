@@ -20,9 +20,9 @@ use crate::*;
 /// }
 /// ```
 pub trait Action: Send + Sync {
-    /// The method that is called when an [`action`](Action) is started.
+    /// The method that is called when an action is started.
     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
-    /// The method that is called when an [`action`](Action) is stopped.
+    /// The method that is called when an action is stopped.
     fn stop(&mut self, entity: Entity, world: &mut World);
 }
 

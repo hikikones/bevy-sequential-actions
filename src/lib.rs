@@ -75,7 +75,10 @@
 //! }
 //! ```
 
-use std::collections::VecDeque;
+use std::{
+    collections::VecDeque,
+    ops::{Deref, DerefMut},
+};
 
 use bevy_ecs::prelude::*;
 
@@ -92,7 +95,7 @@ pub use commands::*;
 pub use traits::*;
 pub use world::*;
 
-/// The component bundle that all entities with actions must have.
+/// The component bundle that all entities with [`actions`](Action) must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
     queue: ActionQueue,
@@ -145,5 +148,33 @@ impl Into<ActionConfig> for AddConfig {
         ActionConfig {
             repeat: self.repeat,
         }
+    }
+}
+
+impl Deref for ActionQueue {
+    type Target = VecDeque<(Box<dyn Action>, ActionConfig)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Deref for CurrentAction {
+    type Target = Option<(Box<dyn Action>, ActionConfig)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ActionQueue {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl DerefMut for CurrentAction {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
