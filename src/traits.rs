@@ -101,6 +101,6 @@ pub trait ModifyActions {
     /// Reverses the order of the [`pushed`](Self::push) actions.
     fn reverse(self) -> Self;
 
-    /// Submit the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
+    /// Submits the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
     fn submit(self) -> Self;
 }
