@@ -12,10 +12,6 @@ pub struct PlaygroundPlugin;
 
 impl Plugin for PlaygroundPlugin {
     fn build(&self, app: &mut App) {
-        // app.add_plugin(assets::AssetsPlugin)
-        //     .add_plugin(level::LevelPlugin)
-        //     .add_plugin(player::PlayerPlugin)
-        //     .add_plugin(camera::CameraPlugin)
         app.insert_resource(assets::MyAssets::default())
             .add_startup_system_set_to_stage(
                 StartupStage::PreStartup,
@@ -30,6 +26,7 @@ impl Plugin for PlaygroundPlugin {
                     .with_system(level::spawn_level)
                     .with_system(player::spawn_player)
                     .with_system(camera::spawn_camera),
-            );
+            )
+            .add_system(bevy::input::system::exit_on_esc_system);
     }
 }

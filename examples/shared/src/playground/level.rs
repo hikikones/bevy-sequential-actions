@@ -2,14 +2,6 @@ use bevy::prelude::*;
 
 use super::assets::*;
 
-// pub(super) struct LevelPlugin;
-
-// impl Plugin for LevelPlugin {
-//     fn build(&self, app: &mut App) {
-//         app.add_startup_system(spawn_level);
-//     }
-// }
-
 pub(super) fn spawn_level(assets: Res<MyAssets>, mut commands: Commands) {
     // Ground
     commands.spawn_bundle(PbrBundle {
