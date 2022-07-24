@@ -3,18 +3,18 @@ use bevy_sequential_actions::ActionsBundle;
 
 use super::assets::*;
 
-pub(super) struct PlayerPlugin;
+// pub(super) struct PlayerPlugin;
 
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_player);
-    }
-}
+// impl Plugin for PlayerPlugin {
+//     fn build(&self, app: &mut App) {
+//         app.add_startup_system(spawn_player);
+//     }
+// }
 
 #[derive(Component)]
 pub struct Player;
 
-fn spawn_player(assets: Res<MyAssets>, mut commands: Commands) {
+pub(super) fn spawn_player(assets: Res<MyAssets>, mut commands: Commands) {
     commands
         .spawn()
         .insert_bundle(TransformBundle::default())

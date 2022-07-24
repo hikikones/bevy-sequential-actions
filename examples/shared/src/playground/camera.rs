@@ -1,12 +1,12 @@
 use bevy::{math::const_vec3, prelude::*};
 
-pub(super) struct CameraPlugin;
+// pub(super) struct CameraPlugin;
 
-impl Plugin for CameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_camera);
-    }
-}
+// impl Plugin for CameraPlugin {
+//     fn build(&self, app: &mut App) {
+//         app.add_startup_system(spawn_camera);
+//     }
+// }
 
 pub const CAMERA_OFFSET: Vec3 = const_vec3!([0.0, 10.0, 8.0]);
 
@@ -16,7 +16,7 @@ pub struct CameraMain;
 #[derive(Component)]
 pub struct CameraPivot;
 
-fn spawn_camera(mut commands: Commands) {
+pub(super) fn spawn_camera(mut commands: Commands) {
     commands
         .spawn_bundle(TransformBundle::default())
         .insert(CameraPivot)

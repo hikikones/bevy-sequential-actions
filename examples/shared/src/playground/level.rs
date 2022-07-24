@@ -2,15 +2,15 @@ use bevy::prelude::*;
 
 use super::assets::*;
 
-pub(super) struct LevelPlugin;
+// pub(super) struct LevelPlugin;
 
-impl Plugin for LevelPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_level);
-    }
-}
+// impl Plugin for LevelPlugin {
+//     fn build(&self, app: &mut App) {
+//         app.add_startup_system(spawn_level);
+//     }
+// }
 
-fn spawn_level(assets: Res<MyAssets>, mut commands: Commands) {
+pub(super) fn spawn_level(assets: Res<MyAssets>, mut commands: Commands) {
     // Ground
     commands.spawn_bundle(PbrBundle {
         mesh: assets.get_mesh(MeshName::Cube),
