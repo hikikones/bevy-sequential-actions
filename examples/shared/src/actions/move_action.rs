@@ -49,9 +49,9 @@ fn move_action(
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    for (actor, mut transform, target, speed) in q.iter_mut() {
+    for (entity, mut transform, target, speed) in q.iter_mut() {
         if transform.move_towards(target.0, speed.0 * time.delta_seconds()) {
-            commands.action(actor).next();
+            commands.action(entity).next();
         }
     }
 }

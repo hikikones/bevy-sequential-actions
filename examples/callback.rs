@@ -1,6 +1,7 @@
-use bevy::{app::AppExit, ecs::event::Events, prelude::*};
-
+use bevy::prelude::*;
 use bevy_sequential_actions::*;
+
+use shared::actions::QuitAction;
 
 fn main() {
     App::new()
@@ -25,7 +26,7 @@ fn callback(entity: Entity, success: bool, commands: &mut ActionCommands) {
     // Quit app if success
     if success {
         println!("Success!");
-        commands.action(entity).add(QuitAction);
+        commands.action(entity).add(QuitAction::new());
         return;
     }
 
@@ -58,18 +59,6 @@ impl Action for GuessAction {
         }
 
         commands.action(entity).next();
-    }
-
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
-}
-
-struct QuitAction;
-
-impl Action for QuitAction {
-    fn start(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        println!("Quit");
-        let mut app_exit_ev = world.resource_mut::<Events<AppExit>>();
-        app_exit_ev.send(AppExit);
     }
 
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
