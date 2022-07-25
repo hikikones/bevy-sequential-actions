@@ -16,7 +16,7 @@ fn main() {
 fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
     let player = player_q.single();
     commands
-        .action(player)
+        .actions(player)
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
@@ -38,9 +38,9 @@ fn input(
         let player = player_q.single();
 
         if *is_stopped {
-            commands.action(player).next();
+            commands.actions(player).next();
         } else {
-            commands.action(player).stop();
+            commands.actions(player).stop();
         }
 
         *is_stopped = !*is_stopped;
