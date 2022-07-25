@@ -21,25 +21,3 @@ bevy_ecs = "0.7"
 shared = { path = "examples/shared" }
 bevy = "0.7"
 fastrand = "1.7"
-
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package."*"]
-opt-level = 3
-
-[[example]]
-name = "basic"
-path = "examples/basic.rs"
-
-[[example]]
-name = "stop"
-path = "examples/stop.rs"
-
-[[example]]
-name = "repeat"
-path = "examples/repeat.rs"
-
-[[example]]
-name = "demo"
-path = "examples/demo/main.rs"

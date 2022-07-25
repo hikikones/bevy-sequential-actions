@@ -11,7 +11,6 @@ impl QuitAction {
 
 impl Action for QuitAction {
     fn start(&mut self, _entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        println!("Quit");
         world.resource_mut::<Events<AppExit>>().send(AppExit);
     }
 

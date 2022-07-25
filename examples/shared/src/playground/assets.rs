@@ -1,17 +1,23 @@
 use bevy::{prelude::*, utils::HashMap};
 
-pub(super) struct AssetsPlugin;
+#[derive(Default)]
+pub(super) struct MyAssets {
+    meshes: HashMap<MeshName, Handle<Mesh>>,
+    materials: HashMap<MaterialName, Handle<StandardMaterial>>,
+}
 
-impl Plugin for AssetsPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(Meshes::default())
-            .insert_resource(Materials::default())
-            .add_startup_system_to_stage(StartupStage::PreStartup, load);
+impl MyAssets {
+    pub fn get_mesh(&self, name: MeshName) -> Handle<Mesh> {
+        self.meshes[&name].clone_weak()
+    }
+
+    pub fn get_material(&self, name: MaterialName) -> Handle<StandardMaterial> {
+        self.materials[&name].clone_weak()
     }
 }
 
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub enum MeshName {
+pub(super) enum MeshName {
     Quad,
     Cube,
     Capsule,
@@ -39,85 +45,61 @@ impl MeshName {
     }
 }
 
-#[derive(Default)]
-pub struct Meshes(HashMap<MeshName, Handle<Mesh>>);
-
-impl Meshes {
-    pub fn get(&self, name: MeshName) -> Handle<Mesh> {
-        self.0[&name].clone()
-    }
-}
-
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub enum MaterialName {
-    None,
+pub(super) enum MaterialName {
     White,
     Black,
     Red,
     Silver,
     SeaGreen,
     DarkGray,
-    Maroon,
-    Gold,
-    AliceBlue,
-    AquaMarine,
+    Cyan,
+    MidnightBlue,
 }
 
 impl MaterialName {
     fn color(&self) -> Color {
         match self {
-            MaterialName::None => Color::NONE,
             MaterialName::Black => Color::BLACK,
             MaterialName::White => Color::WHITE,
             MaterialName::Red => Color::RED,
             MaterialName::Silver => Color::SILVER,
             MaterialName::SeaGreen => Color::SEA_GREEN,
             MaterialName::DarkGray => Color::DARK_GRAY,
-            MaterialName::Maroon => Color::MAROON,
-            MaterialName::Gold => Color::GOLD,
-            MaterialName::AliceBlue => Color::ALICE_BLUE,
-            MaterialName::AquaMarine => Color::AQUAMARINE,
+            MaterialName::Cyan => Color::CYAN,
+            MaterialName::MidnightBlue => Color::MIDNIGHT_BLUE,
         }
     }
 
     fn iter() -> impl Iterator<Item = Self> {
         [
-            MaterialName::None,
             MaterialName::White,
             MaterialName::Black,
             MaterialName::Red,
             MaterialName::Silver,
             MaterialName::SeaGreen,
             MaterialName::DarkGray,
-            MaterialName::Maroon,
-            MaterialName::Gold,
-            MaterialName::AliceBlue,
-            MaterialName::AquaMarine,
+            MaterialName::Cyan,
+            MaterialName::MidnightBlue,
         ]
         .into_iter()
     }
 }
 
-#[derive(Default)]
-pub struct Materials(HashMap<MaterialName, Handle<StandardMaterial>>);
-
-impl Materials {
-    pub fn get(&self, name: MaterialName) -> Handle<StandardMaterial> {
-        self.0[&name].clone()
-    }
-}
-
-fn load(
-    mut meshes: ResMut<Meshes>,
-    mut materials: ResMut<Materials>,
+pub(super) fn load(
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut mat_assets: ResMut<Assets<StandardMaterial>>,
+    mut my_assets: ResMut<MyAssets>,
 ) {
     for mesh in MeshName::iter() {
-        meshes.0.insert(mesh, mesh_assets.add(mesh.mesh().into()));
+        my_assets
+            .meshes
+            .insert(mesh, mesh_assets.add(mesh.mesh().into()));
     }
 
     for mat in MaterialName::iter() {
-        materials.0.insert(mat, mat_assets.add(mat.color().into()));
+        my_assets
+            .materials
+            .insert(mat, mat_assets.add(mat.color().into()));
     }
 }

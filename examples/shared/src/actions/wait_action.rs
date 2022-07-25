@@ -9,21 +9,30 @@ impl Plugin for WaitActionPlugin {
     }
 }
 
-pub struct WaitAction(f32);
+pub struct WaitAction {
+    duration: f32,
+    current: f32,
+}
 
 impl WaitAction {
     pub fn new(duration: f32) -> Self {
-        Self(duration)
+        Self {
+            duration,
+            current: duration,
+        }
     }
 }
 
 impl Action for WaitAction {
     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        println!("Wait({})", self.0);
-        world.entity_mut(entity).insert(Wait(self.0));
+        world.entity_mut(entity).insert(Wait(self.current));
     }
 
     fn stop(&mut self, entity: Entity, world: &mut World) {
+        self.current = world.get::<Wait>(entity).unwrap().0;
+        if self.current <= 0.0 {
+            self.current = self.duration;
+        }
         world.entity_mut(entity).remove::<Wait>();
     }
 }
@@ -35,7 +44,6 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
     for (actor, mut wait) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
-            // Action is finished, issue next.
             commands.action(actor).next();
         }
     }
