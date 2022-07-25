@@ -2,11 +2,14 @@ use crate::*;
 
 /// The trait that all actions must implement.
 ///
-/// # Example
-///
-/// An empty action that does nothing.
 /// All actions must declare when they are done.
 /// This is done by calling [`next`](ModifyActions::next) from either [`ActionCommands`] or [`Commands`].
+///
+/// # Examples
+///
+/// ##### Empty Action
+///
+/// An action that does nothing.
 ///
 /// ```rust
 /// # use bevy::prelude::*;
@@ -15,6 +18,7 @@ use crate::*;
 /// # fn main() {}
 /// #
 /// struct EmptyAction;
+///
 /// impl Action for EmptyAction {
 ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
@@ -24,9 +28,57 @@ use crate::*;
 ///     fn stop(&mut self, entity: Entity, world: &mut World) {}
 /// }
 /// ```
+///
+/// ##### Wait Action
+///
+/// An action that waits a specified duration.
+///
+/// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_sequential_actions::*;
+/// # use shared::actions::QuitAction;
+/// #
+/// # fn main() {
+/// #     App::new()
+/// #         .add_plugins(MinimalPlugins)
+/// #         .add_startup_system(setup)
+/// #         .add_system(wait)
+/// #         .run();
+/// # }
+/// #
+/// # fn setup(mut commands: Commands) {
+/// #     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
+/// #     commands.actions(entity).add(WaitAction(0.0)).add(QuitAction);
+/// # }
+/// struct WaitAction(f32);
+///
+/// impl Action for WaitAction {
+///     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+///         world.entity_mut(entity).insert(Wait(self.0));
+///     }
+///
+///     fn stop(&mut self, entity: Entity, world: &mut World) {
+///         world.entity_mut(entity).remove::<Wait>();
+///     }
+/// }
+///
+/// #[derive(Component)]
+/// struct Wait(f32);
+///
+/// fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
+///     for (entity, mut wait) in wait_q.iter_mut() {
+///         wait.0 -= time.delta_seconds();
+///         if wait.0 <= 0.0 {
+///             // Action is finished, issue next.
+///             commands.actions(entity).next();
+///         }
+///     }
+/// }
+/// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+
     /// The method that is called when an action is stopped.
     fn stop(&mut self, entity: Entity, world: &mut World);
 }
