@@ -1,12 +1,14 @@
 use bevy::prelude::*;
-
 use bevy_sequential_actions::*;
+
+use shared::actions::wait_action::*;
 
 fn main() {
     App::new()
         .add_plugins(MinimalPlugins)
+        .add_plugin(WaitActionPlugin)
         .add_startup_system(setup)
-        .add_system(wait)
+        // .add_system(wait)
         .run();
 }
 
@@ -22,35 +24,9 @@ fn setup(mut commands: Commands) {
             start: true,           // Start action if nothing is currently running
             repeat: true,          // Repeat each action when it has finished
         })
-        .add(WaitAction(1.0))
-        .add(WaitAction(2.0))
-        .add(WaitAction(3.0));
+        .add(WaitAction::new(1.0))
+        .add(WaitAction::new(2.0))
+        .add(WaitAction::new(3.0));
 
     // These three wait actions will now basically loop forever in the added order.
-}
-
-struct WaitAction(f32);
-
-impl Action for WaitAction {
-    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        println!("Wait({})", self.0);
-        world.entity_mut(entity).insert(Wait(self.0));
-    }
-
-    fn stop(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Wait>();
-    }
-}
-
-#[derive(Component)]
-struct Wait(f32);
-
-fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-    for (entity, mut wait) in wait_q.iter_mut() {
-        wait.0 -= time.delta_seconds();
-        if wait.0 <= 0.0 {
-            // To signal that an action has finished, the next action method must be called.
-            commands.action(entity).next();
-        }
-    }
 }
