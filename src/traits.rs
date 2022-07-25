@@ -17,15 +17,12 @@ use crate::*;
 ///         commands.action(entity).next();
 ///     }
 ///
-///     fn remove(&mut self, entity: Entity, world: &mut World) {}
 ///     fn stop(&mut self, entity: Entity, world: &mut World) {}
 /// }
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an [`action`](Action) is started.
     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
-    /// The method that is called when an [`action`](Action) is removed.
-    fn remove(&mut self, entity: Entity, world: &mut World);
     /// The method that is called when an [`action`](Action) is stopped.
     fn stop(&mut self, entity: Entity, world: &mut World);
 }
@@ -59,22 +56,14 @@ pub trait ModifyActionsExt {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// Starts the next [`action`](Action) in the queue. This is done by [`removing`](Action::remove) the currently running action,
-    /// and retrieving the next action in the queue list.
+    /// Starts the next [`action`](Action) in the queue by [`stopping`](Action::stop) the currently running action,
+    /// and [`starting`](Action::start) the next action in the queue list.
     fn next(self) -> Self;
 
-    /// Stops the current [`action`](Action). This is done by [`removing`](Action::remove) the currently running action,
-    /// and adding it to the **front** of the queue again.
-    ///
-    /// **Note:** when stopping an action, you need to manually resume again.
-    /// This can be done by calling [`next`](Self::next), which will resume the same action that was stopped,
-    /// or you could add a new action to the **front** of the queue beforehand.
-    /// When adding a new action, either specify in [`config`](AddConfig) that the action should [`start`](AddConfig::start),
-    /// or manually call [`next`](Self::next) afterwards, __but not both__, as that will trigger two
-    /// consecutive [`next`](Self::next) calls.
+    /// [`Stops`](Action::stop) the currently running [`action`](Action) without removing it from the queue.
     fn stop(self) -> Self;
 
-    /// [`Removes`](Action::remove) the currently running action, and clears any remaining.
+    /// [`Stops`](Action::stop) the currently running [`action`](Action), and clears any remaining.
     fn clear(self) -> Self;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).

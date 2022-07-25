@@ -66,7 +66,5 @@ impl Action for CameraAction {
         }
     }
 
-    fn remove(&mut self, _actor: Entity, _world: &mut World) {}
-
     fn stop(&mut self, _actor: Entity, _world: &mut World) {}
 }

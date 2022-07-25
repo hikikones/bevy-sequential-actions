@@ -60,7 +60,6 @@ impl Action for GuessAction {
         commands.action(entity).next();
     }
 
-    fn remove(&mut self, _entity: Entity, _world: &mut World) {}
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }
 
@@ -73,6 +72,5 @@ impl Action for QuitAction {
         app_exit_ev.send(AppExit);
     }
 
-    fn remove(&mut self, _entity: Entity, _world: &mut World) {}
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }

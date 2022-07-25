@@ -45,16 +45,12 @@ impl Action for CountAction {
         world.entity_mut(entity).insert(Count(count));
     }
 
-    fn remove(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Count>();
-    }
-
     fn stop(&mut self, entity: Entity, world: &mut World) {
         // When stop is called, we need to store the current count progress.
         // This is so we can continue the count when start() is called again.
         let count = world.get::<Count>(entity).unwrap();
         self.current_count = Some(count.0);
-        self.remove(entity, world);
+        world.entity_mut(entity).remove::<Count>();
     }
 }
 
@@ -93,7 +89,6 @@ impl Action for QuitAction {
         app_exit_ev.send(AppExit);
     }
 
-    fn remove(&mut self, _entity: Entity, _world: &mut World) {}
     fn stop(&mut self, _entity: Entity, _world: &mut World) {}
 }
 
@@ -109,14 +104,10 @@ impl Action for InterruptAction {
         state.set(InterruptState::Active).unwrap();
     }
 
-    fn remove(&mut self, entity: Entity, world: &mut World) {
+    fn stop(&mut self, entity: Entity, world: &mut World) {
         world.entity_mut(entity).remove::<InterruptMarker>();
         let mut state = world.resource_mut::<State<InterruptState>>();
         state.set(InterruptState::None).unwrap();
-    }
-
-    fn stop(&mut self, entity: Entity, world: &mut World) {
-        self.remove(entity, world);
     }
 }
 
