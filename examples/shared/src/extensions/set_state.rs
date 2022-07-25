@@ -18,8 +18,7 @@ pub trait SetStateExt {
 
 impl SetStateExt for World {
     fn set_state<T: BevyState>(&mut self, state: T) {
-        let mut state_res = self.resource_mut::<State<T>>();
-        state_res.set(state).unwrap();
+        self.resource_mut::<State<T>>().set(state).unwrap();
     }
 }
 

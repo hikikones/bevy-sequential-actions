@@ -20,9 +20,9 @@ use crate::*;
 /// }
 /// ```
 pub trait Action: Send + Sync {
-    /// The method that is called when an [`action`](Action) is started.
+    /// The method that is called when an action is started.
     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
-    /// The method that is called when an [`action`](Action) is stopped.
+    /// The method that is called when an action is stopped.
     fn stop(&mut self, entity: Entity, world: &mut World);
 }
 
@@ -101,6 +101,6 @@ pub trait ModifyActions {
     /// Reverses the order of the [`pushed`](Self::push) actions.
     fn reverse(self) -> Self;
 
-    /// Submit the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
+    /// Submits the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
     fn submit(self) -> Self;
 }

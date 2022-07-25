@@ -1,12 +1,12 @@
 # Bevy Sequential Actions
 
-`bevy_sequential_actions` is a library for the [Bevy game engine](https://bevyengine.org/ "bevy game engine") that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start, and so on until the list is empty.
+`bevy-sequential-actions` is a library for the [Bevy](https://bevyengine.org) that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start, and so on until the list is empty.
 
 https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-a326-f34e055a1b40.mp4
 
 ## Getting Started
 
-An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. Each action must signal when they are finished, which is done by calling the `next` method from either `Commands` or `ActionCommands`.
+An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. Each action must signal when they are finished, which is done by calling the `next` method from either [`Commands`] in a system or [`ActionCommands`] in the action trait.
 
 ```rust
 use bevy::prelude::*;
@@ -71,17 +71,16 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
 ## Examples
 
 See the [examples](examples/) for more usage. Each example can be run with `cargo run --example <example>`.
+Consider running with `--release` as debug builds can be quite slow.
 
-| Example    | Description                                                                                                                                                                            |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `basic`    | Shows the basic usage of the library by adding a bunch of actions.                                                                                                                     |
-| `stop`     | Shows how to stop a running action, and then add a new action to the front of the queue.                                                                                               |
-| `repeat`   | Shows how to add actions that basically loop forever in the added order.                                                                                                               |
-| `callback` | Shows an action with a callback.                                                                                                                                                       |
-| `demo`     | A more comprehensive and practical example showcasing how this library can be used in a turn-based board game. Includes lots of custom actions that can be reused throughout the game. |
+| Example  | Description                                                                            |
+| -------- | -------------------------------------------------------------------------------------- |
+| `basic`  | Shows the basic usage of the library by adding some actions and then quitting the app. |
+| `stop`   | Shows how to stop and resume an action by pressing `space`.                            |
+| `repeat` | Shows how to add actions that basically loop forever in the added order.               |
 
 ## Compatibility
 
-| bevy | bevy_sequential_actions |
+| bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
 | 0.7  | 0.1 — 0.2               |

@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, playground::*};
+use shared::{actions::*, bootstrap::*};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(PlaygroundPlugin)
+        .add_plugin(BootstrapPlugin)
         .add_plugin(ActionsPlugin)
         .add_startup_system(setup)
         .add_system(input)
