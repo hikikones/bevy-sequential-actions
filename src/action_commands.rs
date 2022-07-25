@@ -9,7 +9,7 @@ pub struct ActionCommands(Vec<ActionCommand>);
 impl<'a> ActionsProxy<'a> for ActionCommands {
     type Modifier = EntityActions<'a>;
 
-    fn action(&'a mut self, entity: Entity) -> EntityActions<'a> {
+    fn actions(&'a mut self, entity: Entity) -> EntityActions<'a> {
         EntityActions {
             entity,
             config: AddConfig::default(),
@@ -89,16 +89,16 @@ impl ActionCommands {
         for cmd in self.0 {
             match cmd {
                 ActionCommand::Add(entity, action, config) => {
-                    world.action(entity).config(config).add(action);
+                    world.actions(entity).config(config).add(action);
                 }
                 ActionCommand::Next(entity) => {
-                    world.action(entity).next();
+                    world.actions(entity).next();
                 }
                 ActionCommand::Stop(entity) => {
-                    world.action(entity).stop();
+                    world.actions(entity).stop();
                 }
                 ActionCommand::Clear(entity) => {
-                    world.action(entity).clear();
+                    world.actions(entity).clear();
                 }
             }
         }

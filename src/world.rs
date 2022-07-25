@@ -5,7 +5,7 @@ use crate::*;
 impl<'a> ActionsProxy<'a> for World {
     type Modifier = EntityWorldActions<'a>;
 
-    fn action(&'a mut self, entity: Entity) -> EntityWorldActions<'a> {
+    fn actions(&'a mut self, entity: Entity) -> EntityWorldActions<'a> {
         EntityWorldActions {
             entity,
             config: AddConfig::default(),
@@ -144,7 +144,7 @@ impl ModifyActions for EntityWorldActions<'_> {
         let mut commands = Commands::new(&mut command_queue, self.world);
 
         for (action, config) in self.actions.drain(..) {
-            commands.action(self.entity).config(config).add(action);
+            commands.actions(self.entity).config(config).add(action);
         }
 
         command_queue.apply(self.world);

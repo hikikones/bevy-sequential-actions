@@ -44,7 +44,7 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
     for (actor, mut wait) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
-            commands.action(actor).next();
+            commands.actions(actor).next();
         }
     }
 }

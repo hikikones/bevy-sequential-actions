@@ -5,7 +5,7 @@ use crate::*;
 impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
     type Modifier = EntityCommandsActions<'w, 's, 'a>;
 
-    fn action(&'a mut self, entity: Entity) -> EntityCommandsActions<'w, 's, 'a> {
+    fn actions(&'a mut self, entity: Entity) -> EntityCommandsActions<'w, 's, 'a> {
         EntityCommandsActions {
             entity,
             config: AddConfig::default(),
@@ -32,28 +32,28 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
     fn add(self, action: impl IntoAction) -> Self {
         let action = action.into_boxed();
         self.commands.add(move |world: &mut World| {
-            world.action(self.entity).config(self.config).add(action);
+            world.actions(self.entity).config(self.config).add(action);
         });
         self
     }
 
     fn next(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.action(self.entity).next();
+            world.actions(self.entity).next();
         });
         self
     }
 
     fn stop(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.action(self.entity).stop();
+            world.actions(self.entity).stop();
         });
         self
     }
 
     fn clear(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.action(self.entity).clear();
+            world.actions(self.entity).clear();
         });
         self
     }
@@ -71,7 +71,7 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
     fn submit(mut self) -> Self {
         for (action, config) in self.actions.drain(..) {
             self.commands.add(move |world: &mut World| {
-                world.action(self.entity).config(config).add(action);
+                world.actions(self.entity).config(config).add(action);
             });
         }
         self
