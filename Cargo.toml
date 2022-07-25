@@ -11,9 +11,6 @@ keywords = ["bevy", "action", "sequence", "command"]
 categories = ["game-development"]
 readme = "README.md"
 
-[lib]
-doctest = false
-
 [dependencies]
 bevy_ecs = "0.7"
 

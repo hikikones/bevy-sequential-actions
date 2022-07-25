@@ -15,7 +15,7 @@
 //! which is done by calling the [`next`](ModifyActions::next) method
 //! from either [`Commands`] in a system or [`ActionCommands`] in the action trait.
 //!
-//! ```rust
+//! ```rust,ignore
 //! use bevy::prelude::*;
 //! use bevy_sequential_actions::*;
 //!
@@ -32,11 +32,11 @@
 //!     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
 //!
 //!     // Add a single action with default config
-//!     commands.action(entity).add(WaitAction(1.0));
+//!     commands.actions(entity).add(WaitAction(1.0));
 //!
 //!     // Add multiple actions with custom config
 //!     commands
-//!         .action(entity)
+//!         .actions(entity)
 //!         .config(AddConfig {
 //!             // Add each action to the back of the queue
 //!             order: AddOrder::Back,
@@ -69,7 +69,7 @@
 //!         wait.0 -= time.delta_seconds();
 //!         if wait.0 <= 0.0 {
 //!             // Action is finished, issue next.
-//!             commands.action(entity).next();
+//!             commands.actions(entity).next();
 //!         }
 //!     }
 //! }

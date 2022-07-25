@@ -9,11 +9,16 @@ use crate::*;
 /// This is done by calling [`next`](ModifyActions::next) from either [`ActionCommands`] or [`Commands`].
 ///
 /// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_sequential_actions::*;
+/// #
+/// # fn main() {}
+/// #
 /// struct EmptyAction;
 /// impl Action for EmptyAction {
 ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
-///         commands.action(entity).next();
+///         commands.actions(entity).next();
 ///     }
 ///
 ///     fn stop(&mut self, entity: Entity, world: &mut World) {}
@@ -55,14 +60,19 @@ impl IntoAction for Box<dyn Action> {
 /// Actions need to be properly queued, which is what [`ActionCommands`] does.
 ///
 /// ```rust
+/// # use bevy::prelude::*;
+/// # use bevy_sequential_actions::*;
+/// #
+/// # fn main() {}
+/// #
 /// struct EmptyAction;
 /// impl Action for EmptyAction {
 ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
-///         world.action(entity).next();
+///         world.actions(entity).next();
 ///
 ///         // Good
-///         commands.action(entity).next();
+///         commands.actions(entity).next();
 ///     }
 ///
 ///     fn stop(&mut self, entity: Entity, world: &mut World) {}

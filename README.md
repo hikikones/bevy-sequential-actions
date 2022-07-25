@@ -6,7 +6,7 @@ https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-
 
 ## Getting Started
 
-An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. Each action must signal when they are finished, which is done by calling the `next` method from either [`Commands`] in a system or [`ActionCommands`] in the action trait.
+An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. Each action must signal when they are finished, which is done by calling the `next` method from either `Commands` in a system or `ActionCommands` in the action trait.
 
 ```rust
 use bevy::prelude::*;
@@ -25,11 +25,11 @@ fn setup(mut commands: Commands) {
     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
 
     // Add a single action with default config
-    commands.action(entity).add(WaitAction(1.0));
+    commands.actions(entity).add(WaitAction(1.0));
 
     // Add multiple actions with custom config
     commands
-        .action(entity)
+        .actions(entity)
         .config(AddConfig {
             // Add each action to the back of the queue
             order: AddOrder::Back,
@@ -62,7 +62,7 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
             // Action is finished, issue next.
-            commands.action(entity).next();
+            commands.actions(entity).next();
         }
     }
 }
