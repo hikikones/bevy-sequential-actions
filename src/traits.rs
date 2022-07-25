@@ -6,11 +6,10 @@ use crate::*;
 ///
 /// An empty action that does nothing.
 /// All actions must declare when they are done.
-/// This is done by calling [`next`](ModifyActionsExt::next) from either [`ActionCommands`] or [`Commands`].
+/// This is done by calling [`next`](ModifyActions::next) from either [`ActionCommands`] or [`Commands`].
 ///
 /// ```rust
 /// struct EmptyAction;
-///
 /// impl Action for EmptyAction {
 ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
@@ -48,8 +47,37 @@ impl IntoAction for Box<dyn Action> {
     }
 }
 
-/// Extension methods for modifying actions.
-pub trait ModifyActionsExt {
+/// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
+///
+/// # Warning
+///
+/// Do not modify actions using [`World`] inside the implementation of an [`Action`].
+/// Actions need to be properly queued, which is what [`ActionCommands`] does.
+///
+/// ```rust
+/// struct EmptyAction;
+/// impl Action for EmptyAction {
+///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // Bad
+///         world.action(entity).next();
+///
+///         // Good
+///         commands.action(entity).next();
+///     }
+///
+///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+/// }
+///```
+pub trait ActionsProxy<'a> {
+    /// The type returned for modifying actions.
+    type Modifier: ModifyActions;
+
+    /// Returns [`Self::Modifier`] for specified [`Entity`].
+    fn action(&'a mut self, entity: Entity) -> Self::Modifier;
+}
+
+/// Methods for modifying actions.
+pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 

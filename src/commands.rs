@@ -2,14 +2,10 @@ use bevy_ecs::{prelude::*, system::Command};
 
 use crate::*;
 
-/// Extension method on [`Commands`] for modifying actions.
-pub trait EntityCommandsActionsExt<'w, 's> {
-    /// Returns an [`EntityCommandsActions`] for the requested [`Entity`].
-    fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_>;
-}
+impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
+    type Modifier = EntityCommandsActions<'w, 's, 'a>;
 
-impl<'w, 's> EntityCommandsActionsExt<'w, 's> for Commands<'w, 's> {
-    fn action(&mut self, entity: Entity) -> EntityCommandsActions<'w, 's, '_> {
+    fn action(&'a mut self, entity: Entity) -> EntityCommandsActions<'w, 's, 'a> {
         EntityCommandsActions {
             entity,
             config: AddConfig::default(),
@@ -27,7 +23,7 @@ pub struct EntityCommandsActions<'w, 's, 'a> {
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's> ModifyActionsExt for EntityCommandsActions<'w, 's, '_> {
+impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

@@ -2,34 +2,10 @@ use bevy_ecs::{prelude::*, system::CommandQueue};
 
 use crate::*;
 
-/// Extension method on [`World`] for modifying actions.
-pub trait EntityWorldActionsExt {
-    /// Returns an [`EntityWorldActions`] for the requested [`Entity`].
-    ///
-    /// ## Warning
-    ///
-    /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
-    /// Actions need to be properly queued, which is what [`ActionCommands`] does.
-    /// ```rust
-    /// struct EmptyAction;
-    ///
-    /// impl Action for EmptyAction {
-    ///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-    ///         // Bad
-    ///         world.action(entity).next();
-    ///
-    ///         // Good
-    ///         commands.action(entity).next();
-    ///     }
-    ///
-    ///     fn stop(&mut self, entity: Entity, world: &mut World) {}
-    /// }
-    ///```
-    fn action(&mut self, entity: Entity) -> EntityWorldActions;
-}
+impl<'a> ActionsProxy<'a> for World {
+    type Modifier = EntityWorldActions<'a>;
 
-impl EntityWorldActionsExt for World {
-    fn action(&mut self, entity: Entity) -> EntityWorldActions {
+    fn action(&'a mut self, entity: Entity) -> EntityWorldActions<'a> {
         EntityWorldActions {
             entity,
             config: AddConfig::default(),
@@ -47,7 +23,7 @@ pub struct EntityWorldActions<'a> {
     world: &'a mut World,
 }
 
-impl ModifyActionsExt for EntityWorldActions<'_> {
+impl ModifyActions for EntityWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

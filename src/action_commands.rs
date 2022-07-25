@@ -6,9 +6,10 @@ use crate::*;
 #[derive(Default)]
 pub struct ActionCommands(Vec<ActionCommand>);
 
-impl ActionCommands {
-    /// Returns an [`EntityActions`] for the requested [`Entity`].
-    pub fn action(&mut self, entity: Entity) -> EntityActions {
+impl<'a> ActionsProxy<'a> for ActionCommands {
+    type Modifier = EntityActions<'a>;
+
+    fn action(&'a mut self, entity: Entity) -> EntityActions<'a> {
         EntityActions {
             entity,
             config: AddConfig::default(),
@@ -33,7 +34,7 @@ enum ActionCommand {
     Clear(Entity),
 }
 
-impl ModifyActionsExt for EntityActions<'_> {
+impl ModifyActions for EntityActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
