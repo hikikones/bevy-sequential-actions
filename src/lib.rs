@@ -11,29 +11,27 @@
 //!
 //! An action is anything that implements the [`Action`] trait,
 //! and can be added to any [`Entity`] that contains the [`ActionsBundle`].
-//! Each action must signal when they are finished,
-//! which is done by calling the [`next`](ModifyActions::next) method
-//! from either [`Commands`] in a system or [`ActionCommands`] in the action trait.
 //!
-//! ```rust,ignore
-//! use bevy::prelude::*;
-//! use bevy_sequential_actions::*;
-//!
-//! fn main() {
-//!     App::new()
-//!         .add_plugins(MinimalPlugins)
-//!         .add_startup_system(setup)
-//!         .add_system(wait)
-//!         .run();
-//! }
-//!
+//! ```rust
+//! # use bevy::prelude::*;
+//! # use bevy_sequential_actions::*;
+//! # fn main() {}
+//! # struct EmptyAction;
+//! # impl Action for EmptyAction {
+//! #     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {}
+//! #     fn stop(&mut self, entity: Entity, world: &mut World) {}
+//! # }
 //! fn setup(mut commands: Commands) {
+//! #   let wait_action = EmptyAction;
+//! #   let move_action = EmptyAction;
+//! #   let quit_action = EmptyAction;
+//! #
 //!     // Create entity with ActionsBundle
 //!     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
-//!
+//!     
 //!     // Add a single action with default config
-//!     commands.actions(entity).add(WaitAction(1.0));
-//!
+//!     commands.actions(entity).add(wait_action);
+//!     
 //!     // Add multiple actions with custom config
 //!     commands
 //!         .actions(entity)
@@ -41,37 +39,12 @@
 //!             // Add each action to the back of the queue
 //!             order: AddOrder::Back,
 //!             // Start action if nothing is currently running
-//!             start: false,
+//!             start: true,
 //!             // Repeat the action
 //!             repeat: false,
 //!         })
-//!         .add(WaitAction(2.0))
-//!         .add(WaitAction(3.0));
-//! }
-//!
-//! struct WaitAction(f32);
-//!
-//! impl Action for WaitAction {
-//!     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-//!         world.entity_mut(entity).insert(Wait(self.0));
-//!     }
-//!
-//!     fn stop(&mut self, entity: Entity, world: &mut World) {
-//!         world.entity_mut(entity).remove::<Wait>();
-//!     }
-//! }
-//!
-//! #[derive(Component)]
-//! struct Wait(f32);
-//!
-//! fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-//!     for (entity, mut wait) in wait_q.iter_mut() {
-//!         wait.0 -= time.delta_seconds();
-//!         if wait.0 <= 0.0 {
-//!             // Action is finished, issue next.
-//!             commands.actions(entity).next();
-//!         }
-//!     }
+//!         .add(move_action)
+//!         .add(quit_action);
 //! }
 //! ```
 
@@ -105,9 +78,9 @@ pub struct ActionsBundle {
 /// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
-    /// An [`action`](Action) is added to the **back** of the queue.
+    /// An [`action`](Action) is added to the back of the queue.
     Back,
-    /// An [`action`](Action) is added to the **front** of the queue.
+    /// An [`action`](Action) is added to the front of the queue.
     Front,
 }
 
@@ -118,7 +91,8 @@ pub struct AddConfig {
     pub order: AddOrder,
     /// Start the [`action`](Action) if nothing is currently running.
     pub start: bool,
-    /// Repeat the [`action`](Action) when it has finished. This is done by adding it back to the queue when it is removed.
+    /// Repeat the [`action`](Action) when it has finished.
+    /// This is done by adding it back to the queue when it is removed.
     pub repeat: bool,
 }
 
