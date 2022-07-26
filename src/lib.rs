@@ -19,7 +19,7 @@
 //! # struct EmptyAction;
 //! # impl Action for EmptyAction {
 //! #     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {}
-//! #     fn stop(&mut self, entity: Entity, world: &mut World) {}
+//! #     fn finish(&mut self, entity: Entity, world: &mut World) {}
 //! # }
 //! fn setup(mut commands: Commands) {
 //! #   let wait_action = EmptyAction;

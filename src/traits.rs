@@ -82,6 +82,21 @@ pub trait Action: Send + Sync {
 
     /// The method that is called when an action is finished.
     fn finish(&mut self, entity: Entity, world: &mut World);
+
+    /// The method that is called when an action is canceled.
+    fn cancel(&mut self, entity: Entity, world: &mut World) {
+        self.finish(entity, world);
+    }
+
+    /// The method that is called when an action is paused.
+    fn pause(&mut self, entity: Entity, world: &mut World) {
+        self.finish(entity, world);
+    }
+
+    /// The method that is called when an action is resumed.
+    fn resume(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+        self.start(entity, world, commands);
+    }
 }
 
 /// Conversion into an [`Action`].
