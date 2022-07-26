@@ -3,11 +3,12 @@ use crate::*;
 /// The trait that all actions must implement.
 ///
 /// All actions must declare when they are done.
-/// This is done by calling [`next`](ModifyActions::next) from either [`ActionCommands`] or [`Commands`].
+/// This is done by calling [`next`](ModifyActions::next)
+/// from either [`ActionCommands`] or [`Commands`].
 ///
 /// # Examples
 ///
-/// ##### Empty Action
+/// #### Empty Action
 ///
 /// An action that does nothing.
 ///
@@ -29,9 +30,9 @@ use crate::*;
 /// }
 /// ```
 ///
-/// ##### Wait Action
+/// #### Wait Action
 ///
-/// An action that waits a specified duration.
+/// An action that waits a specified time in seconds.
 ///
 /// ```rust
 /// # use bevy::prelude::*;
