@@ -30,7 +30,7 @@ pub struct EntityActions<'a> {
 enum ActionCommand {
     Add(Entity, Box<dyn Action>, AddConfig),
     Next(Entity),
-    Stop(Entity),
+    Finish(Entity),
     Clear(Entity),
 }
 
@@ -54,8 +54,8 @@ impl ModifyActions for EntityActions<'_> {
         self
     }
 
-    fn stop(self) -> Self {
-        self.commands.0.push(ActionCommand::Stop(self.entity));
+    fn finish(self) -> Self {
+        self.commands.0.push(ActionCommand::Finish(self.entity));
         self
     }
 
@@ -94,8 +94,8 @@ impl ActionCommands {
                 ActionCommand::Next(entity) => {
                     world.actions(entity).next();
                 }
-                ActionCommand::Stop(entity) => {
-                    world.actions(entity).stop();
+                ActionCommand::Finish(entity) => {
+                    world.actions(entity).finish();
                 }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();

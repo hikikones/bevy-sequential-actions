@@ -62,7 +62,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
         // Stop current action
         if let Some((mut action, cfg)) = current {
-            action.stop(self.entity, self.world);
+            action.finish(self.entity, self.world);
             if cfg.repeat {
                 // Add action back to queue again if repeat
                 let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
@@ -90,7 +90,7 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
-    fn stop(self) -> Self {
+    fn finish(self) -> Self {
         // Get current action
         let current = self
             .world
@@ -100,7 +100,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
         // Stop current action
         if let Some((mut action, cfg)) = current {
-            action.stop(self.entity, self.world);
+            action.finish(self.entity, self.world);
             let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
             // Push stopped action to front so it runs again when next action is called
             actions.push_front((action, cfg));
@@ -119,7 +119,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
         // Stop current action
         if let Some((mut action, _)) = current {
-            action.stop(self.entity, self.world);
+            action.finish(self.entity, self.world);
         }
 
         // Clear remaining

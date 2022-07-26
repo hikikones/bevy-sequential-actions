@@ -28,7 +28,7 @@ impl Action for WaitAction {
         world.entity_mut(entity).insert(Wait(self.current));
     }
 
-    fn stop(&mut self, entity: Entity, world: &mut World) {
+    fn finish(&mut self, entity: Entity, world: &mut World) {
         self.current = world.get::<Wait>(entity).unwrap().0;
         if self.current <= 0.0 {
             self.current = self.duration;

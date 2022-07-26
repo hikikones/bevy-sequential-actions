@@ -27,7 +27,7 @@ impl Action for MoveAction {
         });
     }
 
-    fn stop(&mut self, entity: Entity, world: &mut World) {
+    fn finish(&mut self, entity: Entity, world: &mut World) {
         world.entity_mut(entity).remove_bundle::<MoveBundle>();
     }
 }

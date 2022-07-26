@@ -24,5 +24,5 @@ impl<T: Command> Action for CommandAction<T> {
         commands.actions(entity).next();
     }
 
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+    fn finish(&mut self, _entity: Entity, _world: &mut World) {}
 }

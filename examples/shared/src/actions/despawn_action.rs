@@ -14,5 +14,5 @@ impl Action for DespawnAction {
         world.despawn(entity);
     }
 
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+    fn finish(&mut self, _entity: Entity, _world: &mut World) {}
 }

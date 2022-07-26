@@ -5,7 +5,7 @@ use crate::*;
 struct EmptyAction;
 impl Action for EmptyAction {
     fn start(&mut self, _entity: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+    fn finish(&mut self, _entity: Entity, _world: &mut World) {}
 }
 
 #[test]
@@ -81,7 +81,7 @@ fn push() {
 }
 
 #[test]
-fn stop() {
+fn finish() {
     let mut world = World::new();
 
     let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
@@ -91,7 +91,7 @@ fn stop() {
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
-    world.actions(e).stop();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_none());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
@@ -166,7 +166,7 @@ fn despawn() {
         fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.despawn(entity);
         }
-        fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+        fn finish(&mut self, _entity: Entity, _world: &mut World) {}
     }
 
     let mut world = World::new();
@@ -191,7 +191,7 @@ fn order() {
         fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.entity_mut(entity).insert(A);
         }
-        fn stop(&mut self, entity: Entity, world: &mut World) {
+        fn finish(&mut self, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<A>();
         }
     }
@@ -199,7 +199,7 @@ fn order() {
         fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.entity_mut(entity).insert(B);
         }
-        fn stop(&mut self, entity: Entity, world: &mut World) {
+        fn finish(&mut self, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<B>();
         }
     }
@@ -207,7 +207,7 @@ fn order() {
         fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.entity_mut(entity).insert(C);
         }
-        fn stop(&mut self, entity: Entity, world: &mut World) {
+        fn finish(&mut self, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<C>();
         }
     }

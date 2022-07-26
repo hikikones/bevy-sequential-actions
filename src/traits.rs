@@ -26,7 +26,7 @@ use crate::*;
 ///         commands.actions(entity).next();
 ///     }
 ///
-///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+///     fn finish(&mut self, entity: Entity, world: &mut World) {}
 /// }
 /// ```
 ///
@@ -58,7 +58,7 @@ use crate::*;
 ///         world.entity_mut(entity).insert(Wait(self.0));
 ///     }
 ///
-///     fn stop(&mut self, entity: Entity, world: &mut World) {
+///     fn finish(&mut self, entity: Entity, world: &mut World) {
 ///         world.entity_mut(entity).remove::<Wait>();
 ///     }
 /// }
@@ -80,8 +80,8 @@ pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
 
-    /// The method that is called when an action is stopped.
-    fn stop(&mut self, entity: Entity, world: &mut World);
+    /// The method that is called when an action is finished.
+    fn finish(&mut self, entity: Entity, world: &mut World);
 }
 
 /// Conversion into an [`Action`].
@@ -128,7 +128,7 @@ impl IntoAction for Box<dyn Action> {
 ///         commands.actions(entity).next();
 ///     }
 ///
-///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+///     fn finish(&mut self, entity: Entity, world: &mut World) {}
 /// }
 ///```
 pub trait ActionsProxy<'a> {
@@ -151,8 +151,9 @@ pub trait ModifyActions {
     /// and [`starting`](Action::start) the next action in the queue list.
     fn next(self) -> Self;
 
-    /// [`Stops`](Action::stop) the currently running [`action`](Action) without removing it from the queue.
-    fn stop(self) -> Self;
+    /// [`Finish`](Action::finish) the currently running [`action`](Action)
+    /// by removing it from the queue and [`starting`](Action::start) the next one.
+    fn finish(self) -> Self;
 
     /// [`Stops`](Action::stop) the currently running [`action`](Action), and clears any remaining.
     fn clear(self) -> Self;

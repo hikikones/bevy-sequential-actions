@@ -40,7 +40,7 @@ fn input(
         if *is_stopped {
             commands.actions(player).next();
         } else {
-            commands.actions(player).stop();
+            commands.actions(player).finish();
         }
 
         *is_stopped = !*is_stopped;
