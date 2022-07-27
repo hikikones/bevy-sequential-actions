@@ -206,7 +206,7 @@ impl EntityWorldActions<'_> {
 
             if cfg.is_paused {
                 cfg.is_paused = false;
-                action.resume(self.entity, self.world, &mut commands);
+                action.resume(self.entity, self.world);
             } else {
                 action.start(self.entity, self.world, &mut commands);
             }

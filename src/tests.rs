@@ -115,7 +115,7 @@ fn pause() {
         fn pause(&mut self, entity: Entity, world: &mut World) {
             world.entity_mut(entity).insert(Paused);
         }
-        fn resume(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        fn resume(&mut self, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<Paused>();
         }
     }

@@ -24,11 +24,20 @@ impl Action for MoveAction {
         world.entity_mut(entity).insert_bundle(MoveBundle {
             target: Target(self.0),
             speed: Speed(4.0),
+            marker: Marker,
         });
     }
 
     fn finish(&mut self, entity: Entity, world: &mut World) {
         world.entity_mut(entity).remove_bundle::<MoveBundle>();
+    }
+
+    fn pause(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove::<Marker>();
+    }
+
+    fn resume(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).insert(Marker);
     }
 }
 
@@ -36,6 +45,7 @@ impl Action for MoveAction {
 struct MoveBundle {
     target: Target,
     speed: Speed,
+    marker: Marker,
 }
 
 #[derive(Component)]
@@ -44,8 +54,11 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
+#[derive(Component)]
+struct Marker;
+
 fn move_action(
-    mut q: Query<(Entity, &mut Transform, &Target, &Speed)>,
+    mut q: Query<(Entity, &mut Transform, &Target, &Speed), With<Marker>>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
@@ -56,7 +69,7 @@ fn move_action(
     }
 }
 
-fn rotate(mut q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+fn rotate(mut q: Query<(&mut Transform, &Target, &Speed), With<Marker>>, time: Res<Time>) {
     for (mut transform, target, speed) in q.iter_mut() {
         let dir = target.0 - transform.translation;
 

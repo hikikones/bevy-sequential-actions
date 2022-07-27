@@ -70,8 +70,7 @@ use crate::*;
 ///     for (entity, mut wait) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
-///             // Action is finished, issue next.
-///             commands.actions(entity).next();
+///             commands.actions(entity).finish();
 ///         }
 ///     }
 /// }
@@ -94,8 +93,8 @@ pub trait Action: Send + Sync {
     }
 
     /// The method that is called when an action is resumed.
-    fn resume(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-        self.start(entity, world, commands);
+    fn resume(&mut self, entity: Entity, world: &mut World) {
+        // self.start(entity, world, commands);
     }
 }
 
