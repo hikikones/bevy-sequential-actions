@@ -54,11 +54,12 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
-    fn finish(mut self) -> Self {
+    fn finish(self) -> Self {
         if let Some((_, cfg)) = &mut self.world.get_mut::<CurrentAction>(self.entity).unwrap().0 {
             cfg.is_finished = true;
-            self.remove_current_action();
-            self.next_action();
+            // self.remove_current_action();
+            // self.next_action();
+            return self.next();
         }
 
         self
@@ -80,9 +81,9 @@ impl ModifyActions for EntityWorldActions<'_> {
             cfg.is_paused = true;
             action.pause(self.entity, self.world);
 
-            // Put action back into queue
+            // Push to front so it runs again when next is called
             let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-            actions.push_back((action, cfg));
+            actions.push_front((action, cfg));
         }
 
         self
