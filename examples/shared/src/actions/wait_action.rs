@@ -25,15 +25,23 @@ impl WaitAction {
 
 impl Action for WaitAction {
     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(entity).insert(Wait(self.current));
+        world.entity_mut(entity).insert(Wait(self.duration));
     }
 
     fn finish(&mut self, entity: Entity, world: &mut World) {
-        self.current = world.get::<Wait>(entity).unwrap().0;
-        if self.current <= 0.0 {
-            self.current = self.duration;
-        }
         world.entity_mut(entity).remove::<Wait>();
+    }
+
+    fn cancel(&mut self, entity: Entity, world: &mut World) {
+        self.finish(entity, world);
+    }
+
+    fn pause(&mut self, entity: Entity, world: &mut World) {
+        self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
+    }
+
+    fn resume(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(entity).insert(Wait(self.current));
     }
 }
 
@@ -44,7 +52,6 @@ fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: C
     for (actor, mut wait) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
         if wait.0 <= 0.0 {
-            println!("WAIT FINISEHD!");
             commands.actions(actor).finish();
         }
     }
