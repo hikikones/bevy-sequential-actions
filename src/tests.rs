@@ -103,6 +103,50 @@ fn cancel() {
 }
 
 #[test]
+fn pause() {
+    #[derive(Component)]
+    struct Paused;
+
+    struct PauseAction;
+    impl Action for PauseAction {
+        fn start(&mut self, _entity: Entity, _world: &mut World, _commands: &mut ActionCommands) {}
+        fn finish(&mut self, _entity: Entity, _world: &mut World) {}
+        fn cancel(&mut self, _entity: Entity, _world: &mut World) {}
+        fn pause(&mut self, entity: Entity, world: &mut World) {
+            world.entity_mut(entity).insert(Paused);
+        }
+        fn resume(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            world.entity_mut(entity).remove::<Paused>();
+        }
+    }
+
+    let mut world = World::new();
+
+    let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+    world.actions(e).add(PauseAction);
+
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+
+    world.actions(e).pause();
+
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
+    assert!(world.entity(e).contains::<Paused>());
+
+    world.actions(e).resume();
+
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
+    assert!(!world.entity(e).contains::<Paused>());
+
+    world.actions(e).finish();
+
+    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
+}
+
+#[test]
 fn clear() {
     let mut world = World::new();
 
