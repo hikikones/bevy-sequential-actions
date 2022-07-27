@@ -162,17 +162,24 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
+    /// Starts the next [`action`](Action) in the queue.
+    /// The current action will be [`canceled`](Action::cancel),
+    /// and the next one will either [`start`](Action::start) or [`resume`](Action::resume).
     fn next(self) -> Self;
 
-    /// [`Finishes`](Action::finish) the current [`action`](Action)
-    /// by removing it from the queue and [`starting`](Action::start) the next one.
+    /// [`Finishes`](Action::finish) the current [`action`](Action),
+    /// and either [`starts`](Action::start) or [`resumes`](Action::resume) the next one in the queue.
     fn finish(self) -> Self;
 
+    // TODO: yeet?
     /// [`Cancels`](Action::finish) the current [`action`](Action)
     /// by removing it from the queue and [`starting`](Action::start) the next one.
     fn cancel(self) -> Self;
 
+    /// [`Pauses`](Action::pause) the current [`action`](Action).
     fn pause(self) -> Self;
+
+    // TODO: yeet?
     fn resume(self) -> Self;
 
     /// [`Cancels`](Action::cancel) the current [`action`](Action), and clears any remaining.

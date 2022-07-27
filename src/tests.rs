@@ -134,7 +134,20 @@ fn pause() {
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
     assert!(world.entity(e).contains::<Paused>());
 
-    world.actions(e).resume();
+    world
+        .actions(e)
+        .config(AddConfig {
+            order: AddOrder::Front,
+            start: true,
+            repeat: false,
+        })
+        .add(EmptyAction);
+
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
+    assert!(world.entity(e).contains::<Paused>());
+
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);

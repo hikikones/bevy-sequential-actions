@@ -26,6 +26,7 @@ pub struct EntityWorldActions<'a> {
 impl ModifyActions for EntityWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
+
         self
     }
 
@@ -47,23 +48,27 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn next(mut self) -> Self {
+        self.remove_current_action();
         self.next_action();
+
         self
     }
 
     fn finish(mut self) -> Self {
         if let Some((_, cfg)) = &mut self.world.get_mut::<CurrentAction>(self.entity).unwrap().0 {
             cfg.is_finished = true;
-            // self.remove_current_action(true);
+            self.remove_current_action();
             self.next_action();
         }
 
         self
     }
 
+    // TODO: yeet
     fn cancel(mut self) -> Self {
-        // self.remove_current_action(false);
+        self.remove_current_action();
         self.next_action();
+
         self
     }
 
@@ -72,10 +77,10 @@ impl ModifyActions for EntityWorldActions<'_> {
 
         // Pause current action
         if let Some((mut action, mut cfg)) = current {
+            cfg.is_paused = true;
             action.pause(self.entity, self.world);
 
-            // Put action back into queue with is_paused enabled
-            cfg.is_paused = true;
+            // Put action back into queue
             let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
             actions.push_back((action, cfg));
         }
@@ -83,8 +88,10 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
+    // TODO: yeet?
     fn resume(mut self) -> Self {
-        self.next_action();
+        // TODO
+        // self.next_action();
         self
     }
 
@@ -105,11 +112,13 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push((action.into_boxed(), self.config));
+
         self
     }
 
     fn reverse(mut self) -> Self {
         self.actions.reverse();
+
         self
     }
 
@@ -147,7 +156,7 @@ impl EntityWorldActions<'_> {
     //     }
     // }
 
-    fn next_action(&mut self) {
+    fn remove_current_action(&mut self) {
         let current = self.take_current_action();
 
         // Finish or cancel current action
@@ -166,6 +175,27 @@ impl EntityWorldActions<'_> {
                 actions.push_back((action, cfg));
             }
         }
+    }
+
+    fn next_action(&mut self) {
+        // let current = self.take_current_action();
+
+        // // Finish or cancel current action
+        // if let Some((mut action, mut cfg)) = current {
+        //     if cfg.is_finished {
+        //         action.finish(self.entity, self.world);
+        //     } else {
+        //         action.cancel(self.entity, self.world);
+        //     }
+
+        //     if cfg.repeat {
+        //         // Add action back to queue again if repeat
+        //         cfg.is_finished = false;
+        //         cfg.is_paused = false;
+        //         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+        //         actions.push_back((action, cfg));
+        //     }
+        // }
 
         let next = self.pop_next_action();
 
