@@ -51,7 +51,7 @@ fn move_action(
 ) {
     for (entity, mut transform, target, speed) in q.iter_mut() {
         if transform.move_towards(target.0, speed.0 * time.delta_seconds()) {
-            commands.actions(entity).next();
+            commands.actions(entity).finish();
         }
     }
 }

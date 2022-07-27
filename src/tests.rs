@@ -23,17 +23,17 @@ fn add() {
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 2);
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_none());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
@@ -64,29 +64,12 @@ fn push() {
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 2);
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
 
-    world.actions(e).next();
-
-    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
-    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
-
-    world.actions(e).next();
-
-    assert!(world.get::<CurrentAction>(e).unwrap().is_none());
-    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
-}
-
-#[test]
-fn finish() {
-    let mut world = World::new();
-
-    let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
-
-    world.actions(e).add(EmptyAction);
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
@@ -94,14 +77,26 @@ fn finish() {
     world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_none());
+    assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
+}
+
+#[test]
+fn cancel() {
+    let mut world = World::new();
+
+    let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
+
+    world.actions(e).add(EmptyAction).add(EmptyAction);
+
+    assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 1);
 
-    world.actions(e).next();
+    world.actions(e).cancel();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
-    world.actions(e).next();
+    world.actions(e).cancel();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_none());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
@@ -148,12 +143,12 @@ fn repeat() {
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.get::<CurrentAction>(e).unwrap().is_some());
     assert!(world.get::<ActionQueue>(e).unwrap().len() == 0);
@@ -216,18 +211,20 @@ fn order() {
 
     let e = world.spawn().insert_bundle(ActionsBundle::default()).id();
 
+    // A, B, C
     world.actions(e).add(A).add(B).add(C);
 
     assert!(world.entity(e).contains::<A>());
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.entity(e).contains::<B>());
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.entity(e).contains::<C>());
 
+    // C, B, A
     world
         .actions(e)
         .clear()
@@ -240,15 +237,41 @@ fn order() {
         .push(B)
         .push(C)
         .submit()
-        .next();
+        .finish();
 
     assert!(world.entity(e).contains::<C>());
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.entity(e).contains::<B>());
 
-    world.actions(e).next();
+    world.actions(e).finish();
 
     assert!(world.entity(e).contains::<A>());
+
+    // A, B, C
+    world
+        .actions(e)
+        .clear()
+        .config(AddConfig {
+            order: AddOrder::Front,
+            start: false,
+            repeat: false,
+        })
+        .push(A)
+        .push(B)
+        .push(C)
+        .reverse()
+        .submit()
+        .finish();
+
+    assert!(world.entity(e).contains::<A>());
+
+    world.actions(e).finish();
+
+    assert!(world.entity(e).contains::<B>());
+
+    world.actions(e).finish();
+
+    assert!(world.entity(e).contains::<C>());
 }

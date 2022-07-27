@@ -162,15 +162,15 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// Starts the next [`action`](Action) in the queue by [`stopping`](Action::stop) the currently running action,
-    /// and [`starting`](Action::start) the next action in the queue list.
-    fn next(self) -> Self;
-
-    /// [`Finish`](Action::finish) the currently running [`action`](Action)
+    /// [`Finishes`](Action::finish) the current [`action`](Action)
     /// by removing it from the queue and [`starting`](Action::start) the next one.
     fn finish(self) -> Self;
 
-    /// [`Stops`](Action::stop) the currently running [`action`](Action), and clears any remaining.
+    /// [`Cancels`](Action::finish) the current [`action`](Action)
+    /// by removing it from the queue and [`starting`](Action::start) the next one.
+    fn cancel(self) -> Self;
+
+    /// [`Cancels`](Action::cancel) the current [`action`](Action), and clears any remaining.
     fn clear(self) -> Self;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).

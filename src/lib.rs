@@ -106,11 +106,13 @@ impl Default for AddConfig {
     }
 }
 
-#[derive(Default, Component)]
-struct ActionQueue(VecDeque<(Box<dyn Action>, ActionConfig)>);
+type ActionTuple = (Box<dyn Action>, ActionConfig);
 
 #[derive(Default, Component)]
-struct CurrentAction(Option<(Box<dyn Action>, ActionConfig)>);
+struct ActionQueue(VecDeque<ActionTuple>);
+
+#[derive(Default, Component)]
+struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
     repeat: bool,
@@ -126,7 +128,7 @@ impl Into<ActionConfig> for AddConfig {
 }
 
 impl Deref for ActionQueue {
-    type Target = VecDeque<(Box<dyn Action>, ActionConfig)>;
+    type Target = VecDeque<ActionTuple>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -134,7 +136,7 @@ impl Deref for ActionQueue {
 }
 
 impl Deref for CurrentAction {
-    type Target = Option<(Box<dyn Action>, ActionConfig)>;
+    type Target = Option<ActionTuple>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

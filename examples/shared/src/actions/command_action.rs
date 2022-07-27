@@ -21,7 +21,7 @@ impl<T: Command> Action for CommandAction<T> {
         cmds.add(self.cmd.take().unwrap());
         queue.apply(world);
 
-        commands.actions(entity).next();
+        commands.actions(entity).finish();
     }
 
     fn finish(&mut self, _entity: Entity, _world: &mut World) {}

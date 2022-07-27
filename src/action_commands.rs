@@ -29,8 +29,8 @@ pub struct EntityActions<'a> {
 
 enum ActionCommand {
     Add(Entity, Box<dyn Action>, AddConfig),
-    Next(Entity),
     Finish(Entity),
+    Cancel(Entity),
     Clear(Entity),
 }
 
@@ -49,13 +49,13 @@ impl ModifyActions for EntityActions<'_> {
         self
     }
 
-    fn next(self) -> Self {
-        self.commands.0.push(ActionCommand::Next(self.entity));
+    fn finish(self) -> Self {
+        self.commands.0.push(ActionCommand::Finish(self.entity));
         self
     }
 
-    fn finish(self) -> Self {
-        self.commands.0.push(ActionCommand::Finish(self.entity));
+    fn cancel(self) -> Self {
+        self.commands.0.push(ActionCommand::Cancel(self.entity));
         self
     }
 
@@ -91,11 +91,11 @@ impl ActionCommands {
                 ActionCommand::Add(entity, action, config) => {
                     world.actions(entity).config(config).add(action);
                 }
-                ActionCommand::Next(entity) => {
-                    world.actions(entity).next();
-                }
                 ActionCommand::Finish(entity) => {
                     world.actions(entity).finish();
+                }
+                ActionCommand::Cancel(entity) => {
+                    world.actions(entity).cancel();
                 }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();
