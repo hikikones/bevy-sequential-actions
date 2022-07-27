@@ -37,6 +37,13 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
         self
     }
 
+    fn next(self) -> Self {
+        self.commands.add(move |world: &mut World| {
+            world.actions(self.entity).next();
+        });
+        self
+    }
+
     fn finish(self) -> Self {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).finish();

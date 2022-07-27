@@ -281,7 +281,7 @@ fn order() {
         .push(B)
         .push(C)
         .submit()
-        .finish();
+        .next();
 
     assert!(world.entity(e).contains::<C>());
 
@@ -307,7 +307,7 @@ fn order() {
         .push(C)
         .reverse()
         .submit()
-        .finish();
+        .next();
 
     assert!(world.entity(e).contains::<A>());
 

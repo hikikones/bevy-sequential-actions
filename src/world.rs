@@ -46,14 +46,23 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
-    fn finish(mut self) -> Self {
-        self.remove_current_action(true);
+    fn next(mut self) -> Self {
         self.next_action();
         self
     }
 
+    fn finish(mut self) -> Self {
+        if let Some((_, cfg)) = &mut self.world.get_mut::<CurrentAction>(self.entity).unwrap().0 {
+            cfg.is_finished = true;
+            // self.remove_current_action(true);
+            self.next_action();
+        }
+
+        self
+    }
+
     fn cancel(mut self) -> Self {
-        self.remove_current_action(false);
+        // self.remove_current_action(false);
         self.next_action();
         self
     }
@@ -119,12 +128,31 @@ impl ModifyActions for EntityWorldActions<'_> {
 }
 
 impl EntityWorldActions<'_> {
-    fn remove_current_action(&mut self, success: bool) {
+    // fn remove_current_action(&mut self, success: bool) {
+    //     let current = self.take_current_action();
+
+    //     // Finish or cancel current action
+    //     if let Some((mut action, cfg)) = current {
+    //         if success {
+    //             action.finish(self.entity, self.world);
+    //         } else {
+    //             action.cancel(self.entity, self.world);
+    //         }
+
+    //         if cfg.repeat {
+    //             // Add action back to queue again if repeat
+    //             let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+    //             actions.push_back((action, cfg));
+    //         }
+    //     }
+    // }
+
+    fn next_action(&mut self) {
         let current = self.take_current_action();
 
         // Finish or cancel current action
-        if let Some((mut action, cfg)) = current {
-            if success {
+        if let Some((mut action, mut cfg)) = current {
+            if cfg.is_finished {
                 action.finish(self.entity, self.world);
             } else {
                 action.cancel(self.entity, self.world);
@@ -132,13 +160,13 @@ impl EntityWorldActions<'_> {
 
             if cfg.repeat {
                 // Add action back to queue again if repeat
+                cfg.is_finished = false;
+                cfg.is_paused = false;
                 let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                 actions.push_back((action, cfg));
             }
         }
-    }
 
-    fn next_action(&mut self) {
         let next = self.pop_next_action();
 
         // Start or resume and set current action
@@ -159,6 +187,28 @@ impl EntityWorldActions<'_> {
             commands.apply(self.world);
         }
     }
+
+    // fn next_action(&mut self) {
+    //     let next = self.pop_next_action();
+
+    //     // Start or resume and set current action
+    //     if let Some((mut action, mut cfg)) = next {
+    //         let mut commands = ActionCommands::default();
+
+    //         if cfg.is_paused {
+    //             cfg.is_paused = false;
+    //             action.resume(self.entity, self.world, &mut commands);
+    //         } else {
+    //             action.start(self.entity, self.world, &mut commands);
+    //         }
+
+    //         if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
+    //             **current = Some((action, cfg));
+    //         }
+
+    //         commands.apply(self.world);
+    //     }
+    // }
 
     fn take_current_action(&mut self) -> Option<ActionTuple> {
         self.world

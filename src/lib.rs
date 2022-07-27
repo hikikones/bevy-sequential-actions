@@ -116,6 +116,7 @@ struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
     repeat: bool,
+    is_finished: bool,
     is_paused: bool,
 }
 
@@ -124,6 +125,7 @@ impl Into<ActionConfig> for AddConfig {
     fn into(self) -> ActionConfig {
         ActionConfig {
             repeat: self.repeat,
+            is_finished: false,
             is_paused: false,
         }
     }

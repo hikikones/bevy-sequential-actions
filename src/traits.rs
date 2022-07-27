@@ -162,6 +162,8 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
+    fn next(self) -> Self;
+
     /// [`Finishes`](Action::finish) the current [`action`](Action)
     /// by removing it from the queue and [`starting`](Action::start) the next one.
     fn finish(self) -> Self;
