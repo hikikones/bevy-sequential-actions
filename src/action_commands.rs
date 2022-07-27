@@ -31,6 +31,8 @@ enum ActionCommand {
     Add(Entity, Box<dyn Action>, AddConfig),
     Finish(Entity),
     Cancel(Entity),
+    Pause(Entity),
+    Resume(Entity),
     Clear(Entity),
 }
 
@@ -56,6 +58,16 @@ impl ModifyActions for EntityActions<'_> {
 
     fn cancel(self) -> Self {
         self.commands.0.push(ActionCommand::Cancel(self.entity));
+        self
+    }
+
+    fn pause(self) -> Self {
+        self.commands.0.push(ActionCommand::Pause(self.entity));
+        self
+    }
+
+    fn resume(self) -> Self {
+        self.commands.0.push(ActionCommand::Resume(self.entity));
         self
     }
 
@@ -96,6 +108,12 @@ impl ActionCommands {
                 }
                 ActionCommand::Cancel(entity) => {
                     world.actions(entity).cancel();
+                }
+                ActionCommand::Pause(entity) => {
+                    world.actions(entity).pause();
+                }
+                ActionCommand::Resume(entity) => {
+                    world.actions(entity).pause();
                 }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();

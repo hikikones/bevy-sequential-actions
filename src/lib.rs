@@ -116,6 +116,7 @@ struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
     repeat: bool,
+    is_paused: bool,
 }
 
 #[allow(clippy::from_over_into)]
@@ -123,6 +124,7 @@ impl Into<ActionConfig> for AddConfig {
     fn into(self) -> ActionConfig {
         ActionConfig {
             repeat: self.repeat,
+            is_paused: false,
         }
     }
 }

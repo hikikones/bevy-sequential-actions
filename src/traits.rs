@@ -170,6 +170,9 @@ pub trait ModifyActions {
     /// by removing it from the queue and [`starting`](Action::start) the next one.
     fn cancel(self) -> Self;
 
+    fn pause(self) -> Self;
+    fn resume(self) -> Self;
+
     /// [`Cancels`](Action::cancel) the current [`action`](Action), and clears any remaining.
     fn clear(self) -> Self;
 
