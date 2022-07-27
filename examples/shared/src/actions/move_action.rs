@@ -7,7 +7,7 @@ pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(move_action).add_system(rotate);
+        app.add_system(move_system).add_system(rotate_system);
     }
 }
 
@@ -24,7 +24,7 @@ impl Action for MoveAction {
         world.entity_mut(entity).insert_bundle(MoveBundle {
             target: Target(self.0),
             speed: Speed(4.0),
-            marker: Marker,
+            marker: MoveMarker,
         });
     }
 
@@ -32,12 +32,16 @@ impl Action for MoveAction {
         world.entity_mut(entity).remove_bundle::<MoveBundle>();
     }
 
-    fn pause(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Marker>();
+    fn cancel(&mut self, entity: Entity, world: &mut World) {
+        self.finish(entity, world);
     }
 
-    fn resume(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).insert(Marker);
+    fn pause(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove::<MoveMarker>();
+    }
+
+    fn resume(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(entity).insert(MoveMarker);
     }
 }
 
@@ -45,7 +49,7 @@ impl Action for MoveAction {
 struct MoveBundle {
     target: Target,
     speed: Speed,
-    marker: Marker,
+    marker: MoveMarker,
 }
 
 #[derive(Component)]
@@ -55,22 +59,25 @@ struct Target(Vec3);
 struct Speed(f32);
 
 #[derive(Component)]
-struct Marker;
+struct MoveMarker;
 
-fn move_action(
-    mut q: Query<(Entity, &mut Transform, &Target, &Speed), With<Marker>>,
+fn move_system(
+    mut move_q: Query<(Entity, &mut Transform, &Target, &Speed), With<MoveMarker>>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
-    for (entity, mut transform, target, speed) in q.iter_mut() {
+    for (entity, mut transform, target, speed) in move_q.iter_mut() {
         if transform.move_towards(target.0, speed.0 * time.delta_seconds()) {
             commands.actions(entity).finish();
         }
     }
 }
 
-fn rotate(mut q: Query<(&mut Transform, &Target, &Speed), With<Marker>>, time: Res<Time>) {
-    for (mut transform, target, speed) in q.iter_mut() {
+fn rotate_system(
+    mut move_q: Query<(&mut Transform, &Target, &Speed), With<MoveMarker>>,
+    time: Res<Time>,
+) {
+    for (mut transform, target, speed) in move_q.iter_mut() {
         let dir = target.0 - transform.translation;
 
         if dir == Vec3::ZERO {

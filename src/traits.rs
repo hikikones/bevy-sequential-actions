@@ -93,8 +93,8 @@ pub trait Action: Send + Sync {
     }
 
     /// The method that is called when an action is resumed.
-    fn resume(&mut self, entity: Entity, world: &mut World) {
-        // self.start(entity, world, commands);
+    fn resume(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+        self.start(entity, world, commands);
     }
 }
 

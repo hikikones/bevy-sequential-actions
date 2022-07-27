@@ -38,10 +38,9 @@ impl Action for WaitAction {
 
     fn pause(&mut self, entity: Entity, world: &mut World) {
         self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
-        println!("PAUSE WAIT: {}", self.current);
     }
 
-    fn resume(&mut self, entity: Entity, world: &mut World) {
+    fn resume(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         world.entity_mut(entity).insert(Wait(self.current));
     }
 }
