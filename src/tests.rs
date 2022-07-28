@@ -232,6 +232,77 @@ fn cancel2() {
     assert!(!ecs.world.entity(e).contains::<Countdown>());
 }
 
+#[test]
+fn pause2() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .add(CountdownAction(5))
+        .stop(StopReason::Paused);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Paused>());
+
+    ecs.actions(e).next();
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Paused>());
+}
+
+// TODO: Hmmm how to fix
+// #[test]
+// fn pause_front() {
+//     let mut ecs = ECS::new();
+//     let e = ecs.spawn_action_entity();
+
+//     ecs.actions(e)
+//         .add(CountdownAction(5))
+//         .stop(StopReason::Paused);
+
+//     ecs.run();
+
+//     assert!(ecs.get_current_action(e).is_none());
+//     assert!(ecs.get_action_queue(e).len() == 1);
+//     assert!(ecs.world.entity(e).contains::<Countdown>());
+//     assert!(ecs.world.entity(e).contains::<Paused>());
+
+//     // Add another action to the front of queue
+//     ecs.actions(e)
+//         .config(AddConfig {
+//             order: AddOrder::Front,
+//             start: true,
+//             repeat: false,
+//         })
+//         .add(CountdownAction(0));
+
+//     ecs.run();
+
+//     // assert!(ecs.get_current_action(e).is_some());
+//     assert!(ecs.get_current_action(e).is_some());
+//     assert!(ecs.get_action_queue(e).len() == 1);
+//     assert!(ecs.world.entity(e).contains::<Countdown>());
+//     assert!(ecs.world.entity(e).contains::<Paused>());
+
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+
+//     assert!(ecs.get_action_queue(e).len() == 0);
+//     assert!(!ecs.world.entity(e).contains::<Paused>());
+// }
+
 /////////////////////////////////////////////////////////////////////////////////////
 
 #[test]
