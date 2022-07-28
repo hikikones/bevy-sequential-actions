@@ -122,27 +122,18 @@ fn add2() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
 
-    ecs.actions(e)
-        .add(CountdownAction(0))
-        .add(CountdownAction(1));
+    ecs.actions(e).add(CountdownAction(0));
 
     assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.actions(e).add(CountdownAction(0));
+
     assert!(ecs.get_action_queue(e).len() == 1);
 
-    ecs.run();
+    ecs.actions(e).add(CountdownAction(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
-
-    ecs.run();
-
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
-
-    ecs.run();
-
-    assert!(ecs.get_current_action(e).is_none());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.get_action_queue(e).len() == 2);
 }
 
 #[test]
@@ -196,6 +187,30 @@ fn push2() {
     assert!(ecs.get_current_action(e).is_some());
     assert!(ecs.get_action_queue(e).len() == 1);
 }
+
+#[test]
+fn cancel2() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e).add(CountdownAction(5));
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+
+    ecs.actions(e).stop(StopReason::Canceled);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 
 #[test]
 fn add() {
