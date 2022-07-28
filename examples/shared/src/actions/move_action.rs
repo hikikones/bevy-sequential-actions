@@ -22,20 +22,34 @@ impl MoveAction {
 impl Action for MoveAction {
     fn start(
         &mut self,
-        _state: StartState,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         _commands: &mut ActionCommands,
     ) {
-        world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(self.0),
-            speed: Speed(4.0),
-            marker: MoveMarker,
-        });
+        match state {
+            StartState::Init => {
+                world.entity_mut(entity).insert_bundle(MoveBundle {
+                    target: Target(self.0),
+                    speed: Speed(4.0),
+                    marker: MoveMarker,
+                });
+            }
+            StartState::Resume => {
+                world.entity_mut(entity).insert(MoveMarker);
+            }
+        }
     }
 
-    fn stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+        match reason {
+            StopReason::Completed | StopReason::Canceled => {
+                world.entity_mut(entity).remove_bundle::<MoveBundle>();
+            }
+            StopReason::Paused => {
+                world.entity_mut(entity).remove::<MoveMarker>();
+            }
+        }
     }
 }
 
