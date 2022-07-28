@@ -2,8 +2,8 @@ use crate::*;
 
 /// The trait that all actions must implement.
 ///
-/// All actions must declare when they are done.
-/// This is done by calling [`next`](ModifyActions::next)
+/// All actions must declare when they are finished.
+/// This is done by calling [`finish`](ModifyActions::finish)
 /// from either [`ActionCommands`] or [`Commands`].
 ///
 /// # Examples
@@ -22,7 +22,7 @@ use crate::*;
 ///
 /// impl Action for EmptyAction {
 ///     fn start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished, issue next.
+///         // Action is finished.
 ///         commands.actions(entity).finish();
 ///     }
 ///
@@ -102,6 +102,7 @@ use crate::*;
 ///     for (entity, mut wait) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
+///             // Action is finished.
 ///             commands.actions(entity).finish();
 ///         }
 ///     }
@@ -119,24 +120,6 @@ pub trait Action: Send + Sync {
 
     /// The method that is called when an action is stopped.
     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World);
-
-    // /// The method that is called when an action is finished.
-    // fn finish(&mut self, entity: Entity, world: &mut World);
-
-    // /// The method that is called when an action is canceled.
-    // fn cancel(&mut self, entity: Entity, world: &mut World) {
-    //     self.finish(entity, world);
-    // }
-
-    // /// The method that is called when an action is paused.
-    // fn pause(&mut self, entity: Entity, world: &mut World) {
-    //     self.finish(entity, world);
-    // }
-
-    // /// The method that is called when an action is resumed.
-    // fn resume(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-    //     self.start(entity, world, commands);
-    // }
 }
 
 /// Conversion into an [`Action`].
