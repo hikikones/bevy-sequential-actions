@@ -50,7 +50,6 @@
 
 use std::{
     collections::VecDeque,
-    default,
     ops::{Deref, DerefMut},
 };
 
@@ -107,18 +106,25 @@ impl Default for AddConfig {
     }
 }
 
+/// The state of an [Action] to be started.
 #[derive(Default, Clone, Copy)]
 pub enum StartState {
     #[default]
+    /// First time an [`action`](Action) is started.
     Init,
+    /// The [`action`](Action) will resume from being [`paused`](StopReason::Paused).
     Resume,
 }
 
+/// The reason why an [Action] was stopped.
 #[derive(Default, Clone, Copy)]
 pub enum StopReason {
+    /// The [`action`](Action) was completed.
     Completed,
+    /// The [`action`](Action) was canceled.
     #[default]
     Canceled,
+    /// The [`action`](Action) was paused.
     Paused,
 }
 
