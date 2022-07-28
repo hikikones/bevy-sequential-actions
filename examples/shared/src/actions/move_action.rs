@@ -43,7 +43,7 @@ impl Action for MoveAction {
 
     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
         match reason {
-            StopReason::Completed | StopReason::Canceled => {
+            StopReason::Finished | StopReason::Canceled => {
                 world.entity_mut(entity).remove_bundle::<MoveBundle>();
             }
             StopReason::Paused => {

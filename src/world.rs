@@ -53,7 +53,7 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn finish(mut self) -> Self {
-        self.stop_action(StopReason::Completed);
+        self.stop_action(StopReason::Finished);
         self.next_action();
 
         self
@@ -110,7 +110,7 @@ impl EntityWorldActions<'_> {
             action.stop(reason, self.entity, self.world);
 
             match reason {
-                StopReason::Completed | StopReason::Canceled => {
+                StopReason::Finished | StopReason::Canceled => {
                     cfg.start = StartState::default();
                     if cfg.repeat {
                         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();

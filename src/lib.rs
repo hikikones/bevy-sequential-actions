@@ -119,12 +119,12 @@ pub enum StartState {
 /// The reason why an [Action] was stopped.
 #[derive(Default, Clone, Copy)]
 pub enum StopReason {
-    /// The [`action`](Action) was completed.
-    Completed,
-    /// The [`action`](Action) was canceled.
+    /// The [`action`](Action) is finished.
+    Finished,
+    /// The [`action`](Action) is canceled.
     #[default]
     Canceled,
-    /// The [`action`](Action) was paused.
+    /// The [`action`](Action) is paused.
     Paused,
 }
 
