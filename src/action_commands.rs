@@ -32,9 +32,6 @@ enum ActionCommand {
     Next(Entity),
     Finish(Entity),
     Stop(Entity, StopReason),
-    // Cancel(Entity),
-    // Pause(Entity),
-    // Resume(Entity),
     Clear(Entity),
 }
 
@@ -69,21 +66,6 @@ impl ModifyActions for EntityActions<'_> {
             .push(ActionCommand::Stop(self.entity, reason));
         self
     }
-
-    // fn cancel(self) -> Self {
-    //     self.commands.0.push(ActionCommand::Cancel(self.entity));
-    //     self
-    // }
-
-    // fn pause(self) -> Self {
-    //     self.commands.0.push(ActionCommand::Pause(self.entity));
-    //     self
-    // }
-
-    // fn resume(self) -> Self {
-    //     self.commands.0.push(ActionCommand::Resume(self.entity));
-    //     self
-    // }
 
     fn clear(self) -> Self {
         self.commands.0.push(ActionCommand::Clear(self.entity));
@@ -126,15 +108,6 @@ impl ActionCommands {
                 ActionCommand::Stop(entity, reason) => {
                     world.actions(entity).stop(reason);
                 }
-                // ActionCommand::Cancel(entity) => {
-                //     world.actions(entity).cancel();
-                // }
-                // ActionCommand::Pause(entity) => {
-                //     world.actions(entity).pause();
-                // }
-                // ActionCommand::Resume(entity) => {
-                //     world.actions(entity).pause();
-                // }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();
                 }

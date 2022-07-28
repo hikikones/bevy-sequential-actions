@@ -17,7 +17,7 @@ impl<T: Command> CommandAction<T> {
 impl<T: Command> Action for CommandAction<T> {
     fn start(
         &mut self,
-        state: StartState,
+        _state: StartState,
         entity: Entity,
         world: &mut World,
         commands: &mut ActionCommands,
@@ -30,5 +30,5 @@ impl<T: Command> Action for CommandAction<T> {
         commands.actions(entity).finish();
     }
 
-    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
+    fn stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
 }

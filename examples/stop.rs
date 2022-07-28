@@ -37,7 +37,6 @@ fn input(
     if keyboard.just_pressed(KeyCode::Space) {
         let player = player_q.single();
 
-        // TODO: FIXME
         if *is_paused {
             commands.actions(player).next();
         } else {

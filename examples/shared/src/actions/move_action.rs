@@ -22,10 +22,10 @@ impl MoveAction {
 impl Action for MoveAction {
     fn start(
         &mut self,
-        state: StartState,
+        _state: StartState,
         entity: Entity,
         world: &mut World,
-        commands: &mut ActionCommands,
+        _commands: &mut ActionCommands,
     ) {
         world.entity_mut(entity).insert_bundle(MoveBundle {
             target: Target(self.0),
@@ -34,7 +34,7 @@ impl Action for MoveAction {
         });
     }
 
-    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+    fn stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
         world.entity_mut(entity).remove_bundle::<MoveBundle>();
     }
 }

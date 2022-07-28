@@ -58,27 +58,6 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
         self
     }
 
-    // fn cancel(self) -> Self {
-    //     self.commands.add(move |world: &mut World| {
-    //         world.actions(self.entity).cancel();
-    //     });
-    //     self
-    // }
-
-    // fn pause(self) -> Self {
-    //     self.commands.add(move |world: &mut World| {
-    //         world.actions(self.entity).pause();
-    //     });
-    //     self
-    // }
-
-    // fn resume(self) -> Self {
-    //     self.commands.add(move |world: &mut World| {
-    //         world.actions(self.entity).resume();
-    //     });
-    //     self
-    // }
-
     fn clear(self) -> Self {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).clear();
