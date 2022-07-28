@@ -21,12 +21,12 @@ use crate::*;
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn on_start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished.
 ///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
+///     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
 /// }
 /// ```
 ///
@@ -66,7 +66,7 @@ use crate::*;
 /// # }
 /// #
 /// impl Action for WaitAction {
-///     fn start(
+///     fn on_start(
 ///         &mut self,
 ///         state: StartState,
 ///         entity: Entity,
@@ -83,7 +83,7 @@ use crate::*;
 ///         }
 ///     }
 ///
-///     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+///     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
 ///         match reason {
 ///             StopReason::Finished | StopReason::Canceled => {
 ///                 world.entity_mut(entity).remove::<Wait>();
@@ -110,7 +110,7 @@ use crate::*;
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
-    fn start(
+    fn on_start(
         &mut self,
         state: StartState,
         entity: Entity,
@@ -119,7 +119,7 @@ pub trait Action: Send + Sync {
     );
 
     /// The method that is called when an action is stopped.
-    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World);
+    fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World);
 }
 
 /// Conversion into an [`Action`].
@@ -158,7 +158,7 @@ impl IntoAction for Box<dyn Action> {
 /// #
 /// struct EmptyAction;
 /// impl Action for EmptyAction {
-///     fn start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn on_start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
 ///         world.actions(entity).finish();
 ///
@@ -166,7 +166,7 @@ impl IntoAction for Box<dyn Action> {
 ///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
+///     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
 /// }
 ///```
 pub trait ActionsProxy<'a> {
@@ -185,12 +185,12 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// [`Stops`](Action::stop) the current action as [`canceled`](StopReason::Canceled),
-    /// and [`starts`](Action::start) the next action in the queue.
+    /// /// [`Starts`](Action::start) the next action in the queue.
+    /// The current action is [`stopped`](Action::stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Stops`](Action::stop) the current action as [`finished`](StopReason::Finished),
-    /// and [`starts`](Action::start) the next action in the queue.
+    /// [`Starts`](Action::start) the next action in the queue.
+    /// The current action is [`stopped`](Action::stop) as [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
     /// [`Stops`](Action::stop) the current [`action`](Action) with specified [`reason`](StopReason).

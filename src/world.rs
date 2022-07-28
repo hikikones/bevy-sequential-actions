@@ -69,7 +69,7 @@ impl ModifyActions for EntityWorldActions<'_> {
         let current = self.take_current_action();
 
         if let Some((mut action, _)) = current {
-            action.stop(StopReason::Canceled, self.entity, self.world);
+            action.on_stop(StopReason::Canceled, self.entity, self.world);
         }
 
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
@@ -107,7 +107,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 impl EntityWorldActions<'_> {
     fn stop_action(&mut self, reason: StopReason) {
         if let Some((mut action, mut cfg)) = self.take_current_action() {
-            action.stop(reason, self.entity, self.world);
+            action.on_stop(reason, self.entity, self.world);
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
@@ -129,7 +129,7 @@ impl EntityWorldActions<'_> {
     fn next_action(&mut self) {
         if let Some((mut action, mut cfg)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
-            action.start(cfg.start, self.entity, self.world, &mut commands);
+            action.on_start(cfg.start, self.entity, self.world, &mut commands);
             cfg.start = StartState::default();
 
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {

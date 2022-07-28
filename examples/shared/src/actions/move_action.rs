@@ -20,7 +20,7 @@ impl MoveAction {
 }
 
 impl Action for MoveAction {
-    fn start(
+    fn on_start(
         &mut self,
         state: StartState,
         entity: Entity,
@@ -41,7 +41,7 @@ impl Action for MoveAction {
         }
     }
 
-    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+    fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
         match reason {
             StopReason::Finished | StopReason::Canceled => {
                 world.entity_mut(entity).remove_bundle::<MoveBundle>();

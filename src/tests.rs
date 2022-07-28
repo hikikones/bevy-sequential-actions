@@ -4,7 +4,7 @@ use crate::*;
 
 struct EmptyAction;
 impl Action for EmptyAction {
-    fn start(
+    fn on_start(
         &mut self,
         _state: StartState,
         _entity: Entity,
@@ -13,7 +13,7 @@ impl Action for EmptyAction {
     ) {
     }
 
-    fn stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn pause() {
 
     struct PauseAction;
     impl Action for PauseAction {
-        fn start(
+        fn on_start(
             &mut self,
             state: StartState,
             entity: Entity,
@@ -139,7 +139,7 @@ fn pause() {
             }
         }
 
-        fn stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+        fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
     }
 
     let mut world = World::new();
@@ -237,7 +237,7 @@ fn repeat() {
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
-        fn start(
+        fn on_start(
             &mut self,
             _state: StartState,
             entity: Entity,
@@ -247,7 +247,7 @@ fn despawn() {
             world.despawn(entity);
         }
 
-        fn stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+        fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
     }
 
     let mut world = World::new();
@@ -269,7 +269,7 @@ fn order() {
     struct C;
 
     impl Action for A {
-        fn start(
+        fn on_start(
             &mut self,
             _state: StartState,
             entity: Entity,
@@ -279,12 +279,12 @@ fn order() {
             world.entity_mut(entity).insert(A);
         }
 
-        fn stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
+        fn on_stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<A>();
         }
     }
     impl Action for B {
-        fn start(
+        fn on_start(
             &mut self,
             _state: StartState,
             entity: Entity,
@@ -294,12 +294,12 @@ fn order() {
             world.entity_mut(entity).insert(B);
         }
 
-        fn stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
+        fn on_stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<B>();
         }
     }
     impl Action for C {
-        fn start(
+        fn on_start(
             &mut self,
             _state: StartState,
             entity: Entity,
@@ -309,7 +309,7 @@ fn order() {
             world.entity_mut(entity).insert(C);
         }
 
-        fn stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
+        fn on_stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
             world.entity_mut(entity).remove::<C>();
         }
     }

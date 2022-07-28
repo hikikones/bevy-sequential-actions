@@ -10,7 +10,7 @@ impl QuitAction {
 }
 
 impl Action for QuitAction {
-    fn start(
+    fn on_start(
         &mut self,
         _state: StartState,
         _entity: Entity,
@@ -20,5 +20,5 @@ impl Action for QuitAction {
         world.resource_mut::<Events<AppExit>>().send(AppExit);
     }
 
-    fn stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
 }
