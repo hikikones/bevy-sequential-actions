@@ -46,7 +46,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn next(mut self) -> Self {
-        // TODO: Keep stop state for resume
         self.stop_action(StopReason::Canceled);
         self.next_action();
 
@@ -112,7 +111,7 @@ impl EntityWorldActions<'_> {
 
             match reason {
                 StopReason::Completed | StopReason::Canceled => {
-                    cfg.start = StartState::Init;
+                    cfg.start = StartState::default();
                     if cfg.repeat {
                         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                         actions.push_back((action, cfg));
@@ -131,7 +130,7 @@ impl EntityWorldActions<'_> {
         if let Some((mut action, mut cfg)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
             action.start(cfg.start, self.entity, self.world, &mut commands);
-            cfg.start = StartState::Init;
+            cfg.start = StartState::default();
 
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
                 **current = Some((action, cfg));

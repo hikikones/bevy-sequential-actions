@@ -50,6 +50,7 @@
 
 use std::{
     collections::VecDeque,
+    default,
     ops::{Deref, DerefMut},
 };
 
@@ -106,15 +107,17 @@ impl Default for AddConfig {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub enum StartState {
+    #[default]
     Init,
     Resume,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub enum StopReason {
     Completed,
+    #[default]
     Canceled,
     Paused,
 }
@@ -129,21 +132,15 @@ struct CurrentAction(Option<ActionTuple>);
 
 struct ActionState {
     start: StartState,
-    // stop: StopReason,
     repeat: bool,
-    // is_finished: bool,
-    // is_paused: bool,
 }
 
 #[allow(clippy::from_over_into)]
 impl Into<ActionState> for AddConfig {
     fn into(self) -> ActionState {
         ActionState {
-            start: StartState::Init,
-            // stop: StopReason::Canceled,
+            start: StartState::default(),
             repeat: self.repeat,
-            // is_finished: false,
-            // is_paused: false,
         }
     }
 }
