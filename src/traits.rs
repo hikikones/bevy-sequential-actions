@@ -189,7 +189,7 @@ pub trait ModifyActions {
     /// and [`starts`](Action::start) the next action in the queue.
     fn next(self) -> Self;
 
-    /// [`Stops`](Action::stop) the current action as [`completed`](StopReason::Completed),
+    /// [`Stops`](Action::stop) the current action as [`finished`](StopReason::Finished),
     /// and [`starts`](Action::start) the next action in the queue.
     fn finish(self) -> Self;
 
