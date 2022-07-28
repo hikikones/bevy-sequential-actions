@@ -101,6 +101,22 @@ fn countdown_system(
     }
 }
 
+struct EmptyAction;
+
+impl Action for EmptyAction {
+    fn on_start(
+        &mut self,
+        _state: StartState,
+        entity: Entity,
+        _world: &mut World,
+        commands: &mut ActionCommands,
+    ) {
+        commands.actions(entity).finish();
+    }
+
+    fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+}
+
 #[test]
 fn add2() {
     let mut ecs = ECS::new();
@@ -129,18 +145,56 @@ fn add2() {
     assert!(ecs.get_action_queue(e).len() == 0);
 }
 
-struct EmptyAction;
-impl Action for EmptyAction {
-    fn on_start(
-        &mut self,
-        _state: StartState,
-        _entity: Entity,
-        _world: &mut World,
-        _commands: &mut ActionCommands,
-    ) {
-    }
+#[test]
+fn push_without_submit() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-    fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+    ecs.actions(e)
+        .push(EmptyAction)
+        .push(EmptyAction)
+        .push(EmptyAction);
+
+    // Must call submit for actions to be added
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+}
+
+#[test]
+fn push_empty() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .push(EmptyAction)
+        .push(EmptyAction)
+        .push(EmptyAction)
+        .submit();
+
+    // Empty actions are recursively finished.
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+}
+
+#[test]
+fn push2() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .push(CountdownAction(0)) // Finished after first run
+        .push(CountdownAction(0)) // Current action after first run
+        .push(CountdownAction(0)) // In action queue after first run
+        .submit();
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 1);
 }
 
 #[test]
