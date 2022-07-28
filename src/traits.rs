@@ -185,19 +185,19 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// /// [`Starts`](Action::start) the next action in the queue.
-    /// The current action is [`stopped`](Action::stop) as [`canceled`](StopReason::Canceled).
+    /// [`Starts`](Action::on_start) the next action in the queue.
+    /// The current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Starts`](Action::start) the next action in the queue.
-    /// The current action is [`stopped`](Action::stop) as [`finished`](StopReason::Finished).
+    /// [`Starts`](Action::on_start) the next action in the queue.
+    /// The current action is [`stopped`](Action::on_stop) as [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
-    /// [`Stops`](Action::stop) the current [`action`](Action) with specified [`reason`](StopReason).
+    /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
     fn stop(self, reason: StopReason) -> Self;
 
     /// Clears the actions queue.
-    /// [`Stops`](Action::stop) the current action as [`canceled`](StopReason::Canceled).
+    /// [`Stops`](Action::on_stop) the current action as [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
