@@ -141,12 +141,11 @@ struct ActionState {
     repeat: bool,
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<ActionState> for AddConfig {
-    fn into(self) -> ActionState {
-        ActionState {
+impl From<AddConfig> for ActionState {
+    fn from(cfg: AddConfig) -> Self {
+        Self {
             start: StartState::default(),
-            repeat: self.repeat,
+            repeat: cfg.repeat,
         }
     }
 }
