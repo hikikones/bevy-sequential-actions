@@ -102,7 +102,7 @@ fn countdown_system(
 }
 
 #[test]
-fn yooyoyoyoy() {
+fn add2() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
 
