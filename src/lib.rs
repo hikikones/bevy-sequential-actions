@@ -111,7 +111,7 @@ impl Default for AddConfig {
 pub enum StartState {
     #[default]
     /// First time an [`action`](Action) is started.
-    Init,
+    Start,
     /// The [`action`](Action) will resume from being [`paused`](StopReason::Paused).
     Resume,
 }

@@ -28,7 +28,7 @@ impl Action for MoveAction {
         _commands: &mut ActionCommands,
     ) {
         match state {
-            StartState::Init => {
+            StartState::Start => {
                 world.entity_mut(entity).insert_bundle(MoveBundle {
                     target: Target(self.0),
                     speed: Speed(4.0),

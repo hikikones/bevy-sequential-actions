@@ -74,7 +74,7 @@ use crate::*;
 ///         commands: &mut ActionCommands,
 ///     ) {
 ///         match state {
-///             StartState::Init => {
+///             StartState::Start => {
 ///                 world.entity_mut(entity).insert(Wait(self.duration));
 ///             }
 ///             StartState::Resume => {

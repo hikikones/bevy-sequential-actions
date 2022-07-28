@@ -130,7 +130,7 @@ fn pause() {
             _commands: &mut ActionCommands,
         ) {
             match state {
-                StartState::Init => {
+                StartState::Start => {
                     world.entity_mut(entity).insert(Paused);
                 }
                 StartState::Resume => {
