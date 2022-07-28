@@ -119,7 +119,6 @@ impl EntityWorldActions<'_> {
                     }
                 }
                 StopReason::Paused => {
-                    println!("STOP PAUSE");
                     cfg.start = StartState::Resume;
                     let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                     actions.push_front((action, cfg));
@@ -129,9 +128,10 @@ impl EntityWorldActions<'_> {
     }
 
     fn next_action(&mut self) {
-        if let Some((mut action, cfg)) = self.pop_next_action() {
+        if let Some((mut action, mut cfg)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
             action.start(cfg.start, self.entity, self.world, &mut commands);
+            cfg.start = StartState::Init;
 
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
                 **current = Some((action, cfg));
