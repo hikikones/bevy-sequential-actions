@@ -40,7 +40,7 @@ Consider running with `--release` as debug builds can be quite slow.
 | Example  | Description                                                                            |
 | -------- | -------------------------------------------------------------------------------------- |
 | `basic`  | Shows the basic usage of the library by adding some actions and then quitting the app. |
-| `stop`   | Shows how to stop and resume an action by pressing `space`.                            |
+| `pause`  | Shows how to pause and resume an action when pressing `space`.                         |
 | `repeat` | Shows how to add actions that basically loop forever in the added order.               |
 
 ## Compatibility
