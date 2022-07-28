@@ -107,7 +107,7 @@ impl Default for AddConfig {
 }
 
 #[derive(Clone, Copy)]
-pub enum StartAction {
+pub enum StartState {
     Init,
     Resume,
 }
@@ -119,7 +119,7 @@ pub enum StopReason {
     Paused,
 }
 
-type ActionTuple = (Box<dyn Action>, ActionConfig);
+type ActionTuple = (Box<dyn Action>, ActionState);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
@@ -127,23 +127,23 @@ struct ActionQueue(VecDeque<ActionTuple>);
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
 
-struct ActionConfig {
-    start: StartAction,
-    stop: StopReason,
+struct ActionState {
+    start: StartState,
+    // stop: StopReason,
     repeat: bool,
-    is_finished: bool,
-    is_paused: bool,
+    // is_finished: bool,
+    // is_paused: bool,
 }
 
 #[allow(clippy::from_over_into)]
-impl Into<ActionConfig> for AddConfig {
-    fn into(self) -> ActionConfig {
-        ActionConfig {
-            start: StartAction::Init,
-            stop: StopReason::Canceled,
+impl Into<ActionState> for AddConfig {
+    fn into(self) -> ActionState {
+        ActionState {
+            start: StartState::Init,
+            // stop: StopReason::Canceled,
             repeat: self.repeat,
-            is_finished: false,
-            is_paused: false,
+            // is_finished: false,
+            // is_paused: false,
         }
     }
 }

@@ -12,7 +12,7 @@ impl DespawnAction {
 impl Action for DespawnAction {
     fn start(
         &mut self,
-        state: StartAction,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         commands: &mut ActionCommands,

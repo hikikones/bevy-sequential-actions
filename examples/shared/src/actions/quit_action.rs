@@ -12,7 +12,7 @@ impl QuitAction {
 impl Action for QuitAction {
     fn start(
         &mut self,
-        state: StartAction,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         commands: &mut ActionCommands,

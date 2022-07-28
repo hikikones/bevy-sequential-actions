@@ -79,7 +79,7 @@ pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
     fn start(
         &mut self,
-        state: StartAction,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         commands: &mut ActionCommands,

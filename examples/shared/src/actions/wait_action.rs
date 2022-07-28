@@ -26,7 +26,7 @@ impl WaitAction {
 impl Action for WaitAction {
     fn start(
         &mut self,
-        state: StartAction,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         commands: &mut ActionCommands,

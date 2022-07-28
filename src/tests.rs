@@ -6,7 +6,7 @@ struct EmptyAction;
 impl Action for EmptyAction {
     fn start(
         &mut self,
-        state: StartAction,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         commands: &mut ActionCommands,
@@ -124,16 +124,16 @@ fn pause() {
     impl Action for PauseAction {
         fn start(
             &mut self,
-            state: StartAction,
+            state: StartState,
             entity: Entity,
             world: &mut World,
             commands: &mut ActionCommands,
         ) {
             match state {
-                StartAction::Init => {
+                StartState::Init => {
                     world.entity_mut(entity).insert(Paused);
                 }
-                StartAction::Resume => {
+                StartState::Resume => {
                     world.entity_mut(entity).remove::<Paused>();
                 }
             }
@@ -239,7 +239,7 @@ fn despawn() {
     impl Action for DespawnAction {
         fn start(
             &mut self,
-            state: StartAction,
+            state: StartState,
             entity: Entity,
             world: &mut World,
             commands: &mut ActionCommands,
@@ -271,7 +271,7 @@ fn order() {
     impl Action for A {
         fn start(
             &mut self,
-            state: StartAction,
+            state: StartState,
             entity: Entity,
             world: &mut World,
             commands: &mut ActionCommands,
@@ -286,7 +286,7 @@ fn order() {
     impl Action for B {
         fn start(
             &mut self,
-            state: StartAction,
+            state: StartState,
             entity: Entity,
             world: &mut World,
             commands: &mut ActionCommands,
@@ -301,7 +301,7 @@ fn order() {
     impl Action for C {
         fn start(
             &mut self,
-            state: StartAction,
+            state: StartState,
             entity: Entity,
             world: &mut World,
             commands: &mut ActionCommands,
