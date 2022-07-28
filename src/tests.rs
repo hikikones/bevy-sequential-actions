@@ -189,6 +189,28 @@ fn push2() {
 }
 
 #[test]
+fn finish2() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e).add(CountdownAction(5));
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+
+    ecs.actions(e).finish();
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
+}
+
+#[test]
 fn cancel2() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
