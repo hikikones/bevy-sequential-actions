@@ -56,13 +56,20 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn finish(self) -> Self {
         if let Some((_, cfg)) = &mut self.world.get_mut::<CurrentAction>(self.entity).unwrap().0 {
-            cfg.is_finished = true;
-            // self.remove_current_action();
-            // self.next_action();
+            cfg.stop = StopReason::Completed;
             return self.next();
         }
 
         self
+
+        // if let Some((_, cfg)) = &mut self.world.get_mut::<CurrentAction>(self.entity).unwrap().0 {
+        //     cfg.is_finished = true;
+        //     // self.remove_current_action();
+        //     // self.next_action();
+        //     return self.next();
+        // }
+
+        // self
     }
 
     // TODO: yeet

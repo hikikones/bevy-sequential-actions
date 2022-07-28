@@ -106,6 +106,17 @@ impl Default for AddConfig {
     }
 }
 
+pub enum StartAction {
+    Init,
+    Resume,
+}
+
+pub enum StopReason {
+    Completed,
+    Canceled,
+    Paused,
+}
+
 type ActionTuple = (Box<dyn Action>, ActionConfig);
 
 #[derive(Default, Component)]
@@ -115,6 +126,8 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
+    start: StartAction,
+    stop: StopReason,
     repeat: bool,
     is_finished: bool,
     is_paused: bool,
@@ -124,6 +137,8 @@ struct ActionConfig {
 impl Into<ActionConfig> for AddConfig {
     fn into(self) -> ActionConfig {
         ActionConfig {
+            start: StartAction::Init,
+            stop: StopReason::Canceled,
             repeat: self.repeat,
             is_finished: false,
             is_paused: false,

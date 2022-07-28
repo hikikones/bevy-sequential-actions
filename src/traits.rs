@@ -79,23 +79,25 @@ pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
 
-    /// The method that is called when an action is finished.
-    fn finish(&mut self, entity: Entity, world: &mut World);
+    fn stop(&mut self, entity: Entity, world: &mut World);
 
-    /// The method that is called when an action is canceled.
-    fn cancel(&mut self, entity: Entity, world: &mut World) {
-        self.finish(entity, world);
-    }
+    // /// The method that is called when an action is finished.
+    // fn finish(&mut self, entity: Entity, world: &mut World);
 
-    /// The method that is called when an action is paused.
-    fn pause(&mut self, entity: Entity, world: &mut World) {
-        self.finish(entity, world);
-    }
+    // /// The method that is called when an action is canceled.
+    // fn cancel(&mut self, entity: Entity, world: &mut World) {
+    //     self.finish(entity, world);
+    // }
 
-    /// The method that is called when an action is resumed.
-    fn resume(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-        self.start(entity, world, commands);
-    }
+    // /// The method that is called when an action is paused.
+    // fn pause(&mut self, entity: Entity, world: &mut World) {
+    //     self.finish(entity, world);
+    // }
+
+    // /// The method that is called when an action is resumed.
+    // fn resume(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+    //     self.start(entity, world, commands);
+    // }
 }
 
 /// Conversion into an [`Action`].
@@ -177,6 +179,9 @@ pub trait ModifyActions {
 
     /// [`Pauses`](Action::pause) the current [`action`](Action).
     fn pause(self) -> Self;
+
+    // Stops an action and removes it from the queue.
+    // fn stop(reason);
 
     // TODO: yeet?
     fn resume(self) -> Self;
