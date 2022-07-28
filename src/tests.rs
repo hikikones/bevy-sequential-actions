@@ -2,6 +2,133 @@ use bevy::prelude::*;
 
 use crate::*;
 
+struct ECS {
+    world: World,
+    schedule: Schedule,
+}
+
+impl ECS {
+    fn new() -> Self {
+        let world = World::new();
+        let mut schedule = Schedule::default();
+        schedule.add_stage("update", SystemStage::parallel());
+
+        let mut ecs = Self { world, schedule };
+        ecs.add_system(countdown_system);
+        ecs
+    }
+
+    fn add_system<Param, S: IntoSystem<(), (), Param>>(&mut self, system: S) {
+        self.schedule.add_system_to_stage("update", system);
+    }
+
+    fn run(&mut self) {
+        self.schedule.run(&mut self.world);
+    }
+
+    fn spawn_action_entity(&mut self) -> Entity {
+        self.world
+            .spawn()
+            .insert_bundle(ActionsBundle::default())
+            .id()
+    }
+
+    fn actions(&mut self, entity: Entity) -> EntityWorldActions {
+        self.world.actions(entity)
+    }
+
+    fn get_current_action(&self, entity: Entity) -> &CurrentAction {
+        self.world.get::<CurrentAction>(entity).unwrap()
+    }
+
+    fn get_action_queue(&self, entity: Entity) -> &ActionQueue {
+        self.world.get::<ActionQueue>(entity).unwrap()
+    }
+}
+
+struct CountdownAction(usize);
+
+impl Action for CountdownAction {
+    fn on_start(
+        &mut self,
+        state: StartState,
+        entity: Entity,
+        world: &mut World,
+        _commands: &mut ActionCommands,
+    ) {
+        match state {
+            StartState::Start => {
+                world.entity_mut(entity).insert(Countdown(self.0));
+            }
+            StartState::Resume => {
+                world.entity_mut(entity).remove::<Paused>();
+            }
+        }
+    }
+
+    fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+        match reason {
+            StopReason::Finished => {
+                world.entity_mut(entity).remove::<Countdown>();
+            }
+            StopReason::Canceled => {
+                world.entity_mut(entity).remove::<Countdown>();
+            }
+            StopReason::Paused => {
+                world.entity_mut(entity).insert(Paused);
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+struct Countdown(usize);
+
+#[derive(Component)]
+struct Paused;
+
+fn countdown_system(
+    mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>,
+    mut commands: Commands,
+) {
+    for (entity, mut countdown) in countdown_q.iter_mut() {
+        if countdown.0 == 0 {
+            commands.actions(entity).finish();
+            continue;
+        }
+
+        countdown.0 -= 1;
+    }
+}
+
+#[test]
+fn yooyoyoyoy() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .add(CountdownAction(0))
+        .add(CountdownAction(1));
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 1);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+}
+
 struct EmptyAction;
 impl Action for EmptyAction {
     fn on_start(
