@@ -31,7 +31,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn add(mut self, action: impl IntoAction) -> Self {
-        // Enqueue action
         let action_tuple = (action.into_boxed(), self.config.into());
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         match self.config.order {
@@ -39,7 +38,6 @@ impl ModifyActions for EntityWorldActions<'_> {
             AddOrder::Back => actions.push_back(action_tuple),
         }
 
-        // Start next action if nothing is currently running
         if self.config.start && !self.has_current_action() {
             self.next_action();
         }
@@ -121,6 +119,7 @@ impl EntityWorldActions<'_> {
                     }
                 }
                 StopReason::Paused => {
+                    println!("STOP PAUSE");
                     cfg.start = StartState::Resume;
                     let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                     actions.push_front((action, cfg));

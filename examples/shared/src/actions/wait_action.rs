@@ -11,14 +11,14 @@ impl Plugin for WaitActionPlugin {
 
 pub struct WaitAction {
     duration: f32,
-    current: Option<f32>,
+    current: f32,
 }
 
 impl WaitAction {
     pub fn new(duration: f32) -> Self {
         Self {
             duration,
-            current: None,
+            current: 0.0,
         }
     }
 }
@@ -26,18 +26,30 @@ impl WaitAction {
 impl Action for WaitAction {
     fn start(
         &mut self,
-        _state: StartState,
+        state: StartState,
         entity: Entity,
         world: &mut World,
         _commands: &mut ActionCommands,
     ) {
-        world
-            .entity_mut(entity)
-            .insert(Wait(self.current.unwrap_or(self.duration)));
+        match state {
+            StartState::Init => {
+                world.entity_mut(entity).insert(Wait(self.duration));
+            }
+            StartState::Resume => {
+                world.entity_mut(entity).insert(Wait(self.current));
+            }
+        }
     }
 
-    fn stop(&mut self, _reason: StopReason, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Wait>();
+    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+        match reason {
+            StopReason::Completed | StopReason::Canceled => {
+                world.entity_mut(entity).remove::<Wait>();
+            }
+            StopReason::Paused => {
+                self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
+            }
+        }
     }
 }
 
