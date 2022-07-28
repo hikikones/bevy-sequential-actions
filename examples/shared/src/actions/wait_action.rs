@@ -15,9 +15,9 @@ pub struct WaitAction {
 }
 
 impl WaitAction {
-    pub fn new(duration: f32) -> Self {
+    pub fn new(seconds: f32) -> Self {
         Self {
-            duration,
+            duration: seconds,
             current: 0.0,
         }
     }

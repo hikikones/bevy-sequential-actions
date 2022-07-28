@@ -21,12 +21,12 @@ use crate::*;
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Action is finished, issue next.
-///         commands.actions(entity).next();
+///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn finish(&mut self, entity: Entity, world: &mut World) {}
+///     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
 /// }
 /// ```
 ///
@@ -49,17 +49,49 @@ use crate::*;
 /// #
 /// # fn setup(mut commands: Commands) {
 /// #     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
-/// #     commands.actions(entity).add(WaitAction(0.0)).add(QuitAction);
+/// #     commands.actions(entity).add(WaitAction::new(0.0)).add(QuitAction);
 /// # }
-/// struct WaitAction(f32);
+/// pub struct WaitAction {
+///     duration: f32,
+///     current: f32,
+/// }
 ///
+/// # impl WaitAction {
+/// #     pub fn new(seconds: f32) -> Self {
+/// #         Self {
+/// #             duration: seconds,
+/// #             current: 0.0,
+/// #         }
+/// #     }
+/// # }
+/// #
 /// impl Action for WaitAction {
-///     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-///         world.entity_mut(entity).insert(Wait(self.0));
+///     fn start(
+///         &mut self,
+///         state: StartState,
+///         entity: Entity,
+///         world: &mut World,
+///         commands: &mut ActionCommands,
+///     ) {
+///         match state {
+///             StartState::Init => {
+///                 world.entity_mut(entity).insert(Wait(self.duration));
+///             }
+///             StartState::Resume => {
+///                 world.entity_mut(entity).insert(Wait(self.current));
+///             }
+///         }
 ///     }
 ///
-///     fn finish(&mut self, entity: Entity, world: &mut World) {
-///         world.entity_mut(entity).remove::<Wait>();
+///     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
+///         match reason {
+///             StopReason::Completed | StopReason::Canceled => {
+///                 world.entity_mut(entity).remove::<Wait>();
+///             }
+///             StopReason::Paused => {
+///                 self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
+///             }
+///         }
 ///     }
 /// }
 ///
@@ -143,15 +175,15 @@ impl IntoAction for Box<dyn Action> {
 /// #
 /// struct EmptyAction;
 /// impl Action for EmptyAction {
-///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
-///         world.actions(entity).next();
+///         world.actions(entity).finish();
 ///
 ///         // Good
-///         commands.actions(entity).next();
+///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn finish(&mut self, entity: Entity, world: &mut World) {}
+///     fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
 /// }
 ///```
 pub trait ActionsProxy<'a> {
