@@ -9,7 +9,8 @@ fn main() {
         .add_plugin(BootstrapPlugin)
         .add_plugin(ActionsPlugin)
         .add_startup_system(setup)
-        .add_system(input)
+        // Run input before update to avoid modifying actions in the same frame
+        .add_system_to_stage(CoreStage::PreUpdate, input)
         .run();
 }
 
