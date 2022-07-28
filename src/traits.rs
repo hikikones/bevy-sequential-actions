@@ -77,9 +77,16 @@ use crate::*;
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
-    fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn start(
+        &mut self,
+        state: StartAction,
+        entity: Entity,
+        world: &mut World,
+        commands: &mut ActionCommands,
+    );
 
-    fn stop(&mut self, entity: Entity, world: &mut World);
+    /// The method that is called when an action is stopped.
+    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World);
 
     // /// The method that is called when an action is finished.
     // fn finish(&mut self, entity: Entity, world: &mut World);
@@ -173,18 +180,18 @@ pub trait ModifyActions {
     fn finish(self) -> Self;
 
     // TODO: yeet?
-    /// [`Cancels`](Action::finish) the current [`action`](Action)
-    /// by removing it from the queue and [`starting`](Action::start) the next one.
-    fn cancel(self) -> Self;
+    // /// [`Cancels`](Action::finish) the current [`action`](Action)
+    // /// by removing it from the queue and [`starting`](Action::start) the next one.
+    // fn cancel(self) -> Self;
 
-    /// [`Pauses`](Action::pause) the current [`action`](Action).
-    fn pause(self) -> Self;
+    // /// [`Pauses`](Action::pause) the current [`action`](Action).
+    // fn pause(self) -> Self;
 
     // Stops an action and removes it from the queue.
-    // fn stop(reason);
+    fn stop(self, reason: StopReason) -> Self;
 
     // TODO: yeet?
-    fn resume(self) -> Self;
+    // fn resume(self) -> Self;
 
     /// [`Cancels`](Action::cancel) the current [`action`](Action), and clears any remaining.
     fn clear(self) -> Self;

@@ -24,24 +24,18 @@ impl WaitAction {
 }
 
 impl Action for WaitAction {
-    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn start(
+        &mut self,
+        state: StartAction,
+        entity: Entity,
+        world: &mut World,
+        commands: &mut ActionCommands,
+    ) {
         world.entity_mut(entity).insert(Wait(self.duration));
     }
 
-    fn finish(&mut self, entity: Entity, world: &mut World) {
+    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
         world.entity_mut(entity).remove::<Wait>();
-    }
-
-    fn cancel(&mut self, entity: Entity, world: &mut World) {
-        self.finish(entity, world);
-    }
-
-    fn pause(&mut self, entity: Entity, world: &mut World) {
-        self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
-    }
-
-    fn resume(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(entity).insert(Wait(self.current));
     }
 }
 

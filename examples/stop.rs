@@ -41,7 +41,7 @@ fn input(
         if *is_paused {
             commands.actions(player).next();
         } else {
-            commands.actions(player).pause();
+            commands.actions(player).stop(StopReason::Paused);
         }
 
         *is_paused = !*is_paused;

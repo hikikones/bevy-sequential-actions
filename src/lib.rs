@@ -106,11 +106,13 @@ impl Default for AddConfig {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum StartAction {
     Init,
     Resume,
 }
 
+#[derive(Clone, Copy)]
 pub enum StopReason {
     Completed,
     Canceled,

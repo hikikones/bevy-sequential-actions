@@ -15,7 +15,13 @@ impl<T: Command> CommandAction<T> {
 }
 
 impl<T: Command> Action for CommandAction<T> {
-    fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn start(
+        &mut self,
+        state: StartAction,
+        entity: Entity,
+        world: &mut World,
+        commands: &mut ActionCommands,
+    ) {
         let mut queue = CommandQueue::default();
         let mut cmds = Commands::new(&mut queue, world);
         cmds.add(self.cmd.take().unwrap());
@@ -24,5 +30,5 @@ impl<T: Command> Action for CommandAction<T> {
         commands.actions(entity).finish();
     }
 
-    fn finish(&mut self, _entity: Entity, _world: &mut World) {}
+    fn stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
 }
