@@ -148,6 +148,14 @@ fn add() {
 }
 
 #[test]
+#[should_panic]
+fn add_panic() {
+    let mut ecs = ECS::new();
+    let e = ecs.world.spawn().id();
+    ecs.actions(e).add(EmptyAction);
+}
+
+#[test]
 fn next() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
@@ -161,6 +169,14 @@ fn next() {
 
     assert!(!ecs.world.entity(e).contains::<Countdown>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
+}
+
+#[test]
+#[should_panic]
+fn next_panic() {
+    let mut ecs = ECS::new();
+    let e = ecs.world.spawn().id();
+    ecs.actions(e).next();
 }
 
 #[test]
@@ -180,6 +196,14 @@ fn finish() {
 }
 
 #[test]
+#[should_panic]
+fn finish_panic() {
+    let mut ecs = ECS::new();
+    let e = ecs.world.spawn().id();
+    ecs.actions(e).finish();
+}
+
+#[test]
 fn stop() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
@@ -196,6 +220,14 @@ fn stop() {
 }
 
 #[test]
+#[should_panic]
+fn stop_panic() {
+    let mut ecs = ECS::new();
+    let e = ecs.world.spawn().id();
+    ecs.actions(e).stop();
+}
+
+#[test]
 fn clear() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
@@ -209,6 +241,14 @@ fn clear() {
     assert!(ecs.get_current_action(e).is_none());
     assert!(ecs.get_action_queue(e).len() == 0);
     assert!(ecs.world.entity(e).contains::<Canceled>());
+}
+
+#[test]
+#[should_panic]
+fn clear_panic() {
+    let mut ecs = ECS::new();
+    let e = ecs.world.spawn().id();
+    ecs.actions(e).clear();
 }
 
 #[test]
@@ -284,7 +324,8 @@ fn despawn() {
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
-        .add(DespawnAction);
+        .add(DespawnAction)
+        .add(EmptyAction);
 
     ecs.run();
 
