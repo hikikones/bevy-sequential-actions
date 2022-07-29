@@ -16,6 +16,7 @@
 //! # use bevy::prelude::*;
 //! # use bevy_sequential_actions::*;
 //! # use shared::actions::QuitAction;
+//! #
 //! fn setup(mut commands: Commands) {
 //! #   let wait_action = QuitAction;
 //! #   let move_action = QuitAction;
@@ -33,9 +34,9 @@
 //!         .config(AddConfig {
 //!             // Add each action to the back of the queue
 //!             order: AddOrder::Back,
-//!             // Start action if nothing is currently running
+//!             // Start the next in the queue if nothing is currently running
 //!             start: true,
-//!             // Repeat the action
+//!             // Repeat the action by adding it back to the queue when it is removed
 //!             repeat: false,
 //!         })
 //!         .add(move_action)
