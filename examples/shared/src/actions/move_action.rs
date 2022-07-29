@@ -3,11 +3,18 @@ use bevy_sequential_actions::*;
 
 use crate::extensions::{LookRotationExt, MoveTowardsExt};
 
+use super::ACTIONS_STAGE;
+
 pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(move_system).add_system(rotate_system);
+        app.add_system_set_to_stage(
+            ACTIONS_STAGE,
+            SystemSet::new()
+                .with_system(move_system)
+                .with_system(rotate_system),
+        );
     }
 }
 

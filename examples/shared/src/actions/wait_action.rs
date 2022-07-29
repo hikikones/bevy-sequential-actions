@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
+use super::ACTIONS_STAGE;
+
 pub struct WaitActionPlugin;
 
 impl Plugin for WaitActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(wait);
+        app.add_system_set_to_stage(ACTIONS_STAGE, SystemSet::new().with_system(wait));
     }
 }
 
