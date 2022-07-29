@@ -49,8 +49,13 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn next(mut self) -> Self {
         // Cancel current
-        if let Some((mut action, mut cfg)) = self.take_current_action() {
+        if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_cancel(self.entity, self.world);
+
+            if cfg.repeat {
+                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                actions.push_back((action, cfg));
+            }
         }
 
         self.start_next_action();
@@ -60,8 +65,13 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn finish(mut self) -> Self {
         // Finish current
-        if let Some((mut action, mut cfg)) = self.take_current_action() {
+        if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_finish(self.entity, self.world);
+
+            if cfg.repeat {
+                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                actions.push_back((action, cfg));
+            }
         }
 
         self.start_next_action();
@@ -121,31 +131,9 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 }
 
-enum StopReason {
-    Finish,
-    Cancel,
-    Stop,
-}
-
 impl EntityWorldActions<'_> {
-    fn stop_current_action(&mut self, reason: StopReason) {
-        if let Some((mut action, mut cfg)) = self.take_current_action() {
-            match reason {
-                StopReason::Finish => todo!(),
-                StopReason::Cancel => todo!(),
-                StopReason::Stop => todo!(),
-            }
-
-            action.on_stop(self.entity, self.world);
-
-            // Push stopped action to the front of the queue so it runs again
-            let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-            actions.push_front((action, cfg));
-        }
-    }
-
     fn start_next_action(&mut self) {
-        if let Some((mut action, mut cfg)) = self.pop_next_action() {
+        if let Some((mut action, cfg)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
             action.on_start(self.entity, self.world, &mut commands);
 
