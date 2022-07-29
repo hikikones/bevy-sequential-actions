@@ -18,8 +18,10 @@
 //! # fn main() {}
 //! # struct EmptyAction;
 //! # impl Action for EmptyAction {
-//! #     fn on_start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {}
-//! #     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
+//! #     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {}
+//! #     fn on_finish(&mut self, entity: Entity, world: &mut World) {}
+//! #     fn on_cancel(&mut self, entity: Entity, world: &mut World) {}
+//! #     fn on_stop(&mut self, entity: Entity, world: &mut World) {}
 //! # }
 //! fn setup(mut commands: Commands) {
 //! #   let wait_action = EmptyAction;

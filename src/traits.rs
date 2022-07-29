@@ -30,12 +30,14 @@ use crate::*;
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn on_start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished.
+///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // Action is finished
 ///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
+///     fn on_finish(&mut self, entity: Entity, world: &mut World) {}
+///     fn on_cancel(&mut self, entity: Entity, world: &mut World) {}
+///     fn on_stop(&mut self, entity: Entity, world: &mut World) {}
 /// }
 /// ```
 ///
@@ -62,45 +64,37 @@ use crate::*;
 /// # }
 /// pub struct WaitAction {
 ///     duration: f32,
-///     current: f32,
+///     current: Option<f32>,
 /// }
 ///
-/// # impl WaitAction {
-/// #     pub fn new(seconds: f32) -> Self {
-/// #         Self {
-/// #             duration: seconds,
-/// #             current: 0.0,
-/// #         }
-/// #     }
-/// # }
-/// #
-/// impl Action for WaitAction {
-///     fn on_start(
-///         &mut self,
-///         state: StartState,
-///         entity: Entity,
-///         world: &mut World,
-///         commands: &mut ActionCommands,
-///     ) {
-///         match state {
-///             StartState::Start => {
-///                 world.entity_mut(entity).insert(Wait(self.duration));
-///             }
-///             StartState::Resume => {
-///                 world.entity_mut(entity).insert(Wait(self.current));
-///             }
+/// impl WaitAction {
+///     pub fn new(seconds: f32) -> Self {
+///         Self {
+///             duration: seconds,
+///             current: None,
 ///         }
 ///     }
+/// }
 ///
-///     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
-///         match reason {
-///             StopReason::Finished | StopReason::Canceled => {
-///                 world.entity_mut(entity).remove::<Wait>();
-///             }
-///             StopReason::Paused => {
-///                 self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
-///             }
-///         }
+/// impl Action for WaitAction {
+///     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+///         world
+///             .entity_mut(entity)
+///             .insert(Wait(self.current.unwrap_or(self.duration)));
+///     }
+///
+///     fn on_finish(&mut self, entity: Entity, world: &mut World) {
+///         world.entity_mut(entity).remove::<Wait>();
+///         self.current = None;
+///     }
+///
+///     fn on_cancel(&mut self, entity: Entity, world: &mut World) {
+///         self.on_finish(entity, world);
+///     }
+///
+///     fn on_stop(&mut self, entity: Entity, world: &mut World) {
+///         let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
+///         self.current = Some(wait.0);
 ///     }
 /// }
 ///
@@ -111,7 +105,7 @@ use crate::*;
 ///     for (entity, mut wait) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
-///             // Action is finished.
+///             // Action is finished
 ///             commands.actions(entity).finish();
 ///         }
 ///     }
@@ -167,7 +161,7 @@ impl IntoAction for Box<dyn Action> {
 /// #
 /// struct EmptyAction;
 /// impl Action for EmptyAction {
-///     fn on_start(&mut self, state: StartState, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
 ///         world.actions(entity).finish();
 ///
@@ -175,7 +169,9 @@ impl IntoAction for Box<dyn Action> {
 ///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {}
+///     fn on_finish(&mut self, entity: Entity, world: &mut World) {}
+///     fn on_cancel(&mut self, entity: Entity, world: &mut World) {}
+///     fn on_stop(&mut self, entity: Entity, world: &mut World) {}
 /// }
 ///```
 pub trait ActionsProxy<'a> {
