@@ -51,9 +51,9 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
         self
     }
 
-    fn stop(self, reason: StopReason) -> Self {
+    fn stop(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).stop(reason);
+            world.actions(self.entity).stop();
         });
         self
     }

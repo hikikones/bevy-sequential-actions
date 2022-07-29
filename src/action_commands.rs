@@ -31,7 +31,7 @@ enum ActionCommand {
     Add(Entity, Box<dyn Action>, AddConfig),
     Next(Entity),
     Finish(Entity),
-    Stop(Entity, StopReason),
+    Stop(Entity),
     Clear(Entity),
 }
 
@@ -60,10 +60,8 @@ impl ModifyActions for EntityActions<'_> {
         self
     }
 
-    fn stop(self, reason: StopReason) -> Self {
-        self.commands
-            .0
-            .push(ActionCommand::Stop(self.entity, reason));
+    fn stop(self) -> Self {
+        self.commands.0.push(ActionCommand::Stop(self.entity));
         self
     }
 
@@ -105,8 +103,8 @@ impl ActionCommands {
                 ActionCommand::Finish(entity) => {
                     world.actions(entity).finish();
                 }
-                ActionCommand::Stop(entity, reason) => {
-                    world.actions(entity).stop(reason);
+                ActionCommand::Stop(entity) => {
+                    world.actions(entity).stop();
                 }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();

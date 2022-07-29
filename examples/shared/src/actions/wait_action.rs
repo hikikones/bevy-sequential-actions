@@ -11,45 +11,37 @@ impl Plugin for WaitActionPlugin {
 
 pub struct WaitAction {
     duration: f32,
-    current: f32,
+    current: Option<f32>,
 }
 
 impl WaitAction {
     pub fn new(seconds: f32) -> Self {
         Self {
             duration: seconds,
-            current: 0.0,
+            current: None,
         }
     }
 }
 
 impl Action for WaitAction {
-    fn on_start(
-        &mut self,
-        state: StartState,
-        entity: Entity,
-        world: &mut World,
-        _commands: &mut ActionCommands,
-    ) {
-        match state {
-            StartState::Start => {
-                world.entity_mut(entity).insert(Wait(self.duration));
-            }
-            StartState::Resume => {
-                world.entity_mut(entity).insert(Wait(self.current));
-            }
-        }
+    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world
+            .entity_mut(entity)
+            .insert(Wait(self.current.unwrap_or(self.duration)));
     }
 
-    fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
-        match reason {
-            StopReason::Finished | StopReason::Canceled => {
-                world.entity_mut(entity).remove::<Wait>();
-            }
-            StopReason::Paused => {
-                self.current = world.entity_mut(entity).remove::<Wait>().unwrap().0;
-            }
-        }
+    fn on_finish(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove::<Wait>();
+        self.current = None;
+    }
+
+    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
+        self.on_finish(entity, world);
+    }
+
+    fn on_stop(&mut self, entity: Entity, world: &mut World) {
+        let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
+        self.current = Some(wait.0);
     }
 }
 

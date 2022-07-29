@@ -20,36 +20,23 @@ impl MoveAction {
 }
 
 impl Action for MoveAction {
-    fn on_start(
-        &mut self,
-        state: StartState,
-        entity: Entity,
-        world: &mut World,
-        _commands: &mut ActionCommands,
-    ) {
-        match state {
-            StartState::Start => {
-                world.entity_mut(entity).insert_bundle(MoveBundle {
-                    target: Target(self.0),
-                    speed: Speed(4.0),
-                    marker: MoveMarker,
-                });
-            }
-            StartState::Resume => {
-                world.entity_mut(entity).insert(MoveMarker);
-            }
-        }
+    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(entity).insert_bundle(MoveBundle {
+            target: Target(self.0),
+            speed: Speed(4.0),
+        });
     }
 
-    fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
-        match reason {
-            StopReason::Finished | StopReason::Canceled => {
-                world.entity_mut(entity).remove_bundle::<MoveBundle>();
-            }
-            StopReason::Paused => {
-                world.entity_mut(entity).remove::<MoveMarker>();
-            }
-        }
+    fn on_finish(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+    }
+
+    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
+        self.on_finish(entity, world);
+    }
+
+    fn on_stop(&mut self, entity: Entity, world: &mut World) {
+        self.on_cancel(entity, world);
     }
 }
 
@@ -57,7 +44,6 @@ impl Action for MoveAction {
 struct MoveBundle {
     target: Target,
     speed: Speed,
-    marker: MoveMarker,
 }
 
 #[derive(Component)]
@@ -66,11 +52,8 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
-#[derive(Component)]
-struct MoveMarker;
-
 fn move_system(
-    mut move_q: Query<(Entity, &mut Transform, &Target, &Speed), With<MoveMarker>>,
+    mut move_q: Query<(Entity, &mut Transform, &Target, &Speed)>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
@@ -81,10 +64,7 @@ fn move_system(
     }
 }
 
-fn rotate_system(
-    mut move_q: Query<(&mut Transform, &Target, &Speed), With<MoveMarker>>,
-    time: Res<Time>,
-) {
+fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
     for (mut transform, target, speed) in move_q.iter_mut() {
         let dir = target.0 - transform.translation;
 

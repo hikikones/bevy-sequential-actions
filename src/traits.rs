@@ -119,16 +119,16 @@ use crate::*;
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
-    fn on_start(
-        &mut self,
-        state: StartState,
-        entity: Entity,
-        world: &mut World,
-        commands: &mut ActionCommands,
-    );
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+
+    /// The method that is called when an action is finished.
+    fn on_finish(&mut self, entity: Entity, world: &mut World);
+
+    /// The method that is called when an action is canceled.
+    fn on_cancel(&mut self, entity: Entity, world: &mut World);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World);
+    fn on_stop(&mut self, entity: Entity, world: &mut World);
 }
 
 /// Conversion into an [`Action`].
@@ -194,16 +194,16 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// [`Starts`](Action::on_start) the next action in the queue.
-    /// The current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
+    // /// [`Starts`](Action::on_start) the next action in the queue.
+    // /// The current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Starts`](Action::on_start) the next action in the queue.
-    /// The current action is [`stopped`](Action::on_stop) as [`finished`](StopReason::Finished).
+    // /// [`Starts`](Action::on_start) the next action in the queue.
+    // /// The current action is [`stopped`](Action::on_stop) as [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
-    /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
-    fn stop(self, reason: StopReason) -> Self;
+    // /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
+    fn stop(self) -> Self;
 
     /// Clears the actions queue.
     /// [`Stops`](Action::on_stop) the current action as [`canceled`](StopReason::Canceled).

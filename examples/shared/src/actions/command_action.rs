@@ -15,13 +15,7 @@ impl<T: Command> CommandAction<T> {
 }
 
 impl<T: Command> Action for CommandAction<T> {
-    fn on_start(
-        &mut self,
-        _state: StartState,
-        entity: Entity,
-        world: &mut World,
-        commands: &mut ActionCommands,
-    ) {
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         let mut queue = CommandQueue::default();
         let mut cmds = Commands::new(&mut queue, world);
         cmds.add(self.cmd.take().unwrap());
@@ -30,5 +24,7 @@ impl<T: Command> Action for CommandAction<T> {
         commands.actions(entity).finish();
     }
 
-    fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
+    fn on_finish(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
 }

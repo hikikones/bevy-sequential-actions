@@ -106,29 +106,7 @@ impl Default for AddConfig {
     }
 }
 
-/// The state of an [Action] to be started.
-#[derive(Default, Clone, Copy)]
-pub enum StartState {
-    #[default]
-    /// First time an [`action`](Action) is started.
-    Start,
-    /// The [`action`](Action) will resume from being [`paused`](StopReason::Paused).
-    Resume,
-}
-
-/// The reason why an [Action] was stopped.
-#[derive(Default, Clone, Copy)]
-pub enum StopReason {
-    /// The [`action`](Action) is finished.
-    Finished,
-    /// The [`action`](Action) is canceled.
-    #[default]
-    Canceled,
-    /// The [`action`](Action) is paused.
-    Paused,
-}
-
-type ActionTuple = (Box<dyn Action>, ActionState);
+type ActionTuple = (Box<dyn Action>, ActionConfig);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
@@ -136,17 +114,13 @@ struct ActionQueue(VecDeque<ActionTuple>);
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
 
-struct ActionState {
-    start: StartState,
+struct ActionConfig {
     repeat: bool,
 }
 
-impl From<AddConfig> for ActionState {
+impl From<AddConfig> for ActionConfig {
     fn from(cfg: AddConfig) -> Self {
-        Self {
-            start: StartState::default(),
-            repeat: cfg.repeat,
-        }
+        Self { repeat: cfg.repeat }
     }
 }
 
