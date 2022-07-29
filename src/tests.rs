@@ -1,239 +1,471 @@
-// use bevy::prelude::*;
+use std::marker::PhantomData;
 
-// use crate::*;
+use bevy::prelude::*;
 
-// struct ECS {
-//     world: World,
-//     schedule: Schedule,
-// }
+use crate::*;
 
-// impl ECS {
-//     fn new() -> Self {
-//         let world = World::new();
-//         let mut schedule = Schedule::default();
-//         schedule.add_stage("update", SystemStage::parallel());
+struct ECS {
+    world: World,
+    schedule: Schedule,
+}
 
-//         let mut ecs = Self { world, schedule };
-//         ecs.add_system(countdown_system);
-//         ecs
-//     }
+impl ECS {
+    fn new() -> Self {
+        let world = World::new();
+        let mut schedule = Schedule::default();
+        schedule.add_stage("update", SystemStage::parallel());
 
-//     fn add_system<Param, S: IntoSystem<(), (), Param>>(&mut self, system: S) {
-//         self.schedule.add_system_to_stage("update", system);
-//     }
+        let mut ecs = Self { world, schedule };
+        ecs.add_system(countdown_system);
+        ecs
+    }
 
-//     fn run(&mut self) {
-//         self.schedule.run(&mut self.world);
-//     }
+    fn add_system<Param, S: IntoSystem<(), (), Param>>(&mut self, system: S) {
+        self.schedule.add_system_to_stage("update", system);
+    }
 
-//     fn spawn_action_entity(&mut self) -> Entity {
-//         self.world
-//             .spawn()
-//             .insert_bundle(ActionsBundle::default())
-//             .id()
-//     }
+    fn run(&mut self) {
+        self.schedule.run(&mut self.world);
+    }
 
-//     fn actions(&mut self, entity: Entity) -> EntityWorldActions {
-//         self.world.actions(entity)
-//     }
+    fn spawn_action_entity(&mut self) -> Entity {
+        self.world
+            .spawn()
+            .insert_bundle(ActionsBundle::default())
+            .id()
+    }
 
-//     fn get_current_action(&self, entity: Entity) -> &CurrentAction {
-//         self.world.get::<CurrentAction>(entity).unwrap()
-//     }
+    fn actions(&mut self, entity: Entity) -> EntityWorldActions {
+        self.world.actions(entity)
+    }
 
-//     fn get_action_queue(&self, entity: Entity) -> &ActionQueue {
-//         self.world.get::<ActionQueue>(entity).unwrap()
-//     }
-// }
+    fn get_current_action(&self, entity: Entity) -> &CurrentAction {
+        self.world.get::<CurrentAction>(entity).unwrap()
+    }
 
-// struct CountdownAction(usize);
+    fn get_action_queue(&self, entity: Entity) -> &ActionQueue {
+        self.world.get::<ActionQueue>(entity).unwrap()
+    }
+}
 
-// impl Action for CountdownAction {
-//     fn on_start(
-//         &mut self,
-//         state: StartState,
-//         entity: Entity,
-//         world: &mut World,
-//         _commands: &mut ActionCommands,
-//     ) {
-//         match state {
-//             StartState::Start => {
-//                 world.entity_mut(entity).insert(Countdown(self.0));
-//             }
-//             StartState::Resume => {
-//                 world.entity_mut(entity).remove::<Paused>();
-//             }
-//         }
-//     }
+struct CountdownAction {
+    count: usize,
+    current: Option<usize>,
+}
 
-//     fn on_stop(&mut self, reason: StopReason, entity: Entity, world: &mut World) {
-//         match reason {
-//             StopReason::Finished => {
-//                 world.entity_mut(entity).remove::<Countdown>();
-//             }
-//             StopReason::Canceled => {
-//                 world.entity_mut(entity).remove::<Countdown>();
-//             }
-//             StopReason::Paused => {
-//                 world.entity_mut(entity).insert(Paused);
-//             }
-//         }
-//     }
-// }
+impl CountdownAction {
+    fn new(count: usize) -> Self {
+        Self {
+            count,
+            current: None,
+        }
+    }
+}
 
-// #[derive(Component)]
-// struct Countdown(usize);
+#[derive(Component)]
+struct Countdown(usize);
 
-// #[derive(Component)]
-// struct Paused;
+#[derive(Component)]
+struct Finished;
 
-// fn countdown_system(
-//     mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>,
-//     mut commands: Commands,
-// ) {
-//     for (entity, mut countdown) in countdown_q.iter_mut() {
-//         if countdown.0 == 0 {
-//             commands.actions(entity).finish();
-//             continue;
-//         }
+#[derive(Component)]
+struct Canceled;
 
-//         countdown.0 -= 1;
-//     }
-// }
+#[derive(Component)]
+struct Stopped;
 
-// struct EmptyAction;
+impl Action for CountdownAction {
+    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world
+            .entity_mut(entity)
+            .insert(Countdown(self.current.unwrap_or(self.count)));
+    }
 
-// impl Action for EmptyAction {
-//     fn on_start(
-//         &mut self,
-//         _state: StartState,
-//         entity: Entity,
-//         _world: &mut World,
-//         commands: &mut ActionCommands,
-//     ) {
-//         commands.actions(entity).finish();
-//     }
+    fn on_finish(&mut self, entity: Entity, world: &mut World) {
+        world
+            .entity_mut(entity)
+            .insert(Finished)
+            .remove::<Countdown>();
+        self.current = None;
+    }
 
-//     fn on_stop(&mut self, _reason: StopReason, _entity: Entity, _world: &mut World) {}
-// }
+    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
+        world
+            .entity_mut(entity)
+            .insert(Canceled)
+            .remove::<Countdown>();
+    }
 
-// #[test]
-// fn add2() {
-//     let mut ecs = ECS::new();
-//     let e = ecs.spawn_action_entity();
+    fn on_stop(&mut self, entity: Entity, world: &mut World) {
+        let count = world
+            .entity_mut(entity)
+            .insert(Stopped)
+            .remove::<Countdown>()
+            .unwrap();
+        self.current = Some(count.0);
+    }
+}
 
-//     ecs.actions(e).add(CountdownAction(0));
+fn countdown_system(mut countdown_q: Query<(Entity, &mut Countdown)>, mut commands: Commands) {
+    for (entity, mut countdown) in countdown_q.iter_mut() {
+        countdown.0 = countdown.0.saturating_sub(1);
+        if countdown.0 == 0 {
+            commands.actions(entity).finish();
+            continue;
+        }
+    }
+}
 
-//     assert!(ecs.get_current_action(e).is_some());
-//     assert!(ecs.get_action_queue(e).len() == 0);
+struct EmptyAction;
 
-//     ecs.actions(e).add(CountdownAction(0));
+impl Action for EmptyAction {
+    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
+        commands.actions(entity).finish();
+    }
 
-//     assert!(ecs.get_action_queue(e).len() == 1);
+    fn on_finish(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
+}
 
-//     ecs.actions(e).add(CountdownAction(0));
+#[test]
+fn add() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-//     assert!(ecs.get_action_queue(e).len() == 2);
-// }
+    ecs.actions(e).add(CountdownAction::new(0));
 
-// #[test]
-// fn push_without_submit() {
-//     let mut ecs = ECS::new();
-//     let e = ecs.spawn_action_entity();
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
 
-//     ecs.actions(e)
-//         .push(EmptyAction)
-//         .push(EmptyAction)
-//         .push(EmptyAction);
+    ecs.actions(e).add(CountdownAction::new(0));
 
-//     // Must call submit for actions to be added
-//     ecs.run();
+    assert!(ecs.get_action_queue(e).len() == 1);
 
-//     assert!(ecs.get_current_action(e).is_none());
-//     assert!(ecs.get_action_queue(e).len() == 0);
-// }
+    ecs.actions(e).add(CountdownAction::new(0));
 
-// #[test]
-// fn push_empty() {
-//     let mut ecs = ECS::new();
-//     let e = ecs.spawn_action_entity();
+    assert!(ecs.get_action_queue(e).len() == 2);
+}
 
-//     ecs.actions(e)
-//         .push(EmptyAction)
-//         .push(EmptyAction)
-//         .push(EmptyAction)
-//         .submit();
+#[test]
+fn next() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-//     // Empty actions are recursively finished.
-//     ecs.run();
+    ecs.actions(e).add(CountdownAction::new(0));
 
-//     assert!(ecs.get_current_action(e).is_none());
-//     assert!(ecs.get_action_queue(e).len() == 0);
-// }
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Canceled>());
 
-// #[test]
-// fn push2() {
-//     let mut ecs = ECS::new();
-//     let e = ecs.spawn_action_entity();
+    ecs.actions(e).next();
 
-//     ecs.actions(e)
-//         .push(CountdownAction(0)) // Finished after first run
-//         .push(CountdownAction(0)) // Current action after first run
-//         .push(CountdownAction(0)) // In action queue after first run
-//         .submit();
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Canceled>());
+}
 
-//     ecs.run();
+#[test]
+fn finish() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-//     assert!(ecs.get_current_action(e).is_some());
-//     assert!(ecs.get_action_queue(e).len() == 1);
-// }
+    ecs.actions(e).add(CountdownAction::new(0));
 
-// #[test]
-// fn finish2() {
-//     let mut ecs = ECS::new();
-//     let e = ecs.spawn_action_entity();
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Finished>());
 
-//     ecs.actions(e).add(CountdownAction(5));
+    ecs.actions(e).finish();
 
-//     ecs.run();
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Finished>());
+}
 
-//     assert!(ecs.get_current_action(e).is_some());
-//     assert!(ecs.get_action_queue(e).len() == 0);
-//     assert!(ecs.world.entity(e).contains::<Countdown>());
+#[test]
+fn stop() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-//     ecs.actions(e).finish();
+    ecs.actions(e).add(CountdownAction::new(0));
 
-//     ecs.run();
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Stopped>());
 
-//     assert!(ecs.get_current_action(e).is_none());
-//     assert!(ecs.get_action_queue(e).len() == 0);
-//     assert!(!ecs.world.entity(e).contains::<Countdown>());
-// }
+    ecs.actions(e).stop();
 
-// #[test]
-// fn cancel2() {
-//     let mut ecs = ECS::new();
-//     let e = ecs.spawn_action_entity();
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Stopped>());
+}
 
-//     ecs.actions(e).add(CountdownAction(5));
+#[test]
+fn clear() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-//     ecs.run();
+    ecs.actions(e)
+        .add(CountdownAction::new(0))
+        .add(CountdownAction::new(0))
+        .add(CountdownAction::new(0))
+        .clear();
 
-//     assert!(ecs.get_current_action(e).is_some());
-//     assert!(ecs.get_action_queue(e).len() == 0);
-//     assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.world.entity(e).contains::<Canceled>());
+}
 
-//     ecs.actions(e).stop(StopReason::Canceled);
+#[test]
+fn push() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
 
-//     ecs.run();
+    ecs.actions(e)
+        .push(EmptyAction)
+        .push(EmptyAction)
+        .push(EmptyAction);
 
-//     assert!(ecs.get_current_action(e).is_none());
-//     assert!(ecs.get_action_queue(e).len() == 0);
-//     assert!(!ecs.world.entity(e).contains::<Countdown>());
-// }
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.actions(e)
+        .push(EmptyAction)
+        .push(EmptyAction)
+        .push(EmptyAction)
+        .submit();
+
+    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.actions(e)
+        .push(CountdownAction::new(0))
+        .push(CountdownAction::new(0))
+        .push(CountdownAction::new(0))
+        .submit();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 2);
+}
+
+#[test]
+fn repeat() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: true,
+            repeat: true,
+        })
+        .add(CountdownAction::new(0));
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+}
+
+#[test]
+fn despawn() {
+    struct DespawnAction;
+    impl Action for DespawnAction {
+        fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            world.despawn(entity);
+        }
+
+        fn on_finish(&mut self, _entity: Entity, _world: &mut World) {}
+        fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
+        fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
+    }
+
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .add(CountdownAction::new(0))
+        .add(DespawnAction);
+
+    ecs.run();
+
+    assert!(ecs.world.get_entity(e).is_none());
+}
+
+#[test]
+fn order() {
+    #[derive(Default)]
+    struct Order<T: Default + Component>(PhantomData<T>);
+    impl<T: Default + Component> Action for Order<T> {
+        fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            world.entity_mut(entity).insert(T::default());
+        }
+        fn on_finish(&mut self, entity: Entity, world: &mut World) {
+            world.entity_mut(entity).remove::<T>();
+        }
+        fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
+        fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
+    }
+
+    #[derive(Default, Component)]
+    struct A;
+    #[derive(Default, Component)]
+    struct B;
+    #[derive(Default, Component)]
+    struct C;
+
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    // A, B, C
+    ecs.actions(e)
+        .add(Order::<A>::default())
+        .add(Order::<B>::default())
+        .add(Order::<C>::default());
+
+    assert!(ecs.world.entity(e).contains::<A>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<B>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<C>());
+
+    // C, B, A
+    ecs.actions(e)
+        .clear()
+        .config(AddConfig {
+            order: AddOrder::Front,
+            start: false,
+            repeat: false,
+        })
+        .push(Order::<A>::default())
+        .push(Order::<B>::default())
+        .push(Order::<C>::default())
+        .submit()
+        .next();
+
+    assert!(ecs.world.entity(e).contains::<C>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<B>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<A>());
+
+    // A, B, C
+    ecs.actions(e)
+        .clear()
+        .config(AddConfig {
+            order: AddOrder::Front,
+            start: false,
+            repeat: false,
+        })
+        .push(Order::<A>::default())
+        .push(Order::<B>::default())
+        .push(Order::<C>::default())
+        .reverse()
+        .submit()
+        .next();
+
+    assert!(ecs.world.entity(e).contains::<A>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<B>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<C>());
+}
+
+#[test]
+fn pause_resume() {
+    let mut ecs = ECS::new();
+    let e = ecs.spawn_action_entity();
+
+    fn get_first_countdown_value(world: &mut World) -> usize {
+        world.query::<&Countdown>().iter(world).next().unwrap().0
+    }
+
+    ecs.actions(e).add(CountdownAction::new(100));
+
+    ecs.run();
+
+    assert!(get_first_countdown_value(&mut ecs.world) == 99);
+
+    ecs.actions(e)
+        .stop()
+        .config(AddConfig {
+            order: AddOrder::Front,
+            start: true,
+            repeat: false,
+        })
+        .add(CountdownAction::new(2));
+
+    ecs.run();
+    ecs.run();
+
+    assert!(get_first_countdown_value(&mut ecs.world) == 99);
+}
 
 // #[test]
 // fn pause2() {
+//     let mut ecs = ECS::new();
+//     let e = ecs.spawn_action_entity();
+
+//     ecs.actions(e).add(CountdownAction::new(0));
+
+//     assert!(ecs.get_current_action(e).is_some());
+//     assert!(ecs.world.entity(e).contains::<Countdown>());
+//     assert!(!ecs.world.entity(e).contains::<Stopped>());
+
+//     ecs.actions(e).stop(StopReason::Paused);
+
+//     assert!(ecs.get_current_action(e).is_none());
+//     assert!(!ecs.world.entity(e).contains::<Countdown>());
+//     assert!(ecs.world.entity(e).contains::<Stopped>());
+// }
+
+// #[test]
+// fn pause_resume() {
+//     let mut ecs = ECS::new();
+//     let e = ecs.spawn_action_entity();
+
+//     fn get_first_countdown_value(world: &mut World) -> usize {
+//         world.query::<&Countdown>().iter(world).next().unwrap().0
+//     }
+
+//     ecs.actions(e).add(CountdownAction::new(100));
+
+//     ecs.run();
+
+//     assert!(get_first_countdown_value(&mut ecs.world) == 99);
+
+//     ecs.actions(e).stop(StopReason::Paused);
+
+//     assert!(ecs.get_current_action(e).is_none());
+//     assert!(ecs.world.entity(e).contains::<Stopped>());
+
+//     ecs.actions(e)
+//         .config(AddConfig {
+//             order: AddOrder::Front,
+//             start: true,
+//             repeat: false,
+//         })
+//         .add(CountdownAction::new(2));
+
+//     ecs.run();
+//     ecs.run();
+
+//     assert!(get_first_countdown_value(&mut ecs.world) == 99);
+// }
+
+// TODO: Hmmm how to fix
+// #[test]
+// fn pause_front() {
 //     let mut ecs = ECS::new();
 //     let e = ecs.spawn_action_entity();
 
@@ -248,62 +480,35 @@
 //     assert!(ecs.world.entity(e).contains::<Countdown>());
 //     assert!(ecs.world.entity(e).contains::<Paused>());
 
-//     ecs.actions(e).next();
+//     // Add another action to the front of queue
+//     ecs.actions(e)
+//         .config(AddConfig {
+//             order: AddOrder::Front,
+//             start: true,
+//             repeat: false,
+//         })
+//         .add(CountdownAction(0));
 
 //     ecs.run();
 
+//     // assert!(ecs.get_current_action(e).is_some());
 //     assert!(ecs.get_current_action(e).is_some());
-//     assert!(ecs.get_action_queue(e).len() == 0);
+//     assert!(ecs.get_action_queue(e).len() == 1);
 //     assert!(ecs.world.entity(e).contains::<Countdown>());
+//     assert!(ecs.world.entity(e).contains::<Paused>());
+
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+//     ecs.run();
+
+//     assert!(ecs.get_action_queue(e).len() == 0);
 //     assert!(!ecs.world.entity(e).contains::<Paused>());
 // }
 
-// // TODO: Hmmm how to fix
-// // #[test]
-// // fn pause_front() {
-// //     let mut ecs = ECS::new();
-// //     let e = ecs.spawn_action_entity();
-
-// //     ecs.actions(e)
-// //         .add(CountdownAction(5))
-// //         .stop(StopReason::Paused);
-
-// //     ecs.run();
-
-// //     assert!(ecs.get_current_action(e).is_none());
-// //     assert!(ecs.get_action_queue(e).len() == 1);
-// //     assert!(ecs.world.entity(e).contains::<Countdown>());
-// //     assert!(ecs.world.entity(e).contains::<Paused>());
-
-// //     // Add another action to the front of queue
-// //     ecs.actions(e)
-// //         .config(AddConfig {
-// //             order: AddOrder::Front,
-// //             start: true,
-// //             repeat: false,
-// //         })
-// //         .add(CountdownAction(0));
-
-// //     ecs.run();
-
-// //     // assert!(ecs.get_current_action(e).is_some());
-// //     assert!(ecs.get_current_action(e).is_some());
-// //     assert!(ecs.get_action_queue(e).len() == 1);
-// //     assert!(ecs.world.entity(e).contains::<Countdown>());
-// //     assert!(ecs.world.entity(e).contains::<Paused>());
-
-// //     ecs.run();
-// //     ecs.run();
-// //     ecs.run();
-// //     ecs.run();
-// //     ecs.run();
-// //     ecs.run();
-
-// //     assert!(ecs.get_action_queue(e).len() == 0);
-// //     assert!(!ecs.world.entity(e).contains::<Paused>());
-// // }
-
-// /////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
 
 // #[test]
 // fn add() {
