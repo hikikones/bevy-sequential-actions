@@ -81,7 +81,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn stop(mut self) -> Self {
         // Stop current
-        if let Some((mut action, mut cfg)) = self.take_current_action() {
+        if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_stop(self.entity, self.world);
 
             // Push stopped action to the front of the queue so it runs again
@@ -94,7 +94,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn clear(mut self) -> Self {
         // Cancel current
-        if let Some((mut action, mut cfg)) = self.take_current_action() {
+        if let Some((mut action, _)) = self.take_current_action() {
             action.on_cancel(self.entity, self.world);
         }
 
