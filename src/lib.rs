@@ -89,10 +89,9 @@ pub enum AddOrder {
 pub struct AddConfig {
     /// Specify the queue order for the [`action`](Action) to be added.
     pub order: AddOrder,
-    /// Start the [`action`](Action) if nothing is currently running.
+    /// Start the next [`action`](Action) in the queue if nothing is currently running.
     pub start: bool,
-    /// Repeat the [`action`](Action) when it has finished.
-    /// This is done by adding it back to the queue when it is removed.
+    /// Repeat the [`action`](Action) by adding it back to the queue when it is removed.
     pub repeat: bool,
 }
 
