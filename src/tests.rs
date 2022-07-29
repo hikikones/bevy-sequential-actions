@@ -266,6 +266,7 @@ fn repeat() {
 }
 
 #[test]
+#[should_panic]
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
@@ -288,6 +289,8 @@ fn despawn() {
     ecs.run();
 
     assert!(ecs.world.get_entity(e).is_none());
+
+    ecs.actions(e).add(EmptyAction);
 }
 
 #[test]
