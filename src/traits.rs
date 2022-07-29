@@ -1,14 +1,5 @@
 use crate::*;
 
-// TODO
-
-// ACTION
-// -------------
-// on_start
-// on_finish
-// on_cancel
-// on_stop
-
 /// The trait that all actions must implement.
 ///
 /// All actions must declare when they are finished.
