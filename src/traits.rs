@@ -21,11 +21,9 @@ use crate::*;
 ///
 /// An action that does nothing.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
-/// #
-/// # fn main() {}
 /// #
 /// struct EmptyAction;
 ///
@@ -45,35 +43,13 @@ use crate::*;
 ///
 /// An action that waits a specified time in seconds.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
-/// # use shared::actions::QuitAction;
 /// #
-/// # fn main() {
-/// #     App::new()
-/// #         .add_plugins(MinimalPlugins)
-/// #         .add_startup_system(setup)
-/// #         .add_system(wait)
-/// #         .run();
-/// # }
-/// #
-/// # fn setup(mut commands: Commands) {
-/// #     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
-/// #     commands.actions(entity).add(WaitAction::new(0.0)).add(QuitAction);
-/// # }
 /// pub struct WaitAction {
 ///     duration: f32,
 ///     current: Option<f32>,
-/// }
-///
-/// impl WaitAction {
-///     pub fn new(seconds: f32) -> Self {
-///         Self {
-///             duration: seconds,
-///             current: None,
-///         }
-///     }
 /// }
 ///
 /// impl Action for WaitAction {
@@ -153,13 +129,12 @@ impl IntoAction for Box<dyn Action> {
 /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
 /// Actions need to be properly queued, which is what [`ActionCommands`] does.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
 /// #
-/// # fn main() {}
-/// #
 /// struct EmptyAction;
+///
 /// impl Action for EmptyAction {
 ///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad

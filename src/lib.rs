@@ -12,21 +12,14 @@
 //! An action is anything that implements the [`Action`] trait,
 //! and can be added to any [`Entity`] that contains the [`ActionsBundle`].
 //!
-//! ```rust
+//! ```rust,no_run
 //! # use bevy::prelude::*;
 //! # use bevy_sequential_actions::*;
-//! # fn main() {}
-//! # struct EmptyAction;
-//! # impl Action for EmptyAction {
-//! #     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {}
-//! #     fn on_finish(&mut self, entity: Entity, world: &mut World) {}
-//! #     fn on_cancel(&mut self, entity: Entity, world: &mut World) {}
-//! #     fn on_stop(&mut self, entity: Entity, world: &mut World) {}
-//! # }
+//! # use shared::actions::QuitAction;
 //! fn setup(mut commands: Commands) {
-//! #   let wait_action = EmptyAction;
-//! #   let move_action = EmptyAction;
-//! #   let quit_action = EmptyAction;
+//! #   let wait_action = QuitAction;
+//! #   let move_action = QuitAction;
+//! #   let quit_action = QuitAction;
 //! #
 //!     // Create entity with ActionsBundle
 //!     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
