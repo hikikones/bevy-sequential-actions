@@ -31,7 +31,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn add(mut self, action: impl IntoAction) -> Self {
-        // Enqueue action
         let action_tuple = (action.into_boxed(), self.config.into());
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         match self.config.order {
@@ -39,7 +38,6 @@ impl ModifyActions for EntityWorldActions<'_> {
             AddOrder::Back => actions.push_back(action_tuple),
         }
 
-        // Start action if nothing is currently running
         if self.config.start && !self.has_current_action() {
             self.start_next_action();
         }
@@ -48,7 +46,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn next(mut self) -> Self {
-        // Cancel current
         if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_cancel(self.entity, self.world);
 
@@ -64,7 +61,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn finish(mut self) -> Self {
-        // Finish current
         if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_finish(self.entity, self.world);
 
@@ -80,7 +76,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn stop(mut self) -> Self {
-        // Stop current
         if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_stop(self.entity, self.world);
 
@@ -93,12 +88,10 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn clear(mut self) -> Self {
-        // Cancel current
         if let Some((mut action, _)) = self.take_current_action() {
             action.on_cancel(self.entity, self.world);
         }
 
-        // Clear queue
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         actions.clear();
 
