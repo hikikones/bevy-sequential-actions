@@ -1,10 +1,10 @@
 [package]
 name = "bevy-sequential-actions"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["hikikones"]
-description = "A Bevy library for executing actions in a sequence."
+description = "A Bevy library for executing various actions in a sequence."
 repository = "https://github.com/hikikones/bevy-sequential-actions"
 homepage = "https://github.com/hikikones/bevy-sequential-actions"
 keywords = ["bevy", "action", "sequence", "command"]
