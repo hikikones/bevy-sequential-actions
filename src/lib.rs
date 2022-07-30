@@ -101,6 +101,17 @@ impl Default for AddConfig {
     }
 }
 
+/// The reason why an [Action] was stopped.
+#[derive(Clone, Copy)]
+pub enum StopReason {
+    /// The [`action`](Action) was finished.
+    Finished,
+    /// The [`action`](Action) was canceled.
+    Canceled,
+    /// The [`action`](Action) was paused.
+    Paused,
+}
+
 type ActionTuple = (Box<dyn Action>, ActionConfig);
 
 #[derive(Default, Component)]

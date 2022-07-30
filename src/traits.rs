@@ -82,14 +82,8 @@ pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
 
-    /// The method that is called when an action is finished.
-    fn on_finish(&mut self, entity: Entity, world: &mut World);
-
-    /// The method that is called when an action is canceled.
-    fn on_cancel(&mut self, entity: Entity, world: &mut World);
-
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, entity: Entity, world: &mut World);
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason);
 }
 
 /// Conversion into an [`Action`].
@@ -157,19 +151,21 @@ pub trait ModifyActions {
     fn add(self, action: impl IntoAction) -> Self;
 
     /// [`Starts`](Action::on_start) the next action in the queue.
-    /// Current action is [`canceled`](Action::on_cancel) and removed from the queue.
+    /// Current action is [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
     /// [`Starts`](Action::on_start) the next action in the queue.
-    /// Current action is [`finished`](Action::on_cancel) and removed from the queue.
+    /// Current action is [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
-    /// [`Stops`](Action::on_stop) the current [`action`](Action).
-    /// A stopped action is not removed from the queue.
-    fn stop(self) -> Self;
+    /// [`Pauses`](Action::on_start) the current action.
+    fn pause(self) -> Self;
+
+    /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
+    fn stop(self, reason: StopReason) -> Self;
 
     /// Clears the actions queue.
-    /// Current action is [`canceled`](Action::on_cancel).
+    /// Current action is [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
