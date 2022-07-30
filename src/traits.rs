@@ -20,7 +20,7 @@ use crate::*;
 ///
 /// impl Action for EmptyAction {
 ///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished
+///         // Action is finished.
 ///         commands.actions(entity).finish();
 ///     }
 ///
@@ -72,7 +72,7 @@ use crate::*;
 ///     for (entity, mut wait) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
-///             // Action is finished
+///             // Action is finished.
 ///             commands.actions(entity).finish();
 ///         }
 ///     }

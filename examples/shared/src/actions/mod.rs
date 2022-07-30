@@ -18,7 +18,7 @@ pub use wait_action::*;
 ///
 /// # Example
 ///
-/// Say you have an entity with a running action `A` and action `B` in the queue.
+/// Say you have an entity with a running action `A` and another action `B` in the queue.
 /// Say you also have a system that stops the current action when `space` is pressed.
 /// Say also that everything runs in the same stage, and no explicit system ordering has been done.
 /// You want to stop this action before it finishes, so you press `space`.
@@ -37,12 +37,8 @@ pub struct ActionsPlugin;
 
 impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_stage_after(
-            CoreStage::PostUpdate,
-            ACTIONS_STAGE,
-            SystemStage::parallel(),
-        )
-        .add_plugin(WaitActionPlugin)
-        .add_plugin(MoveActionPlugin);
+        app.add_stage_after(CoreStage::Update, ACTIONS_STAGE, SystemStage::parallel())
+            .add_plugin(WaitActionPlugin)
+            .add_plugin(MoveActionPlugin);
     }
 }

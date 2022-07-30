@@ -1,6 +1,6 @@
 # Bevy Sequential Actions
 
-`bevy-sequential-actions` is a library for the [Bevy](https://bevyengine.org) game engine that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start, and so on until the list is empty.
+A [Bevy](https://bevyengine.org) library that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start and so on until the list is empty.
 
 https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-a326-f34e055a1b40.mp4
 
@@ -22,9 +22,9 @@ fn setup(mut commands: Commands) {
         .config(AddConfig {
             // Add each action to the back of the queue
             order: AddOrder::Back,
-            // Start the next in the queue if nothing is currently running
+            // Start action if nothing is currently running
             start: true,
-            // Repeat the action by adding it back to the queue when it is removed
+            // Repeat the action
             repeat: false,
         })
         .add(move_action)
