@@ -10,9 +10,9 @@ impl DespawnAction {
 }
 
 impl Action for DespawnAction {
-    fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         world.despawn(entity);
     }
 
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
 }

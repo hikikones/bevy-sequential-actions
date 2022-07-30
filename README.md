@@ -1,6 +1,6 @@
 # Bevy Sequential Actions
 
-`bevy-sequential-actions` is a library for the [Bevy](https://bevyengine.org) game engine that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start, and so on until the list is empty.
+A [Bevy](https://bevyengine.org) library that aims to execute a list of actions in a sequential manner. This generally means that one action runs at a time, and when it is done, the next action will start and so on until the list is empty.
 
 https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-a326-f34e055a1b40.mp4
 
@@ -40,7 +40,7 @@ Consider running with `--release` as debug builds can be quite slow.
 | Example  | Description                                                                            |
 | -------- | -------------------------------------------------------------------------------------- |
 | `basic`  | Shows the basic usage of the library by adding some actions and then quitting the app. |
-| `stop`   | Shows how to stop and resume an action by pressing `space`.                            |
+| `pause`  | Shows how to pause and resume an action when pressing `space`.                         |
 | `repeat` | Shows how to add actions that basically loop forever in the added order.               |
 
 ## Compatibility

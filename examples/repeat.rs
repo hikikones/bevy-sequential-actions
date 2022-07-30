@@ -14,6 +14,13 @@ fn main() {
 
 fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
     let player = player_q.single();
+
+    let min_wait = 0.5;
+    let max_wait = 2.0;
+
+    let min_move = Vec3::new(-4.0, 0.0, -4.0);
+    let max_move = min_move * -1.0;
+
     commands
         .actions(player)
         .config(AddConfig {
@@ -21,8 +28,6 @@ fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
             start: true,
             repeat: true,
         })
-        .add(WaitAction::new(1.0))
-        .add(MoveAction::new(-Vec3::X * 4.0))
-        .add(WaitAction::new(1.0))
-        .add(MoveAction::new(Vec3::X * 4.0));
+        .add(WaitRandomAction::new(min_wait, max_wait))
+        .add(MoveRandomAction::new(min_move, max_move));
 }

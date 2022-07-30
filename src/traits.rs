@@ -2,8 +2,8 @@ use crate::*;
 
 /// The trait that all actions must implement.
 ///
-/// All actions must declare when they are done.
-/// This is done by calling [`next`](ModifyActions::next)
+/// All actions must declare when they are finished.
+/// This is done by calling [`finish`](ModifyActions::finish)
 /// from either [`ActionCommands`] or [`Commands`].
 ///
 /// # Examples
@@ -12,21 +12,19 @@ use crate::*;
 ///
 /// An action that does nothing.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
-/// #
-/// # fn main() {}
 /// #
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished, issue next.
-///         commands.actions(entity).next();
+///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///         // Action is finished.
+///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
 /// }
 /// ```
 ///
@@ -34,32 +32,32 @@ use crate::*;
 ///
 /// An action that waits a specified time in seconds.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
-/// # use shared::actions::QuitAction;
 /// #
-/// # fn main() {
-/// #     App::new()
-/// #         .add_plugins(MinimalPlugins)
-/// #         .add_startup_system(setup)
-/// #         .add_system(wait)
-/// #         .run();
-/// # }
-/// #
-/// # fn setup(mut commands: Commands) {
-/// #     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
-/// #     commands.actions(entity).add(WaitAction(0.0)).add(QuitAction);
-/// # }
-/// struct WaitAction(f32);
+/// pub struct WaitAction {
+///     duration: f32,
+///     current: Option<f32>,
+/// }
 ///
 /// impl Action for WaitAction {
-///     fn start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-///         world.entity_mut(entity).insert(Wait(self.0));
+///     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+///         let duration = self.current.unwrap_or(self.duration);
+///         world.entity_mut(entity).insert(Wait(duration));
 ///     }
 ///
-///     fn stop(&mut self, entity: Entity, world: &mut World) {
-///         world.entity_mut(entity).remove::<Wait>();
+///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+///         match reason {
+///             StopReason::Finished | StopReason::Canceled => {
+///                 world.entity_mut(entity).remove::<Wait>();
+///                 self.current = None;
+///             }
+///             StopReason::Paused => {
+///                 let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
+///                 self.current = Some(wait.0);
+///             }
+///         }
 ///     }
 /// }
 ///
@@ -70,18 +68,18 @@ use crate::*;
 ///     for (entity, mut wait) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
-///             // Action is finished, issue next.
-///             commands.actions(entity).next();
+///             // Action is finished.
+///             commands.actions(entity).finish();
 ///         }
 ///     }
 /// }
 /// ```
 pub trait Action: Send + Sync {
     /// The method that is called when an action is started.
-    fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
 
     /// The method that is called when an action is stopped.
-    fn stop(&mut self, entity: Entity, world: &mut World);
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason);
 }
 
 /// Conversion into an [`Action`].
@@ -112,23 +110,22 @@ impl IntoAction for Box<dyn Action> {
 /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
 /// Actions need to be properly queued, which is what [`ActionCommands`] does.
 ///
-/// ```rust
+/// ```rust,no_run
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
 /// #
-/// # fn main() {}
-/// #
 /// struct EmptyAction;
+///
 /// impl Action for EmptyAction {
-///     fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
-///         world.actions(entity).next();
+///         world.actions(entity).finish();
 ///
 ///         // Good
-///         commands.actions(entity).next();
+///         commands.actions(entity).finish();
 ///     }
 ///
-///     fn stop(&mut self, entity: Entity, world: &mut World) {}
+///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
 /// }
 ///```
 pub trait ActionsProxy<'a> {
@@ -147,14 +144,22 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// Starts the next [`action`](Action) in the queue by [`stopping`](Action::stop) the currently running action,
-    /// and [`starting`](Action::start) the next action in the queue list.
+    /// [`Starts`](Action::on_start) the next action in the queue.
+    /// Current action is [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Stops`](Action::stop) the currently running [`action`](Action) without removing it from the queue.
-    fn stop(self) -> Self;
+    /// [`Starts`](Action::on_start) the next action in the queue.
+    /// Current action is [`finished`](StopReason::Finished).
+    fn finish(self) -> Self;
 
-    /// [`Stops`](Action::stop) the currently running [`action`](Action), and clears any remaining.
+    /// [`Pauses`](Action::on_start) the current action.
+    fn pause(self) -> Self;
+
+    /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
+    fn stop(self, reason: StopReason) -> Self;
+
+    /// Clears the actions queue.
+    /// Current action is [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).

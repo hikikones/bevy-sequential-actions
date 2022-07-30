@@ -15,14 +15,14 @@ impl<T: Command> CommandAction<T> {
 }
 
 impl<T: Command> Action for CommandAction<T> {
-    fn start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         let mut queue = CommandQueue::default();
         let mut cmds = Commands::new(&mut queue, world);
         cmds.add(self.cmd.take().unwrap());
         queue.apply(world);
 
-        commands.actions(entity).next();
+        commands.actions(entity).finish();
     }
 
-    fn stop(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
 }

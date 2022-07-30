@@ -26,11 +26,11 @@ pub struct EntityWorldActions<'a> {
 impl ModifyActions for EntityWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
+
         self
     }
 
-    fn add(self, action: impl IntoAction) -> Self {
-        // Enqueue action
+    fn add(mut self, action: impl IntoAction) -> Self {
         let action_tuple = (action.into_boxed(), self.config.into());
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         match self.config.order {
@@ -38,91 +38,42 @@ impl ModifyActions for EntityWorldActions<'_> {
             AddOrder::Back => actions.push_back(action_tuple),
         }
 
-        // Start next action if nothing is currently running
-        if self.config.start
-            && self
-                .world
-                .get::<CurrentAction>(self.entity)
-                .unwrap()
-                .is_none()
-        {
-            return self.next();
+        if self.config.start && !self.has_current_action() {
+            self.start_next_action();
         }
 
         self
     }
 
-    fn next(self) -> Self {
-        // Get current action
-        let current = self
-            .world
-            .get_mut::<CurrentAction>(self.entity)
-            .unwrap()
-            .take();
-
-        // Stop current action
-        if let Some((mut action, cfg)) = current {
-            action.stop(self.entity, self.world);
-            if cfg.repeat {
-                // Add action back to queue again if repeat
-                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                actions.push_back((action, cfg));
-            }
-        }
-
-        // Get next action
-        let next = self
-            .world
-            .get_mut::<ActionQueue>(self.entity)
-            .unwrap()
-            .pop_front();
-
-        // Start and set current action
-        if let Some((mut action, cfg)) = next {
-            let mut commands = ActionCommands::default();
-            action.start(self.entity, self.world, &mut commands);
-            if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
-                **current = Some((action, cfg));
-            }
-            commands.apply(self.world);
-        }
+    fn next(mut self) -> Self {
+        self.stop_current_action(StopReason::Canceled);
+        self.start_next_action();
 
         self
     }
 
-    fn stop(self) -> Self {
-        // Get current action
-        let current = self
-            .world
-            .get_mut::<CurrentAction>(self.entity)
-            .unwrap()
-            .take();
-
-        // Stop current action
-        if let Some((mut action, cfg)) = current {
-            action.stop(self.entity, self.world);
-            let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-            // Push stopped action to front so it runs again when next action is called
-            actions.push_front((action, cfg));
-        }
+    fn finish(mut self) -> Self {
+        self.stop_current_action(StopReason::Finished);
+        self.start_next_action();
 
         self
     }
 
-    fn clear(self) -> Self {
-        // Get current action
-        let current = self
-            .world
-            .get_mut::<CurrentAction>(self.entity)
-            .unwrap()
-            .take();
+    fn pause(mut self) -> Self {
+        self.stop_current_action(StopReason::Paused);
 
-        // Stop current action
-        if let Some((mut action, _)) = current {
-            action.stop(self.entity, self.world);
-        }
+        self
+    }
 
-        // Clear remaining
+    fn stop(mut self, reason: StopReason) -> Self {
+        self.stop_current_action(reason);
+
+        self
+    }
+
+    fn clear(mut self) -> Self {
+        self.stop_current_action(StopReason::Canceled);
+
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         actions.clear();
 
@@ -131,11 +82,13 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push((action.into_boxed(), self.config));
+
         self
     }
 
     fn reverse(mut self) -> Self {
         self.actions.reverse();
+
         self
     }
 
@@ -150,5 +103,60 @@ impl ModifyActions for EntityWorldActions<'_> {
         command_queue.apply(self.world);
 
         self
+    }
+}
+
+impl EntityWorldActions<'_> {
+    fn stop_current_action(&mut self, reason: StopReason) {
+        if let Some((mut action, cfg)) = self.take_current_action() {
+            action.on_stop(self.entity, self.world, reason);
+
+            match reason {
+                StopReason::Finished | StopReason::Canceled => {
+                    if cfg.repeat {
+                        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                        actions.push_back((action, cfg));
+                    }
+                }
+                StopReason::Paused => {
+                    let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                    actions.push_front((action, cfg));
+                }
+            }
+        }
+    }
+
+    fn start_next_action(&mut self) {
+        if let Some((mut action, cfg)) = self.pop_next_action() {
+            let mut commands = ActionCommands::default();
+            action.on_start(self.entity, self.world, &mut commands);
+
+            if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
+                **current = Some((action, cfg));
+            }
+
+            commands.apply(self.world);
+        }
+    }
+
+    fn take_current_action(&mut self) -> Option<ActionTuple> {
+        self.world
+            .get_mut::<CurrentAction>(self.entity)
+            .unwrap()
+            .take()
+    }
+
+    fn pop_next_action(&mut self) -> Option<ActionTuple> {
+        self.world
+            .get_mut::<ActionQueue>(self.entity)
+            .unwrap()
+            .pop_front()
+    }
+
+    fn has_current_action(&self) -> bool {
+        self.world
+            .get::<CurrentAction>(self.entity)
+            .unwrap()
+            .is_some()
     }
 }
