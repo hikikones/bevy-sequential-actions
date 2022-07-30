@@ -3,7 +3,7 @@ use bevy_sequential_actions::*;
 
 use crate::extensions::{LookRotationExt, MoveTowardsExt};
 
-use super::ACTIONS_STAGE;
+use super::{random_vec3, ACTIONS_STAGE};
 
 pub struct MoveActionPlugin;
 
@@ -84,5 +84,43 @@ fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res
             Quat::look_rotation(dir, Vec3::Y),
             speed.0 * 2.0 * time.delta_seconds(),
         );
+    }
+}
+
+pub struct MoveRandomAction {
+    min: Vec3,
+    max: Vec3,
+    target: Option<Vec3>,
+}
+
+impl MoveRandomAction {
+    pub fn new(min: Vec3, max: Vec3) -> Self {
+        Self {
+            min,
+            max,
+            target: None,
+        }
+    }
+}
+
+impl Action for MoveRandomAction {
+    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(entity).insert_bundle(MoveBundle {
+            target: Target(self.target.unwrap_or(random_vec3(self.min, self.max))),
+            speed: Speed(4.0),
+        });
+    }
+
+    fn on_finish(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+        self.target = None;
+    }
+
+    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
+        self.on_finish(entity, world);
+    }
+
+    fn on_stop(&mut self, entity: Entity, world: &mut World) {
+        world.entity_mut(entity).remove_bundle::<MoveBundle>();
     }
 }

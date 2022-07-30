@@ -14,25 +14,21 @@ fn main() {
 
 fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
     let player = player_q.single();
+
+    let min_wait = 0.5;
+    let max_wait = 2.0;
+
+    let min_move = Vec3::new(-4.0, 0.0, -4.0);
+    let max_move = min_move * -1.0;
+
     commands
         .actions(player)
-        .add(WaitAction::new(random_f32()))
-        .add(MoveAction::new(random_vec3()))
-        .add(WaitAction::new(random_f32()))
-        .add(MoveAction::new(random_vec3()))
-        .add(WaitAction::new(random_f32()))
-        .add(MoveAction::new(random_vec3()))
-        .add(WaitAction::new(random_f32()))
+        .add(WaitRandomAction::new(min_wait, max_wait))
+        .add(MoveRandomAction::new(min_move, max_move))
+        .add(WaitRandomAction::new(min_wait, max_wait))
+        .add(MoveRandomAction::new(min_move, max_move))
+        .add(WaitRandomAction::new(min_wait, max_wait))
+        .add(MoveRandomAction::new(min_move, max_move))
+        .add(WaitRandomAction::new(min_wait, max_wait))
         .add(QuitAction::new());
-}
-
-fn random_f32() -> f32 {
-    0.5 + fastrand::f32() * 2.0
-}
-
-fn random_vec3() -> Vec3 {
-    let x = fastrand::isize(-5..=5) as f32 * fastrand::f32();
-    let y = 0.0;
-    let z = fastrand::isize(-5..=5) as f32 * fastrand::f32();
-    Vec3::new(x, y, z)
 }
