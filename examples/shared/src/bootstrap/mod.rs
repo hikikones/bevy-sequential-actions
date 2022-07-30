@@ -27,6 +27,6 @@ impl Plugin for BootstrapPlugin {
                     .with_system(player::spawn_player)
                     .with_system(camera::spawn_camera),
             )
-            .add_system(bevy::input::system::exit_on_esc_system);
+            .add_system(bevy::window::close_on_esc);
     }
 }

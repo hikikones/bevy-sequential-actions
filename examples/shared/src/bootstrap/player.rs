@@ -9,7 +9,7 @@ pub struct Player;
 pub(super) fn spawn_player(assets: Res<MyAssets>, mut commands: Commands) {
     commands
         .spawn()
-        .insert_bundle(TransformBundle::default())
+        .insert_bundle(SpatialBundle::default())
         .insert_bundle(ActionsBundle::default())
         .insert(Player)
         .with_children(|child| {
