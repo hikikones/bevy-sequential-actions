@@ -4,12 +4,12 @@ use bevy::prelude::*;
 
 use crate::*;
 
-struct ECS {
+struct Ecs {
     world: World,
     schedule: Schedule,
 }
 
-impl ECS {
+impl Ecs {
     fn new() -> Self {
         let world = World::new();
         let mut schedule = Schedule::default();
@@ -124,7 +124,7 @@ impl Action for EmptyAction {
 
 #[test]
 fn add() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e).add(CountdownAction::new(0));
@@ -144,14 +144,14 @@ fn add() {
 #[test]
 #[should_panic]
 fn add_panic() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).add(EmptyAction);
 }
 
 #[test]
 fn next() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e).add(CountdownAction::new(0));
@@ -168,14 +168,14 @@ fn next() {
 #[test]
 #[should_panic]
 fn next_panic() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).next();
 }
 
 #[test]
 fn finish() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e).add(CountdownAction::new(0));
@@ -192,14 +192,14 @@ fn finish() {
 #[test]
 #[should_panic]
 fn finish_panic() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).finish();
 }
 
 #[test]
 fn pause() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e).add(CountdownAction::new(0));
@@ -216,14 +216,14 @@ fn pause() {
 #[test]
 #[should_panic]
 fn pause_panic() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).stop(StopReason::Paused);
 }
 
 #[test]
 fn clear() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e)
@@ -240,14 +240,14 @@ fn clear() {
 #[test]
 #[should_panic]
 fn clear_panic() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).clear();
 }
 
 #[test]
 fn push() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e)
@@ -279,7 +279,7 @@ fn push() {
 
 #[test]
 fn repeat() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e)
@@ -310,7 +310,7 @@ fn despawn() {
         fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
     }
 
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e)
@@ -345,7 +345,7 @@ fn order() {
     #[derive(Default, Component)]
     struct C;
 
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     // A, B, C
@@ -416,7 +416,7 @@ fn order() {
 
 #[test]
 fn pause_resume() {
-    let mut ecs = ECS::new();
+    let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
     fn get_first_countdown_value(world: &mut World) -> usize {
