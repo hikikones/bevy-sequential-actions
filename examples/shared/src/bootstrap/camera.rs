@@ -1,6 +1,6 @@
-use bevy::{math::const_vec3, prelude::*};
+use bevy::prelude::*;
 
-pub const CAMERA_OFFSET: Vec3 = const_vec3!([0.0, 10.0, 8.0]);
+pub const CAMERA_OFFSET: Vec3 = Vec3::new(0.0, 10.0, 8.0);
 
 #[derive(Component)]
 pub struct CameraMain;
@@ -14,7 +14,7 @@ pub(super) fn spawn_camera(mut commands: Commands) {
         .insert(CameraPivot)
         .with_children(|child| {
             child
-                .spawn_bundle(PerspectiveCameraBundle {
+                .spawn_bundle(Camera3dBundle {
                     transform: Transform::from_translation(CAMERA_OFFSET)
                         .looking_at(Vec3::ZERO, Vec3::Y),
                     ..Default::default()

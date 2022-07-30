@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 bevy-sequential-actions = { path = "../../" }
-bevy = "0.7"
+bevy = "0.8"
 fastrand = "1.7"
