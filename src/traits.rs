@@ -43,9 +43,8 @@ use crate::*;
 ///
 /// impl Action for WaitAction {
 ///     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-///         world
-///             .entity_mut(entity)
-///             .insert(Wait(self.current.unwrap_or(self.duration)));
+///         let duration = self.current.unwrap_or(self.duration);
+///         world.entity_mut(entity).insert(Wait(duration));
 ///     }
 ///
 ///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
