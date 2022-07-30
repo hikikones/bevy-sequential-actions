@@ -105,8 +105,19 @@ impl MoveRandomAction {
 
 impl Action for MoveRandomAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        if let Some(target) = self.target {
+            world.entity_mut(entity).insert_bundle(MoveBundle {
+                target: Target(target),
+                speed: Speed(4.0),
+            });
+            return;
+        }
+
+        let target = random_vec3(self.min, self.max);
+        self.target = Some(target);
+
         world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(self.target.unwrap_or(random_vec3(self.min, self.max))),
+            target: Target(target),
             speed: Speed(4.0),
         });
     }
