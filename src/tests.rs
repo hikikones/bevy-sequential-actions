@@ -72,7 +72,7 @@ struct Finished;
 struct Canceled;
 
 #[derive(Component)]
-struct Stopped;
+struct Paused;
 
 impl Action for CountdownAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
@@ -81,28 +81,24 @@ impl Action for CountdownAction {
             .insert(Countdown(self.current.unwrap_or(self.count)));
     }
 
-    fn on_finish(&mut self, entity: Entity, world: &mut World) {
-        world
-            .entity_mut(entity)
-            .insert(Finished)
-            .remove::<Countdown>();
-        self.current = None;
-    }
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+        let mut e = world.entity_mut(entity);
+        let count = e.remove::<Countdown>();
 
-    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
-        world
-            .entity_mut(entity)
-            .insert(Canceled)
-            .remove::<Countdown>();
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World) {
-        let count = world
-            .entity_mut(entity)
-            .insert(Stopped)
-            .remove::<Countdown>()
-            .unwrap();
-        self.current = Some(count.0);
+        match reason {
+            StopReason::Finished => {
+                self.current = None;
+                e.insert(Finished);
+            }
+            StopReason::Canceled => {
+                self.current = None;
+                e.insert(Canceled);
+            }
+            StopReason::Paused => {
+                self.current = Some(count.unwrap().0);
+                e.insert(Paused);
+            }
+        }
     }
 }
 
@@ -123,9 +119,7 @@ impl Action for EmptyAction {
         commands.actions(entity).finish();
     }
 
-    fn on_finish(&mut self, _entity: Entity, _world: &mut World) {}
-    fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
-    fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 #[test]
@@ -204,27 +198,27 @@ fn finish_panic() {
 }
 
 #[test]
-fn stop() {
+fn pause() {
     let mut ecs = ECS::new();
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
     assert!(ecs.world.entity(e).contains::<Countdown>());
-    assert!(!ecs.world.entity(e).contains::<Stopped>());
+    assert!(!ecs.world.entity(e).contains::<Paused>());
 
-    ecs.actions(e).stop();
+    ecs.actions(e).pause();
 
     assert!(!ecs.world.entity(e).contains::<Countdown>());
-    assert!(ecs.world.entity(e).contains::<Stopped>());
+    assert!(ecs.world.entity(e).contains::<Paused>());
 }
 
 #[test]
 #[should_panic]
-fn stop_panic() {
+fn pause_panic() {
     let mut ecs = ECS::new();
     let e = ecs.world.spawn().id();
-    ecs.actions(e).stop();
+    ecs.actions(e).stop(StopReason::Paused);
 }
 
 #[test]
@@ -313,10 +307,7 @@ fn despawn() {
         fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.despawn(entity);
         }
-
-        fn on_finish(&mut self, _entity: Entity, _world: &mut World) {}
-        fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
-        fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
+        fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
     }
 
     let mut ecs = ECS::new();
@@ -342,11 +333,9 @@ fn order() {
         fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.entity_mut(entity).insert(T::default());
         }
-        fn on_finish(&mut self, entity: Entity, world: &mut World) {
+        fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
             world.entity_mut(entity).remove::<T>();
         }
-        fn on_cancel(&mut self, _entity: Entity, _world: &mut World) {}
-        fn on_stop(&mut self, _entity: Entity, _world: &mut World) {}
     }
 
     #[derive(Default, Component)]
@@ -441,7 +430,7 @@ fn pause_resume() {
     assert!(get_first_countdown_value(&mut ecs.world) == 99);
 
     ecs.actions(e)
-        .stop()
+        .pause()
         .config(AddConfig {
             order: AddOrder::Front,
             start: true,

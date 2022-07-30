@@ -34,16 +34,8 @@ impl Action for MoveAction {
         });
     }
 
-    fn on_finish(&mut self, entity: Entity, world: &mut World) {
+    fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
         world.entity_mut(entity).remove_bundle::<MoveBundle>();
-    }
-
-    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
-        self.on_finish(entity, world);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World) {
-        self.on_cancel(entity, world);
     }
 }
 
@@ -105,16 +97,13 @@ impl MoveRandomAction {
 
 impl Action for MoveRandomAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        if let Some(target) = self.target {
-            world.entity_mut(entity).insert_bundle(MoveBundle {
-                target: Target(target),
-                speed: Speed(4.0),
-            });
-            return;
-        }
-
-        let target = random_vec3(self.min, self.max);
-        self.target = Some(target);
+        let target = if let Some(target) = self.target {
+            target
+        } else {
+            let random = random_vec3(self.min, self.max);
+            self.target = Some(random);
+            random
+        };
 
         world.entity_mut(entity).insert_bundle(MoveBundle {
             target: Target(target),
@@ -122,16 +111,11 @@ impl Action for MoveRandomAction {
         });
     }
 
-    fn on_finish(&mut self, entity: Entity, world: &mut World) {
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
         world.entity_mut(entity).remove_bundle::<MoveBundle>();
-        self.target = None;
-    }
 
-    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
-        self.on_finish(entity, world);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+        if let StopReason::Finished | StopReason::Canceled = reason {
+            self.target = None;
+        }
     }
 }

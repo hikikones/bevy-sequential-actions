@@ -32,18 +32,17 @@ impl Action for WaitAction {
             .insert(Wait(self.current.unwrap_or(self.duration)));
     }
 
-    fn on_finish(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Wait>();
-        self.current = None;
-    }
-
-    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
-        self.on_finish(entity, world);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World) {
-        let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
-        self.current = Some(wait.0);
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+        match reason {
+            StopReason::Finished | StopReason::Canceled => {
+                world.entity_mut(entity).remove::<Wait>();
+                self.current = None;
+            }
+            StopReason::Paused => {
+                let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
+                self.current = Some(wait.0);
+            }
+        }
     }
 }
 
@@ -82,17 +81,16 @@ impl Action for WaitRandomAction {
             .insert(Wait(self.current.unwrap_or(random_f32(self.min, self.max))));
     }
 
-    fn on_finish(&mut self, entity: Entity, world: &mut World) {
-        world.entity_mut(entity).remove::<Wait>();
-        self.current = None;
-    }
-
-    fn on_cancel(&mut self, entity: Entity, world: &mut World) {
-        self.on_finish(entity, world);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World) {
-        let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
-        self.current = Some(wait.0);
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+        match reason {
+            StopReason::Finished | StopReason::Canceled => {
+                world.entity_mut(entity).remove::<Wait>();
+                self.current = None;
+            }
+            StopReason::Paused => {
+                let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
+                self.current = Some(wait.0);
+            }
+        }
     }
 }

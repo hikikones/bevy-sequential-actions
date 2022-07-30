@@ -33,17 +33,17 @@ fn input(
     keyboard: Res<Input<KeyCode>>,
     player_q: Query<Entity, With<Player>>,
     mut commands: Commands,
-    mut is_stopped: Local<bool>,
+    mut is_paused: Local<bool>,
 ) {
     if keyboard.just_pressed(KeyCode::Space) {
         let player = player_q.single();
 
-        if *is_stopped {
+        if *is_paused {
             commands.actions(player).next();
         } else {
-            commands.actions(player).stop();
+            commands.actions(player).pause();
         }
 
-        *is_stopped = !*is_stopped;
+        *is_paused = !*is_paused;
     }
 }

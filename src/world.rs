@@ -46,51 +46,33 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn next(mut self) -> Self {
-        if let Some((mut action, cfg)) = self.take_current_action() {
-            action.on_cancel(self.entity, self.world);
-
-            if cfg.repeat {
-                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                actions.push_back((action, cfg));
-            }
-        }
-
+        self.stop_current_action(StopReason::Canceled);
         self.start_next_action();
 
         self
     }
 
     fn finish(mut self) -> Self {
-        if let Some((mut action, cfg)) = self.take_current_action() {
-            action.on_finish(self.entity, self.world);
-
-            if cfg.repeat {
-                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                actions.push_back((action, cfg));
-            }
-        }
-
+        self.stop_current_action(StopReason::Finished);
         self.start_next_action();
 
         self
     }
 
-    fn stop(mut self) -> Self {
-        if let Some((mut action, cfg)) = self.take_current_action() {
-            action.on_stop(self.entity, self.world);
+    fn pause(mut self) -> Self {
+        self.stop_current_action(StopReason::Paused);
 
-            // Push stopped action to the front of the queue so it runs again
-            let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-            actions.push_front((action, cfg));
-        }
+        self
+    }
+
+    fn stop(mut self, reason: StopReason) -> Self {
+        self.stop_current_action(reason);
 
         self
     }
 
     fn clear(mut self) -> Self {
-        if let Some((mut action, _)) = self.take_current_action() {
-            action.on_cancel(self.entity, self.world);
-        }
+        self.stop_current_action(StopReason::Canceled);
 
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         actions.clear();
@@ -125,6 +107,25 @@ impl ModifyActions for EntityWorldActions<'_> {
 }
 
 impl EntityWorldActions<'_> {
+    fn stop_current_action(&mut self, reason: StopReason) {
+        if let Some((mut action, cfg)) = self.take_current_action() {
+            action.on_stop(self.entity, self.world, reason);
+
+            match reason {
+                StopReason::Finished | StopReason::Canceled => {
+                    if cfg.repeat {
+                        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                        actions.push_back((action, cfg));
+                    }
+                }
+                StopReason::Paused => {
+                    let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                    actions.push_front((action, cfg));
+                }
+            }
+        }
+    }
+
     fn start_next_action(&mut self) {
         if let Some((mut action, cfg)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
