@@ -136,6 +136,38 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, entity: Entity) -> Self::Modifier;
 }
 
+trait Modify {
+    type Builder: Builder;
+
+    fn builder(self) -> Self::Builder;
+}
+
+trait Builder {
+    type Modifier: Modify;
+
+    fn submit(self) -> Self::Modifier;
+}
+
+struct MyModifier;
+
+impl Modify for MyModifier {
+    type Builder = MyBuilder;
+
+    fn builder(self) -> Self::Builder {
+        todo!()
+    }
+}
+
+struct MyBuilder;
+
+impl Builder for MyBuilder {
+    type Modifier = MyModifier;
+
+    fn submit(self) -> Self::Modifier {
+        todo!()
+    }
+}
+
 /// Methods for modifying actions.
 pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.

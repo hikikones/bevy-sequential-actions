@@ -101,7 +101,7 @@ impl Default for AddConfig {
     }
 }
 
-/// The reason why an [Action] was stopped.
+/// The reason why an [`Action`] was stopped.
 #[derive(Clone, Copy)]
 pub enum StopReason {
     /// The [`action`](Action) was finished.
