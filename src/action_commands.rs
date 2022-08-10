@@ -80,20 +80,18 @@ impl<'a> ModifyActions for EntityActions<'a> {
 
     fn builder(self) -> Self::Builder {
         ActionsBuilder {
-            entity: self.entity,
-            config: self.config,
+            config: AddConfig::default(),
             actions: Vec::new(),
-            commands: self.commands,
+            modifier: self,
         }
     }
 }
 
 /// Build a list of [`actions`](Action) using [`ActionCommands`].
 pub struct ActionsBuilder<'a> {
-    entity: Entity,
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,
-    commands: &'a mut ActionCommands,
+    modifier: EntityActions<'a>,
 }
 
 impl<'a> ActionBuilder for ActionsBuilder<'a> {
@@ -116,16 +114,13 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
 
     fn submit(self) -> Self::Modifier {
         for (action, config) in self.actions {
-            self.commands
+            self.modifier
+                .commands
                 .0
-                .push(ActionCommand::Add(self.entity, config, action));
+                .push(ActionCommand::Add(self.modifier.entity, config, action));
         }
 
-        EntityActions {
-            entity: self.entity,
-            config: self.config,
-            commands: self.commands,
-        }
+        self.modifier
     }
 }
 
