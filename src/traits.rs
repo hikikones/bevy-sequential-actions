@@ -136,56 +136,64 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, entity: Entity) -> Self::Modifier;
 }
 
-trait Modify {
-    type Builder: Builder;
-
-    fn builder(self) -> Self::Builder;
-}
-
-trait Builder {
-    type Modifier: Modify;
+pub trait ActionBuilder {
+    type Modifier: ModifyActions;
 
     fn submit(self) -> Self::Modifier;
 }
 
-struct MyModifier<'w, 's, 'a> {
-    entity: Entity,
-    config: AddConfig,
-    commands: &'a mut Commands<'w, 's>,
-}
+// trait Modify {
+//     type Builder: Builder;
 
-impl<'w: 'a, 's: 'a, 'a> Modify for MyModifier<'w, 's, 'a> {
-    type Builder = MyBuilder<'w, 's, 'a>;
+//     fn builder(self) -> Self::Builder;
+// }
 
-    fn builder(self) -> Self::Builder {
-        MyBuilder {
-            entity: self.entity,
-            config: self.config,
-            commands: self.commands,
-        }
-    }
-}
+// trait Builder {
+//     type Modifier: Modify;
 
-struct MyBuilder<'w, 's, 'a> {
-    entity: Entity,
-    config: AddConfig,
-    commands: &'a mut Commands<'w, 's>,
-}
+//     fn submit(self) -> Self::Modifier;
+// }
 
-impl<'w, 's, 'a> Builder for MyBuilder<'w, 's, 'a> {
-    type Modifier = MyModifier<'w, 's, 'a>;
+// struct MyModifier<'w, 's, 'a> {
+//     entity: Entity,
+//     config: AddConfig,
+//     commands: &'a mut Commands<'w, 's>,
+// }
 
-    fn submit(self) -> Self::Modifier {
-        MyModifier {
-            entity: self.entity,
-            config: self.config,
-            commands: self.commands,
-        }
-    }
-}
+// impl<'w: 'a, 's: 'a, 'a> Modify for MyModifier<'w, 's, 'a> {
+//     type Builder = MyBuilder<'w, 's, 'a>;
+
+//     fn builder(self) -> Self::Builder {
+//         MyBuilder {
+//             entity: self.entity,
+//             config: self.config,
+//             commands: self.commands,
+//         }
+//     }
+// }
+
+// struct MyBuilder<'w, 's, 'a> {
+//     entity: Entity,
+//     config: AddConfig,
+//     commands: &'a mut Commands<'w, 's>,
+// }
+
+// impl<'w, 's, 'a> Builder for MyBuilder<'w, 's, 'a> {
+//     type Modifier = MyModifier<'w, 's, 'a>;
+
+//     fn submit(self) -> Self::Modifier {
+//         MyModifier {
+//             entity: self.entity,
+//             config: self.config,
+//             commands: self.commands,
+//         }
+//     }
+// }
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
+    type Builder: ActionBuilder;
+
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 
