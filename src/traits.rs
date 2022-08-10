@@ -148,7 +148,7 @@ trait Builder {
     fn submit(self) -> Self::Modifier;
 }
 
-pub struct MyModifier<'w, 's, 'a> {
+struct MyModifier<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,
     commands: &'a mut Commands<'w, 's>,
@@ -158,7 +158,11 @@ impl<'w: 'a, 's: 'a, 'a> Modify for MyModifier<'w, 's, 'a> {
     type Builder = MyBuilder<'w, 's, 'a>;
 
     fn builder(self) -> Self::Builder {
-        todo!()
+        MyBuilder {
+            entity: self.entity,
+            config: self.config,
+            commands: self.commands,
+        }
     }
 }
 
@@ -172,7 +176,11 @@ impl<'w, 's, 'a> Builder for MyBuilder<'w, 's, 'a> {
     type Modifier = MyModifier<'w, 's, 'a>;
 
     fn submit(self) -> Self::Modifier {
-        todo!()
+        MyModifier {
+            entity: self.entity,
+            config: self.config,
+            commands: self.commands,
+        }
     }
 }
 
