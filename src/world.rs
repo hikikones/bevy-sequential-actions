@@ -77,20 +77,18 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 
     fn builder(self) -> Self::Builder {
         ActionWorldBuilder {
-            entity: self.entity,
-            config: self.config,
+            config: AddConfig::default(),
             actions: Vec::new(),
-            world: self.world,
+            modifier: self,
         }
     }
 }
 
 /// Build a list of [`actions`](Action) using [`World`].
 pub struct ActionWorldBuilder<'a> {
-    entity: Entity,
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,
-    world: &'a mut World,
+    modifier: EntityWorldActions<'a>,
 }
 
 impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
@@ -113,14 +111,14 @@ impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
 
     fn submit(self) -> Self::Modifier {
         for (action, config) in self.actions {
-            self.world.actions(self.entity).config(config).add(action);
+            self.modifier
+                .world
+                .actions(self.modifier.entity)
+                .config(config)
+                .add(action);
         }
 
-        EntityWorldActions {
-            entity: self.entity,
-            config: self.config,
-            world: self.world,
-        }
+        self.modifier
     }
 }
 
