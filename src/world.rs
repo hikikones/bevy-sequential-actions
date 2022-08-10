@@ -22,7 +22,7 @@ pub struct EntityWorldActions<'a> {
 }
 
 impl<'a> ModifyActions for EntityWorldActions<'a> {
-    type Builder = WorldActionBuilder<'a>;
+    type Builder = ActionWorldBuilder<'a>;
 
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
@@ -76,7 +76,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
     }
 
     fn builder(self) -> Self::Builder {
-        WorldActionBuilder {
+        ActionWorldBuilder {
             entity: self.entity,
             config: self.config,
             actions: Vec::new(),
@@ -86,14 +86,14 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 }
 
 /// Build a list of [`actions`](Action) using [`World`].
-pub struct WorldActionBuilder<'a> {
+pub struct ActionWorldBuilder<'a> {
     entity: Entity,
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,
     world: &'a mut World,
 }
 
-impl<'a> ActionBuilder for WorldActionBuilder<'a> {
+impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
     type Modifier = EntityWorldActions<'a>;
 
     fn config(mut self, config: AddConfig) -> Self {

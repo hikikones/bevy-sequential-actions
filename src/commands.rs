@@ -22,7 +22,7 @@ pub struct EntityCommandsActions<'w, 's, 'a> {
 }
 
 impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
-    type Builder = CommandsActionBuilder<'w, 's, 'a>;
+    type Builder = ActionCommandsBuilder<'w, 's, 'a>;
 
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
@@ -73,7 +73,7 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
     }
 
     fn builder(self) -> Self::Builder {
-        CommandsActionBuilder {
+        ActionCommandsBuilder {
             entity: self.entity,
             config: self.config,
             actions: Vec::new(),
@@ -83,14 +83,14 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
 }
 
 /// Build a list of [`actions`](Action) using [`Commands`].
-pub struct CommandsActionBuilder<'w, 's, 'a> {
+pub struct ActionCommandsBuilder<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's, 'a> ActionBuilder for CommandsActionBuilder<'w, 's, 'a> {
+impl<'w, 's, 'a> ActionBuilder for ActionCommandsBuilder<'w, 's, 'a> {
     type Modifier = EntityCommandsActions<'w, 's, 'a>;
 
     fn config(mut self, config: AddConfig) -> Self {
