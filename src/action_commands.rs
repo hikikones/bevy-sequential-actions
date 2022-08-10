@@ -26,7 +26,7 @@ pub struct EntityActions<'a> {
 }
 
 enum ActionCommand {
-    Add(Entity, Box<dyn Action>, AddConfig),
+    Add(Entity, AddConfig, Box<dyn Action>),
     Next(Entity),
     Finish(Entity),
     Pause(Entity),
@@ -45,8 +45,8 @@ impl<'a> ModifyActions for EntityActions<'a> {
     fn add(self, action: impl IntoAction) -> Self {
         self.commands.0.push(ActionCommand::Add(
             self.entity,
-            action.into_boxed(),
             self.config,
+            action.into_boxed(),
         ));
         self
     }
@@ -92,7 +92,7 @@ impl<'a> ModifyActions for EntityActions<'a> {
 pub struct ActionsBuilder<'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    actions: Vec<Box<dyn Action>>,
     commands: &'a mut ActionCommands,
 }
 
@@ -100,7 +100,7 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
     type Modifier = EntityActions<'a>;
 
     fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
+        self.actions.push(action.into_boxed());
         self
     }
 
@@ -110,10 +110,10 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
     }
 
     fn submit(self) -> Self::Modifier {
-        for (action, config) in self.actions {
+        for action in self.actions {
             self.commands
                 .0
-                .push(ActionCommand::Add(self.entity, action, config));
+                .push(ActionCommand::Add(self.entity, self.config, action));
         }
 
         EntityActions {
@@ -128,7 +128,7 @@ impl ActionCommands {
     pub(super) fn apply(self, world: &mut World) {
         for cmd in self.0 {
             match cmd {
-                ActionCommand::Add(entity, action, config) => {
+                ActionCommand::Add(entity, config, action) => {
                     world.actions(entity).config(config).add(action);
                 }
                 ActionCommand::Next(entity) => {
