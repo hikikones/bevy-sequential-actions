@@ -91,3 +91,29 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
         self
     }
 }
+
+trait Builder {
+    type Modifier: ModifyActions;
+
+    fn submit(self) -> Self::Modifier;
+}
+
+pub struct CommandsActionsBuilder<'w, 's, 'a> {
+    entity: Entity,
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    commands: &'a mut Commands<'w, 's>,
+}
+
+impl<'w, 's, 'a> Builder for CommandsActionsBuilder<'w, 's, 'a> {
+    type Modifier = EntityCommandsActions<'a, 's, 'a>;
+
+    fn submit(self) -> Self::Modifier {
+        EntityCommandsActions {
+            entity: todo!(),
+            config: todo!(),
+            actions: todo!(),
+            commands: todo!(),
+        }
+    }
+}
