@@ -36,7 +36,9 @@ enum ActionCommand {
     Clear(Entity),
 }
 
-impl ModifyActions for EntityActions<'_> {
+impl<'a> ModifyActions for EntityActions<'a> {
+    type Builder = ActionsBuilder<'a>;
+
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -96,6 +98,15 @@ impl ModifyActions for EntityActions<'_> {
         }
         self
     }
+
+    fn builder(self) -> Self::Builder {
+        ActionsBuilder {
+            entity: self.entity,
+            config: self.config,
+            actions: Vec::new(), // TODO: remove
+            commands: self.commands,
+        }
+    }
 }
 
 impl ActionCommands {
@@ -121,6 +132,26 @@ impl ActionCommands {
                     world.actions(entity).clear();
                 }
             }
+        }
+    }
+}
+
+pub struct ActionsBuilder<'a> {
+    entity: Entity,
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    commands: &'a mut ActionCommands,
+}
+
+impl<'a> ActionBuilder for ActionsBuilder<'a> {
+    type Modifier = EntityActions<'a>;
+
+    fn submit(self) -> Self::Modifier {
+        EntityActions {
+            entity: self.entity,
+            config: self.config,
+            actions: Vec::new(), // TODO: remove
+            commands: self.commands,
         }
     }
 }

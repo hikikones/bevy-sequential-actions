@@ -23,7 +23,9 @@ pub struct EntityWorldActions<'a> {
     world: &'a mut World,
 }
 
-impl ModifyActions for EntityWorldActions<'_> {
+impl<'a> ModifyActions for EntityWorldActions<'a> {
+    type Builder = WorldActionBuilder<'a>;
+
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
 
@@ -104,6 +106,15 @@ impl ModifyActions for EntityWorldActions<'_> {
 
         self
     }
+
+    fn builder(self) -> Self::Builder {
+        WorldActionBuilder {
+            entity: self.entity,
+            config: self.config,
+            actions: Vec::new(), // TODO: remove
+            world: self.world,
+        }
+    }
 }
 
 impl EntityWorldActions<'_> {
@@ -158,5 +169,25 @@ impl EntityWorldActions<'_> {
             .get::<CurrentAction>(self.entity)
             .unwrap()
             .is_some()
+    }
+}
+
+pub struct WorldActionBuilder<'a> {
+    entity: Entity,
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    world: &'a mut World,
+}
+
+impl<'a> ActionBuilder for WorldActionBuilder<'a> {
+    type Modifier = EntityWorldActions<'a>;
+
+    fn submit(self) -> Self::Modifier {
+        EntityWorldActions {
+            entity: self.entity,
+            config: self.config,
+            actions: Vec::new(), // TODO: remove
+            world: self.world,
+        }
     }
 }
