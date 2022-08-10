@@ -23,7 +23,9 @@ pub struct EntityCommandsActions<'w, 's, 'a> {
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
+impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
+    type Builder = CommandsActionBuilder<'w, 's, 'a>;
+
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -89,6 +91,44 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
             });
         }
         self
+    }
+
+    // fn builder<'a>(&'a mut self) -> Self::Builder {
+    //     CommandsActionBuilder {
+    //         entity: self.entity,
+    //         config: self.config,
+    //         actions: Vec::new(), // TODO: remove
+    //         commands: self.commands,
+    //     }
+    // }
+
+    fn builder(self) -> Self::Builder {
+        CommandsActionBuilder {
+            entity: self.entity,
+            config: self.config,
+            actions: Vec::new(), // TODO: remove
+            commands: self.commands,
+        }
+    }
+}
+
+pub struct CommandsActionBuilder<'w, 's, 'a> {
+    entity: Entity,
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    commands: &'a mut Commands<'w, 's>,
+}
+
+impl<'w, 's, 'a> ActionBuilder for CommandsActionBuilder<'w, 's, 'a> {
+    type Modifier = EntityCommandsActions<'w, 's, 'a>;
+
+    fn submit(self) -> Self::Modifier {
+        EntityCommandsActions {
+            entity: self.entity,
+            config: self.config,
+            actions: Vec::new(), // TODO: remove
+            commands: self.commands,
+        }
     }
 }
 

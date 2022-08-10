@@ -227,4 +227,7 @@ pub trait ModifyActions {
 
     /// Submits the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
     fn submit(self) -> Self;
+
+    // fn builder<'a>(&'a mut self) -> Self::Builder;
+    fn builder(self) -> Self::Builder;
 }
