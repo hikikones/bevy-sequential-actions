@@ -42,7 +42,7 @@ impl<'a> ModifyActions for EntityActions<'a> {
         self
     }
 
-    fn add(self, action: impl IntoAction) -> Self {
+    fn add<T: IntoAction>(self, action: T) -> Self {
         self.commands.0.push(ActionCommand::Add(
             self.entity,
             self.config,
@@ -102,7 +102,7 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
         self
     }
 
-    fn push(mut self, action: impl IntoAction) -> Self {
+    fn push<T: IntoAction>(mut self, action: T) -> Self {
         self.actions.push((action.into_boxed(), self.config));
         self
     }

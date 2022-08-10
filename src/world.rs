@@ -29,7 +29,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
         self
     }
 
-    fn add(mut self, action: impl IntoAction) -> Self {
+    fn add<T: IntoAction>(mut self, action: T) -> Self {
         let action_tuple = (action.into_boxed(), self.config.into());
         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         match self.config.order {
@@ -99,7 +99,7 @@ impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
         self
     }
 
-    fn push(mut self, action: impl IntoAction) -> Self {
+    fn push<T: IntoAction>(mut self, action: T) -> Self {
         self.actions.push((action.into_boxed(), self.config));
         self
     }

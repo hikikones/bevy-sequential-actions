@@ -29,7 +29,7 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
         self
     }
 
-    fn add(self, action: impl IntoAction) -> Self {
+    fn add<T: IntoAction>(self, action: T) -> Self {
         let action = action.into_boxed();
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).config(self.config).add(action);
@@ -96,7 +96,7 @@ impl<'w, 's, 'a> ActionBuilder for ActionCommandsBuilder<'w, 's, 'a> {
         self
     }
 
-    fn push(mut self, action: impl IntoAction) -> Self {
+    fn push<T: IntoAction>(mut self, action: T) -> Self {
         self.actions.push((action.into_boxed(), self.config));
         self
     }
