@@ -64,7 +64,7 @@ pub use commands::*;
 pub use traits::*;
 pub use world::*;
 
-/// The component bundle that all entities with [`actions`](Action) must have.
+/// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
     queue: ActionQueue,
@@ -101,7 +101,7 @@ impl Default for AddConfig {
     }
 }
 
-/// The reason why an [Action] was stopped.
+/// The reason why an [`Action`] was stopped.
 #[derive(Clone, Copy)]
 pub enum StopReason {
     /// The [`action`](Action) was finished.

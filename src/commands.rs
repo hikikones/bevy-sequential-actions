@@ -9,7 +9,6 @@ impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
         EntityCommandsActions {
             entity,
             config: AddConfig::default(),
-            actions: Vec::new(),
             commands: self,
         }
     }
@@ -19,11 +18,12 @@ impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
 pub struct EntityCommandsActions<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
     commands: &'a mut Commands<'w, 's>,
 }
 
-impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
+impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
+    type Builder = ActionCommandsBuilder<'w, 's, 'a>;
+
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -72,6 +72,30 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
         self
     }
 
+    fn builder(self) -> Self::Builder {
+        ActionCommandsBuilder {
+            config: AddConfig::default(),
+            actions: Vec::new(),
+            modifier: self,
+        }
+    }
+}
+
+/// Build a list of actions using [`Commands`].
+pub struct ActionCommandsBuilder<'w, 's, 'a> {
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    modifier: EntityCommandsActions<'w, 's, 'a>,
+}
+
+impl<'w, 's, 'a> ActionBuilder for ActionCommandsBuilder<'w, 's, 'a> {
+    type Modifier = EntityCommandsActions<'w, 's, 'a>;
+
+    fn config(mut self, config: AddConfig) -> Self {
+        self.config = config;
+        self
+    }
+
     fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push((action.into_boxed(), self.config));
         self
@@ -82,12 +106,16 @@ impl<'w, 's> ModifyActions for EntityCommandsActions<'w, 's, '_> {
         self
     }
 
-    fn submit(mut self) -> Self {
-        for (action, config) in self.actions.drain(..) {
-            self.commands.add(move |world: &mut World| {
-                world.actions(self.entity).config(config).add(action);
+    fn submit(self) -> Self::Modifier {
+        for (action, config) in self.actions {
+            self.modifier.commands.add(move |world: &mut World| {
+                world
+                    .actions(self.modifier.entity)
+                    .config(config)
+                    .add(action);
             });
         }
-        self
+
+        self.modifier
     }
 }

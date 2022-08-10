@@ -251,6 +251,7 @@ fn push() {
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e)
+        .builder()
         .push(EmptyAction)
         .push(EmptyAction)
         .push(EmptyAction);
@@ -259,6 +260,7 @@ fn push() {
     assert!(ecs.get_action_queue(e).len() == 0);
 
     ecs.actions(e)
+        .builder()
         .push(EmptyAction)
         .push(EmptyAction)
         .push(EmptyAction)
@@ -268,6 +270,7 @@ fn push() {
     assert!(ecs.get_action_queue(e).len() == 0);
 
     ecs.actions(e)
+        .builder()
         .push(CountdownAction::new(0))
         .push(CountdownAction::new(0))
         .push(CountdownAction::new(0))
@@ -289,6 +292,11 @@ fn repeat() {
             repeat: true,
         })
         .add(CountdownAction::new(0));
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
 
     assert!(ecs.get_current_action(e).is_some());
     assert!(ecs.get_action_queue(e).len() == 0);
@@ -367,6 +375,7 @@ fn order() {
     // C, B, A
     ecs.actions(e)
         .clear()
+        .builder()
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
@@ -391,6 +400,7 @@ fn order() {
     // A, B, C
     ecs.actions(e)
         .clear()
+        .builder()
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
@@ -440,6 +450,7 @@ fn pause_resume() {
 
     ecs.run();
     ecs.run();
+    ecs.run();
 
-    assert!(get_first_countdown_value(&mut ecs.world) == 99);
+    assert!(get_first_countdown_value(&mut ecs.world) == 98);
 }

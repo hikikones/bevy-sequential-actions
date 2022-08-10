@@ -138,37 +138,52 @@ pub trait ActionsProxy<'a> {
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
+    /// The type returned for building a list of actions.
+    type Builder: ActionBuilder;
+
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// [`Starts`](Action::on_start) the next action in the queue.
-    /// Current action is [`canceled`](StopReason::Canceled).
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
+    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Starts`](Action::on_start) the next action in the queue.
-    /// Current action is [`finished`](StopReason::Finished).
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
+    /// Current action is [`stopped`](Action::on_stop) as [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
-    /// [`Pauses`](Action::on_start) the current action.
+    /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
     fn pause(self) -> Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
     fn stop(self, reason: StopReason) -> Self;
 
     /// Clears the actions queue.
-    /// Current action is [`canceled`](StopReason::Canceled).
+    /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
+    /// Build a list of actions.
+    fn builder(self) -> Self::Builder;
+}
+
+/// Methods for building a list of actions.
+pub trait ActionBuilder {
+    /// The type that is returned after [`submit`](Self::submit) is called.
+    type Modifier: ModifyActions;
+
+    /// Sets the current [`config`](AddConfig) for actions to be pushed.
+    fn config(self, config: AddConfig) -> Self;
+
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
-    /// Pushed actions __will not__ be added to the queue until [`submit`](Self::submit) is called.
+    /// Pushed actions will not be added to the queue until [`submit`](Self::submit) is called.
     fn push(self, action: impl IntoAction) -> Self;
 
     /// Reverses the order of the [`pushed`](Self::push) actions.
     fn reverse(self) -> Self;
 
-    /// Submits the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
-    fn submit(self) -> Self;
+    /// Submits the [`pushed`](Self::push) actions by consuming the list and adding them to the queue.
+    fn submit(self) -> Self::Modifier;
 }

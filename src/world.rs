@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::*, system::CommandQueue};
+use bevy_ecs::prelude::*;
 
 use crate::*;
 
@@ -9,7 +9,6 @@ impl<'a> ActionsProxy<'a> for World {
         EntityWorldActions {
             entity,
             config: AddConfig::default(),
-            actions: Vec::new(),
             world: self,
         }
     }
@@ -19,14 +18,14 @@ impl<'a> ActionsProxy<'a> for World {
 pub struct EntityWorldActions<'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
     world: &'a mut World,
 }
 
-impl ModifyActions for EntityWorldActions<'_> {
+impl<'a> ModifyActions for EntityWorldActions<'a> {
+    type Builder = ActionWorldBuilder<'a>;
+
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
-
         self
     }
 
@@ -48,26 +47,22 @@ impl ModifyActions for EntityWorldActions<'_> {
     fn next(mut self) -> Self {
         self.stop_current_action(StopReason::Canceled);
         self.start_next_action();
-
         self
     }
 
     fn finish(mut self) -> Self {
         self.stop_current_action(StopReason::Finished);
         self.start_next_action();
-
         self
     }
 
     fn pause(mut self) -> Self {
         self.stop_current_action(StopReason::Paused);
-
         self
     }
 
     fn stop(mut self, reason: StopReason) -> Self {
         self.stop_current_action(reason);
-
         self
     }
 
@@ -80,29 +75,50 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
+    fn builder(self) -> Self::Builder {
+        ActionWorldBuilder {
+            config: AddConfig::default(),
+            actions: Vec::new(),
+            modifier: self,
+        }
+    }
+}
+
+/// Build a list of actions using [`World`].
+pub struct ActionWorldBuilder<'a> {
+    config: AddConfig,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    modifier: EntityWorldActions<'a>,
+}
+
+impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
+    type Modifier = EntityWorldActions<'a>;
+
+    fn config(mut self, config: AddConfig) -> Self {
+        self.config = config;
+        self
+    }
+
     fn push(mut self, action: impl IntoAction) -> Self {
         self.actions.push((action.into_boxed(), self.config));
-
         self
     }
 
     fn reverse(mut self) -> Self {
         self.actions.reverse();
-
         self
     }
 
-    fn submit(mut self) -> Self {
-        let mut command_queue = CommandQueue::default();
-        let mut commands = Commands::new(&mut command_queue, self.world);
-
-        for (action, config) in self.actions.drain(..) {
-            commands.actions(self.entity).config(config).add(action);
+    fn submit(self) -> Self::Modifier {
+        for (action, config) in self.actions {
+            self.modifier
+                .world
+                .actions(self.modifier.entity)
+                .config(config)
+                .add(action);
         }
 
-        command_queue.apply(self.world);
-
-        self
+        self.modifier
     }
 }
 
