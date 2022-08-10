@@ -370,12 +370,12 @@ fn order() {
     // C, B, A
     ecs.actions(e)
         .clear()
+        .builder()
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
             repeat: false,
         })
-        .builder()
         .push(Order::<A>::default())
         .push(Order::<B>::default())
         .push(Order::<C>::default())
@@ -395,12 +395,12 @@ fn order() {
     // A, B, C
     ecs.actions(e)
         .clear()
+        .builder()
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
             repeat: false,
         })
-        .builder()
         .push(Order::<A>::default())
         .push(Order::<B>::default())
         .push(Order::<C>::default())
