@@ -136,62 +136,6 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, entity: Entity) -> Self::Modifier;
 }
 
-pub trait ActionBuilder {
-    type Modifier: ModifyActions;
-
-    fn push(self, action: impl IntoAction) -> Self;
-    fn reverse(self) -> Self;
-    fn submit(self) -> Self::Modifier;
-}
-
-// trait Modify {
-//     type Builder: Builder;
-
-//     fn builder(self) -> Self::Builder;
-// }
-
-// trait Builder {
-//     type Modifier: Modify;
-
-//     fn submit(self) -> Self::Modifier;
-// }
-
-// struct MyModifier<'w, 's, 'a> {
-//     entity: Entity,
-//     config: AddConfig,
-//     commands: &'a mut Commands<'w, 's>,
-// }
-
-// impl<'w: 'a, 's: 'a, 'a> Modify for MyModifier<'w, 's, 'a> {
-//     type Builder = MyBuilder<'w, 's, 'a>;
-
-//     fn builder(self) -> Self::Builder {
-//         MyBuilder {
-//             entity: self.entity,
-//             config: self.config,
-//             commands: self.commands,
-//         }
-//     }
-// }
-
-// struct MyBuilder<'w, 's, 'a> {
-//     entity: Entity,
-//     config: AddConfig,
-//     commands: &'a mut Commands<'w, 's>,
-// }
-
-// impl<'w, 's, 'a> Builder for MyBuilder<'w, 's, 'a> {
-//     type Modifier = MyModifier<'w, 's, 'a>;
-
-//     fn submit(self) -> Self::Modifier {
-//         MyModifier {
-//             entity: self.entity,
-//             config: self.config,
-//             commands: self.commands,
-//         }
-//     }
-// }
-
 /// Methods for modifying actions.
 pub trait ModifyActions {
     type Builder: ActionBuilder;
@@ -230,6 +174,13 @@ pub trait ModifyActions {
     /// Submits the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
     fn submit(self) -> Self;
 
-    // fn builder<'a>(&'a mut self) -> Self::Builder;
     fn builder(self) -> Self::Builder;
+}
+
+pub trait ActionBuilder {
+    type Modifier: ModifyActions;
+
+    fn push(self, action: impl IntoAction) -> Self;
+    fn reverse(self) -> Self;
+    fn submit(self) -> Self::Modifier;
 }
