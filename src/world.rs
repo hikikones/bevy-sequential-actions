@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::*, system::CommandQueue};
+use bevy_ecs::prelude::*;
 
 use crate::*;
 
@@ -26,7 +26,6 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
-
         self
     }
 
@@ -48,26 +47,22 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
     fn next(mut self) -> Self {
         self.stop_current_action(StopReason::Canceled);
         self.start_next_action();
-
         self
     }
 
     fn finish(mut self) -> Self {
         self.stop_current_action(StopReason::Finished);
         self.start_next_action();
-
         self
     }
 
     fn pause(mut self) -> Self {
         self.stop_current_action(StopReason::Paused);
-
         self
     }
 
     fn stop(mut self, reason: StopReason) -> Self {
         self.stop_current_action(reason);
-
         self
     }
 
@@ -94,7 +89,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 pub struct WorldActionBuilder<'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    actions: Vec<Box<dyn Action>>,
     world: &'a mut World,
 }
 
@@ -102,7 +97,7 @@ impl<'a> ActionBuilder for WorldActionBuilder<'a> {
     type Modifier = EntityWorldActions<'a>;
 
     fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
+        self.actions.push(action.into_boxed());
         self
     }
 
@@ -112,14 +107,12 @@ impl<'a> ActionBuilder for WorldActionBuilder<'a> {
     }
 
     fn submit(self) -> Self::Modifier {
-        let mut command_queue = CommandQueue::default();
-        let mut commands = Commands::new(&mut command_queue, self.world);
-
-        for (action, config) in self.actions {
-            commands.actions(self.entity).config(config).add(action);
+        for action in self.actions {
+            self.world
+                .actions(self.entity)
+                .config(self.config)
+                .add(action);
         }
-
-        command_queue.apply(self.world);
 
         EntityWorldActions {
             entity: self.entity,
