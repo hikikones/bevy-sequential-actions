@@ -67,7 +67,12 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
     }
 
     fn skip(mut self) -> Self {
-        self.pop_next_action();
+        if let Some((action, cfg)) = self.pop_next_action() {
+            if cfg.repeat {
+                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                actions.push_back((action, cfg));
+            }
+        }
         self
     }
 
