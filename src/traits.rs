@@ -145,7 +145,7 @@ pub trait ModifyActions {
     fn config(self, config: AddConfig) -> Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
-    fn add(self, action: impl IntoAction) -> Self;
+    fn add<T: IntoAction>(self, action: T) -> Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
@@ -179,7 +179,7 @@ pub trait ActionBuilder {
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
     /// Pushed actions will not be added to the queue until [`submit`](Self::submit) is called.
-    fn push(self, action: impl IntoAction) -> Self;
+    fn push<T: IntoAction>(self, action: T) -> Self;
 
     /// Reverses the order of the [`pushed`](Self::push) actions.
     fn reverse(self) -> Self;
