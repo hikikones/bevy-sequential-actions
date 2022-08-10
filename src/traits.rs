@@ -148,20 +148,28 @@ trait Builder {
     fn submit(self) -> Self::Modifier;
 }
 
-struct MyModifier;
+pub struct MyModifier<'w, 's, 'a> {
+    entity: Entity,
+    config: AddConfig,
+    commands: &'a mut Commands<'w, 's>,
+}
 
-impl Modify for MyModifier {
-    type Builder = MyBuilder;
+impl<'w: 'a, 's: 'a, 'a> Modify for MyModifier<'w, 's, 'a> {
+    type Builder = MyBuilder<'w, 's, 'a>;
 
     fn builder(self) -> Self::Builder {
         todo!()
     }
 }
 
-struct MyBuilder;
+struct MyBuilder<'w, 's, 'a> {
+    entity: Entity,
+    config: AddConfig,
+    commands: &'a mut Commands<'w, 's>,
+}
 
-impl Builder for MyBuilder {
-    type Modifier = MyModifier;
+impl<'w, 's, 'a> Builder for MyBuilder<'w, 's, 'a> {
+    type Modifier = MyModifier<'w, 's, 'a>;
 
     fn submit(self) -> Self::Modifier {
         todo!()
