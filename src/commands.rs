@@ -82,6 +82,7 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
     }
 }
 
+/// Build a list of [`actions`](Action) using [`Commands`].
 pub struct CommandsActionBuilder<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,

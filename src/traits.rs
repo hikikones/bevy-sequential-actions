@@ -129,49 +129,53 @@ impl IntoAction for Box<dyn Action> {
 /// }
 ///```
 pub trait ActionsProxy<'a> {
-    /// The type returned for modifying actions.
+    /// The type returned for modifying [`actions`](Action).
     type Modifier: ModifyActions;
 
     /// Returns [`Self::Modifier`] for specified [`Entity`].
     fn actions(&'a mut self, entity: Entity) -> Self::Modifier;
 }
 
-/// Methods for modifying actions.
+/// Methods for modifying [`actions`](Action).
 pub trait ModifyActions {
+    /// The type returned for building a list of [`actions`](Action).
     type Builder: ActionBuilder;
 
-    /// Sets the current [`config`](AddConfig) for actions to be added.
+    /// Sets the current [`config`](AddConfig) for [`actions`](Action) to be added.
     fn config(self, config: AddConfig) -> Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add(self, action: impl IntoAction) -> Self;
 
-    /// [`Starts`](Action::on_start) the next action in the queue.
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Starts`](Action::on_start) the next action in the queue.
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
-    /// [`Pauses`](Action::on_start) the current action.
+    /// [`Pauses`](Action::on_start) the current [`action`](Action).
     fn pause(self) -> Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
     fn stop(self, reason: StopReason) -> Self;
 
     /// Clears the actions queue.
-    /// Current action is [`canceled`](StopReason::Canceled).
+    /// Current [`action`](Action) is [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
+    /// Build a list of [`actions`](Action).
     fn builder(self) -> Self::Builder;
 }
 
+/// Methods for building a list of [`actions`](Action).
 pub trait ActionBuilder {
+    /// The type that is returned after [`submit`](Self::submit) is called.
     type Modifier: ModifyActions;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
-    /// Pushed actions __will not__ be added to the queue until [`submit`](Self::submit) is called.
+    /// Pushed actions will not be added to the queue until [`submit`](Self::submit) is called.
     fn push(self, action: impl IntoAction) -> Self;
 
     /// Reverses the order of the [`pushed`](Self::push) actions.

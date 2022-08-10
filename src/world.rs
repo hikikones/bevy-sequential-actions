@@ -90,6 +90,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
     }
 }
 
+/// Build a list of [`actions`](Action) using [`World`].
 pub struct WorldActionBuilder<'a> {
     entity: Entity,
     config: AddConfig,
