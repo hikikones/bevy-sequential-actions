@@ -146,7 +146,23 @@ pub struct ActionsBuilder<'a> {
 impl<'a> ActionBuilder for ActionsBuilder<'a> {
     type Modifier = EntityActions<'a>;
 
+    fn push(mut self, action: impl IntoAction) -> Self {
+        self.actions.push((action.into_boxed(), self.config));
+        self
+    }
+
+    fn reverse(mut self) -> Self {
+        self.actions.reverse();
+        self
+    }
+
     fn submit(self) -> Self::Modifier {
+        for (action, config) in self.actions {
+            self.commands
+                .0
+                .push(ActionCommand::Add(self.entity, action, config));
+        }
+
         EntityActions {
             entity: self.entity,
             config: self.config,

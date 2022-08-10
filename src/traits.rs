@@ -139,6 +139,8 @@ pub trait ActionsProxy<'a> {
 pub trait ActionBuilder {
     type Modifier: ModifyActions;
 
+    fn push(self, action: impl IntoAction) -> Self;
+    fn reverse(self) -> Self;
     fn submit(self) -> Self::Modifier;
 }
 

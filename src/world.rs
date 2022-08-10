@@ -182,7 +182,26 @@ pub struct WorldActionBuilder<'a> {
 impl<'a> ActionBuilder for WorldActionBuilder<'a> {
     type Modifier = EntityWorldActions<'a>;
 
+    fn push(mut self, action: impl IntoAction) -> Self {
+        self.actions.push((action.into_boxed(), self.config));
+        self
+    }
+
+    fn reverse(mut self) -> Self {
+        self.actions.reverse();
+        self
+    }
+
     fn submit(self) -> Self::Modifier {
+        let mut command_queue = CommandQueue::default();
+        let mut commands = Commands::new(&mut command_queue, self.world);
+
+        for (action, config) in self.actions {
+            commands.actions(self.entity).config(config).add(action);
+        }
+
+        command_queue.apply(self.world);
+
         EntityWorldActions {
             entity: self.entity,
             config: self.config,
