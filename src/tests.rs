@@ -300,6 +300,11 @@ fn repeat() {
 
     assert!(ecs.get_current_action(e).is_some());
     assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
 }
 
 #[test]
@@ -445,6 +450,7 @@ fn pause_resume() {
 
     ecs.run();
     ecs.run();
+    ecs.run();
 
-    assert!(get_first_countdown_value(&mut ecs.world) == 99);
+    assert!(get_first_countdown_value(&mut ecs.world) == 98);
 }
