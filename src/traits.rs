@@ -164,6 +164,12 @@ pub trait ModifyActions {
     /// Current action is [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
+    fn builder(self) -> Self::Builder;
+}
+
+pub trait ActionBuilder {
+    type Modifier: ModifyActions;
+
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
     /// Pushed actions __will not__ be added to the queue until [`submit`](Self::submit) is called.
     fn push(self, action: impl IntoAction) -> Self;
@@ -171,16 +177,6 @@ pub trait ModifyActions {
     /// Reverses the order of the [`pushed`](Self::push) actions.
     fn reverse(self) -> Self;
 
-    /// Submits the [`pushed`](Self::push) actions by draining the list and adding them to the queue.
-    fn submit(self) -> Self;
-
-    fn builder(self) -> Self::Builder;
-}
-
-pub trait ActionBuilder {
-    type Modifier: ModifyActions;
-
-    fn push(self, action: impl IntoAction) -> Self;
-    fn reverse(self) -> Self;
+    /// Submits the [`pushed`](Self::push) actions by consuming the list and adding them to the queue.
     fn submit(self) -> Self::Modifier;
 }

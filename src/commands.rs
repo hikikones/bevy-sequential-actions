@@ -9,7 +9,6 @@ impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
         EntityCommandsActions {
             entity,
             config: AddConfig::default(),
-            actions: Vec::new(),
             commands: self,
         }
     }
@@ -19,7 +18,6 @@ impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
 pub struct EntityCommandsActions<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
     commands: &'a mut Commands<'w, 's>,
 }
 
@@ -74,30 +72,11 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
         self
     }
 
-    fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
-        self
-    }
-
-    fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    fn submit(mut self) -> Self {
-        for (action, config) in self.actions.drain(..) {
-            self.commands.add(move |world: &mut World| {
-                world.actions(self.entity).config(config).add(action);
-            });
-        }
-        self
-    }
-
     fn builder(self) -> Self::Builder {
         CommandsActionBuilder {
             entity: self.entity,
             config: self.config,
-            actions: Vec::new(), // TODO: remove
+            actions: Vec::new(),
             commands: self.commands,
         }
     }
@@ -133,7 +112,6 @@ impl<'w, 's, 'a> ActionBuilder for CommandsActionBuilder<'w, 's, 'a> {
         EntityCommandsActions {
             entity: self.entity,
             config: self.config,
-            actions: Vec::new(), // TODO: remove
             commands: self.commands,
         }
     }

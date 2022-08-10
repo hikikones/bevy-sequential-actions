@@ -251,6 +251,7 @@ fn push() {
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e)
+        .builder()
         .push(EmptyAction)
         .push(EmptyAction)
         .push(EmptyAction);
@@ -259,6 +260,7 @@ fn push() {
     assert!(ecs.get_action_queue(e).len() == 0);
 
     ecs.actions(e)
+        .builder()
         .push(EmptyAction)
         .push(EmptyAction)
         .push(EmptyAction)
@@ -268,6 +270,7 @@ fn push() {
     assert!(ecs.get_action_queue(e).len() == 0);
 
     ecs.actions(e)
+        .builder()
         .push(CountdownAction::new(0))
         .push(CountdownAction::new(0))
         .push(CountdownAction::new(0))
@@ -372,6 +375,7 @@ fn order() {
             start: false,
             repeat: false,
         })
+        .builder()
         .push(Order::<A>::default())
         .push(Order::<B>::default())
         .push(Order::<C>::default())
@@ -396,6 +400,7 @@ fn order() {
             start: false,
             repeat: false,
         })
+        .builder()
         .push(Order::<A>::default())
         .push(Order::<B>::default())
         .push(Order::<C>::default())

@@ -13,7 +13,6 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
         EntityActions {
             entity,
             config: AddConfig::default(),
-            actions: Vec::new(),
             commands: self,
         }
     }
@@ -23,7 +22,6 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
 pub struct EntityActions<'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
     commands: &'a mut ActionCommands,
 }
 
@@ -80,58 +78,12 @@ impl<'a> ModifyActions for EntityActions<'a> {
         self
     }
 
-    fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
-        self
-    }
-
-    fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    fn submit(mut self) -> Self {
-        for (action, config) in self.actions.drain(..) {
-            self.commands
-                .0
-                .push(ActionCommand::Add(self.entity, action, config));
-        }
-        self
-    }
-
     fn builder(self) -> Self::Builder {
         ActionsBuilder {
             entity: self.entity,
             config: self.config,
-            actions: Vec::new(), // TODO: remove
+            actions: Vec::new(),
             commands: self.commands,
-        }
-    }
-}
-
-impl ActionCommands {
-    pub(super) fn apply(self, world: &mut World) {
-        for cmd in self.0 {
-            match cmd {
-                ActionCommand::Add(entity, action, config) => {
-                    world.actions(entity).config(config).add(action);
-                }
-                ActionCommand::Next(entity) => {
-                    world.actions(entity).next();
-                }
-                ActionCommand::Finish(entity) => {
-                    world.actions(entity).finish();
-                }
-                ActionCommand::Pause(entity) => {
-                    world.actions(entity).pause();
-                }
-                ActionCommand::Stop(entity, reason) => {
-                    world.actions(entity).stop(reason);
-                }
-                ActionCommand::Clear(entity) => {
-                    world.actions(entity).clear();
-                }
-            }
         }
     }
 }
@@ -166,8 +118,34 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
         EntityActions {
             entity: self.entity,
             config: self.config,
-            actions: Vec::new(), // TODO: remove
             commands: self.commands,
+        }
+    }
+}
+
+impl ActionCommands {
+    pub(super) fn apply(self, world: &mut World) {
+        for cmd in self.0 {
+            match cmd {
+                ActionCommand::Add(entity, action, config) => {
+                    world.actions(entity).config(config).add(action);
+                }
+                ActionCommand::Next(entity) => {
+                    world.actions(entity).next();
+                }
+                ActionCommand::Finish(entity) => {
+                    world.actions(entity).finish();
+                }
+                ActionCommand::Pause(entity) => {
+                    world.actions(entity).pause();
+                }
+                ActionCommand::Stop(entity, reason) => {
+                    world.actions(entity).stop(reason);
+                }
+                ActionCommand::Clear(entity) => {
+                    world.actions(entity).clear();
+                }
+            }
         }
     }
 }
