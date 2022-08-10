@@ -31,6 +31,7 @@ enum ActionCommand {
     Finish(Entity),
     Pause(Entity),
     Stop(Entity, StopReason),
+    Skip(Entity),
     Clear(Entity),
 }
 
@@ -70,6 +71,11 @@ impl<'a> ModifyActions for EntityActions<'a> {
         self.commands
             .0
             .push(ActionCommand::Stop(self.entity, reason));
+        self
+    }
+
+    fn skip(self) -> Self {
+        self.commands.0.push(ActionCommand::Skip(self.entity));
         self
     }
 
@@ -142,6 +148,9 @@ impl ActionCommands {
                 }
                 ActionCommand::Stop(entity, reason) => {
                     world.actions(entity).stop(reason);
+                }
+                ActionCommand::Skip(entity) => {
+                    world.actions(entity).skip();
                 }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();

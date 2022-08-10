@@ -107,7 +107,6 @@ fn countdown_system(mut countdown_q: Query<(Entity, &mut Countdown)>, mut comman
         countdown.0 = countdown.0.saturating_sub(1);
         if countdown.0 == 0 {
             commands.actions(entity).finish();
-            continue;
         }
     }
 }
@@ -219,6 +218,41 @@ fn pause_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).stop(StopReason::Paused);
+}
+
+#[test]
+fn skip() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: false,
+        })
+        .add(EmptyAction)
+        .add(EmptyAction)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: true,
+        })
+        .add(EmptyAction);
+
+    assert!(ecs.get_action_queue(e).len() == 3);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.get_action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.get_action_queue(e).len() == 1);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.get_action_queue(e).len() == 1);
 }
 
 #[test]

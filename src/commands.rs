@@ -65,6 +65,13 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
         self
     }
 
+    fn skip(self) -> Self {
+        self.commands.add(move |world: &mut World| {
+            world.actions(self.entity).skip();
+        });
+        self
+    }
+
     fn clear(self) -> Self {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).clear();

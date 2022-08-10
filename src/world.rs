@@ -66,6 +66,16 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
         self
     }
 
+    fn skip(mut self) -> Self {
+        if let Some((action, cfg)) = self.pop_next_action() {
+            if cfg.repeat {
+                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                actions.push_back((action, cfg));
+            }
+        }
+        self
+    }
+
     fn clear(mut self) -> Self {
         self.stop_current_action(StopReason::Canceled);
 
