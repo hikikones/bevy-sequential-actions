@@ -161,6 +161,9 @@ pub trait ModifyActions {
     /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
     fn stop(self, reason: StopReason) -> Self;
 
+    /// Skips the next [`action`](Action) in the queue.
+    fn skip(self) -> Self;
+
     /// Clears the actions queue.
     /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;

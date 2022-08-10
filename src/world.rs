@@ -66,6 +66,11 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
         self
     }
 
+    fn skip(mut self) -> Self {
+        self.pop_next_action();
+        self
+    }
+
     fn clear(mut self) -> Self {
         self.stop_current_action(StopReason::Canceled);
 
