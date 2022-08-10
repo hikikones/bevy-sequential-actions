@@ -174,6 +174,9 @@ pub trait ActionBuilder {
     /// The type that is returned after [`submit`](Self::submit) is called.
     type Modifier: ModifyActions;
 
+    /// Sets the current [`config`](AddConfig) for [`actions`](Action) to be pushed.
+    fn config(self, config: AddConfig) -> Self;
+
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
     /// Pushed actions will not be added to the queue until [`submit`](Self::submit) is called.
     fn push(self, action: impl IntoAction) -> Self;

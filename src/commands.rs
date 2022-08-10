@@ -86,15 +86,20 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
 pub struct CommandsActionBuilder<'w, 's, 'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<Box<dyn Action>>,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
     commands: &'a mut Commands<'w, 's>,
 }
 
 impl<'w, 's, 'a> ActionBuilder for CommandsActionBuilder<'w, 's, 'a> {
     type Modifier = EntityCommandsActions<'w, 's, 'a>;
 
+    fn config(mut self, config: AddConfig) -> Self {
+        self.config = config;
+        self
+    }
+
     fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push(action.into_boxed());
+        self.actions.push((action.into_boxed(), self.config));
         self
     }
 
@@ -104,9 +109,9 @@ impl<'w, 's, 'a> ActionBuilder for CommandsActionBuilder<'w, 's, 'a> {
     }
 
     fn submit(self) -> Self::Modifier {
-        for action in self.actions {
+        for (action, config) in self.actions {
             self.commands.add(move |world: &mut World| {
-                world.actions(self.entity).config(self.config).add(action);
+                world.actions(self.entity).config(config).add(action);
             });
         }
 

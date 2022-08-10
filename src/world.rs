@@ -89,15 +89,20 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 pub struct WorldActionBuilder<'a> {
     entity: Entity,
     config: AddConfig,
-    actions: Vec<Box<dyn Action>>,
+    actions: Vec<(Box<dyn Action>, AddConfig)>,
     world: &'a mut World,
 }
 
 impl<'a> ActionBuilder for WorldActionBuilder<'a> {
     type Modifier = EntityWorldActions<'a>;
 
+    fn config(mut self, config: AddConfig) -> Self {
+        self.config = config;
+        self
+    }
+
     fn push(mut self, action: impl IntoAction) -> Self {
-        self.actions.push(action.into_boxed());
+        self.actions.push((action.into_boxed(), self.config));
         self
     }
 
@@ -107,11 +112,8 @@ impl<'a> ActionBuilder for WorldActionBuilder<'a> {
     }
 
     fn submit(self) -> Self::Modifier {
-        for action in self.actions {
-            self.world
-                .actions(self.entity)
-                .config(self.config)
-                .add(action);
+        for (action, config) in self.actions {
+            self.world.actions(self.entity).config(config).add(action);
         }
 
         EntityWorldActions {
