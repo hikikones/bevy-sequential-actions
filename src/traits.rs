@@ -148,21 +148,21 @@ pub trait ModifyActions {
     fn add(self, action: impl IntoAction) -> Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
-    /// Current action is [`canceled`](StopReason::Canceled).
+    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
-    /// Current action is [`finished`](StopReason::Finished).
+    /// Current action is [`stopped`](Action::on_stop) as [`finished`](StopReason::Finished).
     fn finish(self) -> Self;
 
-    /// [`Pauses`](Action::on_start) the current [`action`](Action).
+    /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
     fn pause(self) -> Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
     fn stop(self, reason: StopReason) -> Self;
 
     /// Clears the actions queue.
-    /// Current [`action`](Action) is [`canceled`](StopReason::Canceled).
+    /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
     /// Build a list of [`actions`](Action).
