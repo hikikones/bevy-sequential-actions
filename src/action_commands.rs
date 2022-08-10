@@ -87,7 +87,7 @@ impl<'a> ModifyActions for EntityActions<'a> {
     }
 }
 
-/// Build a list of [`actions`](Action) using [`ActionCommands`].
+/// Build a list of actions using [`ActionCommands`].
 pub struct ActionsBuilder<'a> {
     config: AddConfig,
     actions: Vec<(Box<dyn Action>, AddConfig)>,

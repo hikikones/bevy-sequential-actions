@@ -129,19 +129,19 @@ impl IntoAction for Box<dyn Action> {
 /// }
 ///```
 pub trait ActionsProxy<'a> {
-    /// The type returned for modifying [`actions`](Action).
+    /// The type returned for modifying actions.
     type Modifier: ModifyActions;
 
     /// Returns [`Self::Modifier`] for specified [`Entity`].
     fn actions(&'a mut self, entity: Entity) -> Self::Modifier;
 }
 
-/// Methods for modifying [`actions`](Action).
+/// Methods for modifying actions.
 pub trait ModifyActions {
-    /// The type returned for building a list of [`actions`](Action).
+    /// The type returned for building a list of actions.
     type Builder: ActionBuilder;
 
-    /// Sets the current [`config`](AddConfig) for [`actions`](Action) to be added.
+    /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
@@ -165,16 +165,16 @@ pub trait ModifyActions {
     /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
 
-    /// Build a list of [`actions`](Action).
+    /// Build a list of actions.
     fn builder(self) -> Self::Builder;
 }
 
-/// Methods for building a list of [`actions`](Action).
+/// Methods for building a list of actions.
 pub trait ActionBuilder {
     /// The type that is returned after [`submit`](Self::submit) is called.
     type Modifier: ModifyActions;
 
-    /// Sets the current [`config`](AddConfig) for [`actions`](Action) to be pushed.
+    /// Sets the current [`config`](AddConfig) for actions to be pushed.
     fn config(self, config: AddConfig) -> Self;
 
     /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
