@@ -4,12 +4,14 @@ pub mod command_action;
 pub mod despawn_action;
 pub mod move_action;
 pub mod quit_action;
+pub mod rotate_action;
 pub mod wait_action;
 
 pub use command_action::*;
 pub use despawn_action::*;
 pub use move_action::*;
 pub use quit_action::*;
+pub use rotate_action::*;
 pub use wait_action::*;
 
 /// Stage for running actions.
@@ -39,7 +41,8 @@ impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_stage_after(CoreStage::Update, ACTIONS_STAGE, SystemStage::parallel())
             .add_plugin(WaitActionPlugin)
-            .add_plugin(MoveActionPlugin);
+            .add_plugin(MoveActionPlugin)
+            .add_plugin(RotateActionPlugin);
     }
 }
 
@@ -56,4 +59,11 @@ fn random_vec3(min: Vec3, max: Vec3) -> Vec3 {
     let y = random_f32(min.y, max.y);
     let z = random_f32(min.z, max.z);
     Vec3::new(x, y, z)
+}
+
+fn random_quat(euler_min: Vec3, euler_max: Vec3) -> Quat {
+    let x = random_f32(euler_min.x, euler_max.x);
+    let y = random_f32(euler_min.y, euler_max.y);
+    let z = random_f32(euler_min.z, euler_max.z);
+    Quat::from_euler(EulerRot::XYZ, x, y, z)
 }
