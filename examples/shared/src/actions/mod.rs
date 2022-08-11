@@ -60,3 +60,10 @@ fn random_vec3(min: Vec3, max: Vec3) -> Vec3 {
     let z = random_f32(min.z, max.z);
     Vec3::new(x, y, z)
 }
+
+fn random_quat(euler_min: Vec3, euler_max: Vec3) -> Quat {
+    let x = random_f32(euler_min.x, euler_max.x);
+    let y = random_f32(euler_min.y, euler_max.y);
+    let z = random_f32(euler_min.z, euler_max.z);
+    Quat::from_euler(EulerRot::XYZ, x, y, z)
+}

@@ -3,7 +3,7 @@ use bevy_sequential_actions::*;
 
 use crate::extensions::RotateTowardsExt;
 
-use super::ACTIONS_STAGE;
+use super::{random_quat, ACTIONS_STAGE};
 
 pub struct RotateActionPlugin;
 
@@ -54,6 +54,47 @@ fn rotate_system(
     for (entity, mut transform, target, speed) in move_q.iter_mut() {
         if transform.rotate_towards(target.0, speed.0 * time.delta_seconds()) {
             commands.actions(entity).finish();
+        }
+    }
+}
+
+pub struct RotateRandomAction {
+    min: Vec3,
+    max: Vec3,
+    target: Option<Quat>,
+}
+
+impl RotateRandomAction {
+    pub fn new(min: Vec3, max: Vec3) -> Self {
+        Self {
+            min,
+            max,
+            target: None,
+        }
+    }
+}
+
+impl Action for RotateRandomAction {
+    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        let target = if let Some(target) = self.target {
+            target
+        } else {
+            let random = random_quat(self.min, self.max);
+            self.target = Some(random);
+            random
+        };
+
+        world.entity_mut(entity).insert_bundle(RotateBundle {
+            target: Target(target),
+            speed: Speed(4.0),
+        });
+    }
+
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+        world.entity_mut(entity).remove_bundle::<RotateBundle>();
+
+        if let StopReason::Finished | StopReason::Canceled = reason {
+            self.target = None;
         }
     }
 }
