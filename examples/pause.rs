@@ -13,11 +13,11 @@ fn main() {
         .run();
 }
 
-fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
-    let player = player_q.single();
+fn setup(mut commands: Commands) {
+    let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
 
     commands
-        .actions(player)
+        .actions(actor)
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
@@ -31,17 +31,17 @@ fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
 
 fn input(
     keyboard: Res<Input<KeyCode>>,
-    player_q: Query<Entity, With<Player>>,
+    actor_q: Query<Entity, With<Actor>>,
     mut commands: Commands,
     mut is_paused: Local<bool>,
 ) {
     if keyboard.just_pressed(KeyCode::Space) {
-        let player = player_q.single();
+        let actor = actor_q.single();
 
         if *is_paused {
-            commands.actions(player).next();
+            commands.actions(actor).next();
         } else {
-            commands.actions(player).pause();
+            commands.actions(actor).pause();
         }
 
         *is_paused = !*is_paused;

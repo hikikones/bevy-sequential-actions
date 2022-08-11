@@ -12,8 +12,8 @@ fn main() {
         .run();
 }
 
-fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
-    let player = player_q.single();
+fn setup(mut commands: Commands) {
+    let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
 
     let min_wait = 0.5;
     let max_wait = 2.0;
@@ -22,7 +22,7 @@ fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
     let max_move = min_move * -1.0;
 
     commands
-        .actions(player)
+        .actions(actor)
         .add(WaitRandomAction::new(min_wait, max_wait))
         .add(MoveRandomAction::new(min_move, max_move))
         .add(WaitRandomAction::new(min_wait, max_wait))
