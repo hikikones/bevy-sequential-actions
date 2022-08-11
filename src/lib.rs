@@ -72,6 +72,7 @@ pub struct ActionsBundle {
     marker: ActionMarker,
 }
 
+/// Marker component for entities with [`ActionsBundle`].
 #[derive(Default, Component)]
 pub struct ActionMarker;
 
