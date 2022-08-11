@@ -69,7 +69,11 @@ pub use world::*;
 pub struct ActionsBundle {
     queue: ActionQueue,
     current: CurrentAction,
+    marker: ActionMarker,
 }
+
+#[derive(Default, Component)]
+pub struct ActionMarker;
 
 /// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
