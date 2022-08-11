@@ -59,16 +59,16 @@ fn rotate_system(
 }
 
 pub struct RotateRandomAction {
-    min: Vec3,
-    max: Vec3,
+    euler_min: Vec3,
+    euler_max: Vec3,
     target: Option<Quat>,
 }
 
 impl RotateRandomAction {
-    pub fn new(min: Vec3, max: Vec3) -> Self {
+    pub fn new(euler_min: Vec3, euler_max: Vec3) -> Self {
         Self {
-            min,
-            max,
+            euler_min,
+            euler_max,
             target: None,
         }
     }
@@ -79,7 +79,7 @@ impl Action for RotateRandomAction {
         let target = if let Some(target) = self.target {
             target
         } else {
-            let random = random_quat(self.min, self.max);
+            let random = random_quat(self.euler_min, self.euler_max);
             self.target = Some(random);
             random
         };
