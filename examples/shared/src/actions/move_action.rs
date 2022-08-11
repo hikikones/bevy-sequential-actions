@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{LookRotationExt, MoveTowardsExt};
+use crate::extensions::{LookRotationExt, MoveTowardsExt, RandomExt};
 
-use super::{random_vec3, ACTIONS_STAGE};
+use super::ACTIONS_STAGE;
 
 pub struct MoveActionPlugin;
 
@@ -100,7 +100,7 @@ impl Action for MoveRandomAction {
         let target = if let Some(target) = self.target {
             target
         } else {
-            let random = random_vec3(self.min, self.max);
+            let random = Vec3::random(self.min, self.max);
             self.target = Some(random);
             random
         };
