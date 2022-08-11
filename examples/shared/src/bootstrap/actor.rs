@@ -45,7 +45,7 @@ pub(super) fn load_actor(
             // Eyes
             let eye_left = Vec3::new(-0.2, 1.6, -0.4);
             let eye_right = Vec3::new(-eye_left.x, eye_left.y, eye_left.z);
-            let eye_scale = Vec3::ONE * 0.15;
+            let eye_scale = Vec3::splat(0.15);
 
             child.spawn_bundle(PbrBundle {
                 mesh: assets.get_mesh(MeshName::Icosphere),

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-pub const CAMERA_OFFSET: Vec3 = Vec3::new(0.0, 10.0, 8.0);
+pub const CAMERA_OFFSET: Vec3 = Vec3::new(0.0, 10.0, 10.0);
 
 #[derive(Component)]
 pub struct CameraMain;
