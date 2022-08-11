@@ -4,12 +4,14 @@ pub mod command_action;
 pub mod despawn_action;
 pub mod move_action;
 pub mod quit_action;
+pub mod rotate_action;
 pub mod wait_action;
 
 pub use command_action::*;
 pub use despawn_action::*;
 pub use move_action::*;
 pub use quit_action::*;
+pub use rotate_action::*;
 pub use wait_action::*;
 
 /// Stage for running actions.
@@ -39,7 +41,8 @@ impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_stage_after(CoreStage::Update, ACTIONS_STAGE, SystemStage::parallel())
             .add_plugin(WaitActionPlugin)
-            .add_plugin(MoveActionPlugin);
+            .add_plugin(MoveActionPlugin)
+            .add_plugin(RotateActionPlugin);
     }
 }
 
