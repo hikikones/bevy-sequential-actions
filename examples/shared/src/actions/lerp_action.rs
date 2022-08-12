@@ -85,7 +85,7 @@ struct LerpTarget(Entity);
 #[derive(Component)]
 struct LerpTimer(Timer);
 
-#[derive(Clone, Component)]
+#[derive(Component)]
 enum Lerp {
     Position(Vec3, Vec3),
     Rotation(Quat, Quat),
