@@ -18,7 +18,7 @@ fn setup(mut commands: Commands) {
     let min_wait = 0.5;
     let max_wait = 2.0;
 
-    let min_move = Vec3::new(-4.0, 0.0, -4.0);
+    let min_move = Vec3::new(-7.0, 0.0, -4.0);
     let max_move = min_move * -1.0;
 
     commands
