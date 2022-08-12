@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 pub mod command_action;
 pub mod despawn_action;
+pub mod lerp_action;
 pub mod move_action;
 pub mod quit_action;
 pub mod rotate_action;
@@ -9,6 +10,7 @@ pub mod wait_action;
 
 pub use command_action::*;
 pub use despawn_action::*;
+pub use lerp_action::*;
 pub use move_action::*;
 pub use quit_action::*;
 pub use rotate_action::*;
@@ -42,6 +44,7 @@ impl Plugin for ActionsPlugin {
         app.add_stage_after(CoreStage::Update, ACTIONS_STAGE, SystemStage::parallel())
             .add_plugin(WaitActionPlugin)
             .add_plugin(MoveActionPlugin)
-            .add_plugin(RotateActionPlugin);
+            .add_plugin(RotateActionPlugin)
+            .add_plugin(LerpActionPlugin);
     }
 }
