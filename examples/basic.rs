@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*};
+use shared::{actions::*, bootstrap::*, extensions::LookRotationExt};
 
 fn main() {
     App::new()
@@ -13,22 +13,74 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
+    // Create entity with ActionsBundle
     let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
 
-    let min_wait = 0.5;
-    let max_wait = 2.0;
+    // Add a single action with default config
+    commands.actions(actor).add(WaitAction::new(1.0));
 
-    let min_move = Vec3::new(-7.0, 0.0, -4.0);
-    let max_move = min_move * -1.0;
-
+    // Add multiple actions with custom config
     commands
         .actions(actor)
-        .add(WaitRandomAction::new(min_wait, max_wait))
-        .add(MoveRandomAction::new(min_move, max_move))
-        .add(WaitRandomAction::new(min_wait, max_wait))
-        .add(MoveRandomAction::new(min_move, max_move))
-        .add(WaitRandomAction::new(min_wait, max_wait))
-        .add(MoveRandomAction::new(min_move, max_move))
-        .add(WaitRandomAction::new(min_wait, max_wait))
-        .add(QuitAction::new());
+        .config(AddConfig {
+            // Add each action to the back of the queue
+            order: AddOrder::Back,
+            // Start action if nothing is currently running
+            start: true,
+            // Repeat the action
+            repeat: false,
+        })
+        .add(MoveAction::new(-Vec3::X * 2.0))
+        .add(WaitAction::new(1.0))
+        .add(MoveAction::new(Vec3::X * 3.0))
+        .add(WaitAction::new(1.0));
+
+    // Build a list of actions before submitting
+    commands
+        .actions(actor)
+        .builder()
+        .config(AddConfig {
+            // This time, add each action to the front of the queue
+            order: AddOrder::Front,
+            ..Default::default()
+        })
+        .push(WaitAction::new(10.0))
+        .push(WaitAction::new(100.0))
+        .push(WaitAction::new(1000.0))
+        // Since we are adding to the front, reverse list to get increasing wait times
+        .reverse()
+        .submit()
+        // We don't really wanna wait that long, so skip the next three actions
+        .skip()
+        .skip()
+        .skip();
+
+    // Add a custom action that itself adds other actions
+    commands.actions(actor).add(MyCustomAction);
+
+    // Finally, quit the app
+    commands
+        .actions(actor)
+        .config(AddConfig {
+            start: false,
+            ..Default::default()
+        })
+        .add(QuitAction);
+}
+
+struct MyCustomAction;
+
+impl Action for MyCustomAction {
+    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
+        // This action just adds a bunch of other actions.
+        // Every action must signal when they are done, so we call finish() in the end.
+        commands
+            .actions(entity)
+            .add(MoveAction::new(Vec3::ZERO))
+            .add(RotateAction::new(Quat::look_rotation(Vec3::Z, Vec3::Y)))
+            .add(WaitAction::new(1.0))
+            .finish();
+    }
+
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
 }
