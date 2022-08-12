@@ -35,7 +35,7 @@ fn setup(mut commands: Commands) {
         .add(MoveAction::new(Vec3::X * 3.0))
         .add(WaitAction::new(1.0));
 
-    // Build a list of actions before submitting
+    // Build a list of actions
     commands
         .actions(actor)
         .builder()
@@ -49,8 +49,9 @@ fn setup(mut commands: Commands) {
         .push(WaitAction::new(1000.0))
         // Since we are adding to the front, reverse list to get increasing wait times
         .reverse()
+        // Submit the list of actions
         .submit()
-        // We don't really wanna wait that long, so skip the next three actions
+        // Since we don't really wanna wait that long, let's skip the next three actions
         .skip()
         .skip()
         .skip();
@@ -59,26 +60,29 @@ fn setup(mut commands: Commands) {
     commands.actions(actor).add(MyCustomAction);
 
     // Finally, quit the app
-    commands
-        .actions(actor)
-        .config(AddConfig {
-            start: false,
-            ..Default::default()
-        })
-        .add(QuitAction);
+    commands.actions(actor).add(QuitAction);
 }
 
 struct MyCustomAction;
 
 impl Action for MyCustomAction {
     fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
-        // This action just adds a bunch of other actions.
-        // Every action must signal when they are done, so we call finish() in the end.
+        // This action just adds a bunch of other actions to the front.
+        // Every action must signal when they are done, so we call finish() at the end.
         commands
             .actions(entity)
-            .add(MoveAction::new(Vec3::ZERO))
-            .add(RotateAction::new(Quat::look_rotation(Vec3::Z, Vec3::Y)))
-            .add(WaitAction::new(1.0))
+            .builder()
+            .config(AddConfig {
+                order: AddOrder::Front,
+                start: false,
+                repeat: false,
+            })
+            .push(MoveAction::new(Vec3::ZERO))
+            .push(WaitAction::new(1.0))
+            .push(RotateAction::new(Quat::look_rotation(Vec3::Z, Vec3::Y)))
+            .push(WaitAction::new(1.0))
+            .reverse()
+            .submit()
             .finish();
     }
 
