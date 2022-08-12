@@ -59,7 +59,7 @@ impl Action for LerpAction {
 
         world.entity_mut(entity).insert_bundle(LerpBundle {
             lerp,
-            target: Target(self.target),
+            target: LerpTarget(self.target),
             timer: LerpTimer(Timer::from_seconds(self.duration, false)),
         });
     }
@@ -75,12 +75,12 @@ impl Action for LerpAction {
 #[derive(Bundle)]
 struct LerpBundle {
     lerp: Lerp,
-    target: Target,
+    target: LerpTarget,
     timer: LerpTimer,
 }
 
 #[derive(Component)]
-struct Target(Entity);
+struct LerpTarget(Entity);
 
 #[derive(Component)]
 struct LerpTimer(Timer);
@@ -93,13 +93,13 @@ enum Lerp {
 }
 
 fn lerp(
-    mut lerp_q: Query<(Entity, &mut LerpTimer, &Target, &Lerp)>,
-    mut target_transform_q: Query<&mut Transform>,
+    mut lerp_q: Query<(Entity, &mut LerpTimer, &LerpTarget, &Lerp)>,
+    mut transform_q: Query<&mut Transform>,
     time: Res<Time>,
     mut commands: Commands,
 ) {
     for (entity, mut timer, target, lerp) in lerp_q.iter_mut() {
-        if let Ok(mut transform) = target_transform_q.get_mut(target.0) {
+        if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
             let t = timer.0.percent();
