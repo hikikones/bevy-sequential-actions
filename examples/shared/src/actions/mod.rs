@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-pub mod command_action;
 pub mod despawn_action;
 pub mod lerp_action;
 pub mod move_action;
@@ -8,7 +7,6 @@ pub mod quit_action;
 pub mod rotate_action;
 pub mod wait_action;
 
-pub use command_action::*;
 pub use despawn_action::*;
 pub use lerp_action::*;
 pub use move_action::*;
