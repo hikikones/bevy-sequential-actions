@@ -66,9 +66,14 @@ fn setup(mut commands: Commands) {
 struct MyCustomAction;
 
 impl Action for MyCustomAction {
-    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
-        // This action just adds a bunch of other actions to the front.
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+        // This action adds a bunch of other actions to the front.
         // Every action must signal when they are done, so we call finish() at the end.
+
+        let camera = world
+            .query_filtered::<Entity, With<CameraMain>>()
+            .single(world);
+
         commands
             .actions(entity)
             .builder()
@@ -79,7 +84,28 @@ impl Action for MyCustomAction {
             })
             .push(MoveAction::new(Vec3::ZERO))
             .push(WaitAction::new(1.0))
-            .push(RotateAction::new(Quat::look_rotation(Vec3::Z, Vec3::Y)))
+            .push(LerpAction::new(
+                camera,
+                LerpType::Position(CAMERA_OFFSET * 0.5),
+                1.0,
+            ))
+            .push(LerpAction::new(
+                entity,
+                LerpType::Rotation(Quat::look_rotation(Vec3::Z, Vec3::Y)),
+                1.5,
+            ))
+            .push(WaitAction::new(1.0))
+            .push(LerpAction::new(
+                camera,
+                LerpType::Position(CAMERA_OFFSET),
+                1.0,
+            ))
+            .push(WaitAction::new(1.0))
+            .push(LerpAction::new(
+                entity,
+                LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
+                1.0,
+            ))
             .push(WaitAction::new(1.0))
             .reverse()
             .submit()
