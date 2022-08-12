@@ -92,7 +92,7 @@ impl Action for MyCustomAction {
             .push(LerpAction::new(
                 entity,
                 LerpType::Rotation(Quat::look_rotation(Vec3::Z, Vec3::Y)),
-                1.5,
+                1.0,
             ))
             .push(WaitAction::new(1.0))
             .push(LerpAction::new(
@@ -104,7 +104,7 @@ impl Action for MyCustomAction {
             .push(LerpAction::new(
                 entity,
                 LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
-                1.0,
+                0.5,
             ))
             .push(WaitAction::new(1.0))
             .reverse()
