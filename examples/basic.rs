@@ -51,7 +51,7 @@ fn setup(mut commands: Commands) {
         .reverse()
         // Submit the list of actions
         .submit()
-        // Since we don't really wanna wait that long, let's skip the next three actions
+        // Ain't nobody got time to wait that long, so skip'em
         .skip()
         .skip()
         .skip();
