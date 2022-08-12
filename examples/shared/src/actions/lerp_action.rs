@@ -7,7 +7,7 @@ pub(super) struct LerpActionPlugin;
 
 impl Plugin for LerpActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set_to_stage(ACTIONS_STAGE, SystemSet::new().with_system(lerp));
+        app.add_system_to_stage(ACTIONS_STAGE, lerp_system);
     }
 }
 
@@ -92,7 +92,7 @@ enum Lerp {
     Transform(Transform, Transform),
 }
 
-fn lerp(
+fn lerp_system(
     mut lerp_q: Query<(Entity, &mut LerpTimer, &LerpTarget, &Lerp)>,
     mut transform_q: Query<&mut Transform>,
     time: Res<Time>,

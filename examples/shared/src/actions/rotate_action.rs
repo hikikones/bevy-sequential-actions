@@ -9,7 +9,7 @@ pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set_to_stage(ACTIONS_STAGE, SystemSet::new().with_system(rotate_system));
+        app.add_system_to_stage(ACTIONS_STAGE, rotate_system);
     }
 }
 
