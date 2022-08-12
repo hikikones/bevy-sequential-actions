@@ -32,8 +32,8 @@ impl RandomExt for Vec3 {
 impl RandomExt for Quat {
     type Bound = Vec3;
 
-    fn random(min: Self::Bound, max: Self::Bound) -> Self {
-        let r = Vec3::random(min, max);
+    fn random(euler_min: Self::Bound, euler_max: Self::Bound) -> Self {
+        let r = Vec3::random(euler_min, euler_max);
         Self::from_euler(EulerRot::XYZ, r.x, r.y, r.z)
     }
 }
