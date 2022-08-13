@@ -62,14 +62,14 @@ fn setup(mut commands: Commands) {
     // Add an anonymous action using a closure
     commands
         .actions(actor)
-        // Single type closure S taking only the on_start method
+        // Single closure for only the on_start method
         .add(
             |entity, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
                 commands.actions(entity).finish();
             },
         )
-        // Tuple closure (S1, S2) taking both on_start and on_stop methods
+        // Tuple closure for both the on_start and on_stop methods
         .add((
             |entity, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
