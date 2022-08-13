@@ -60,12 +60,25 @@ fn setup(mut commands: Commands) {
     commands.actions(actor).add(MyCustomAction);
 
     // Add an anonymous action using a closure
-    commands.actions(actor).add(
-        |entity, _world: &mut World, commands: &mut ActionCommands| {
-            // Do something...
-            commands.actions(entity).finish();
-        },
-    );
+    commands
+        .actions(actor)
+        // Single type closure S taking only the on_start method
+        .add(
+            |entity, _world: &mut World, commands: &mut ActionCommands| {
+                // on_start
+                commands.actions(entity).finish();
+            },
+        )
+        // Tuple closure (S1, S2) taking both on_start and on_stop methods
+        .add((
+            |entity, _world: &mut World, commands: &mut ActionCommands| {
+                // on_start
+                commands.actions(entity).finish();
+            },
+            |_entity, _world: &mut World, _reason| {
+                // on_stop
+            },
+        ));
 
     // Finally, quit the app
     commands.actions(actor).add(QuitAction);
@@ -108,7 +121,7 @@ impl Action for MyCustomAction {
                 LerpType::Position(CAMERA_OFFSET),
                 1.0,
             ))
-            .push(WaitAction::new(1.0))
+            .push(WaitAction::new(0.5))
             .push(LerpAction::new(
                 entity,
                 LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
