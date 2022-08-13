@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::RotateTowardsExt;
+use crate::extensions::{RandomExt, RotateTowardsExt};
 
-use super::{random_quat, ACTIONS_STAGE};
+use super::ACTIONS_STAGE;
 
 pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set_to_stage(ACTIONS_STAGE, SystemSet::new().with_system(rotate_system));
+        app.add_system_to_stage(ACTIONS_STAGE, rotate_system);
     }
 }
 
@@ -79,7 +79,7 @@ impl Action for RotateRandomAction {
         let target = if let Some(target) = self.target {
             target
         } else {
-            let random = random_quat(self.euler_min, self.euler_max);
+            let random = Quat::random(self.euler_min, self.euler_max);
             self.target = Some(random);
             random
         };

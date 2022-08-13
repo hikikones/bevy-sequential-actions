@@ -12,17 +12,17 @@ fn main() {
         .run();
 }
 
-fn setup(player_q: Query<Entity, With<Player>>, mut commands: Commands) {
-    let player = player_q.single();
+fn setup(mut commands: Commands) {
+    let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
 
     let min_wait = 0.5;
     let max_wait = 2.0;
 
-    let min_move = Vec3::new(-4.0, 0.0, -4.0);
+    let min_move = Vec3::new(-7.0, 0.0, -4.0);
     let max_move = min_move * -1.0;
 
     commands
-        .actions(player)
+        .actions(actor)
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,

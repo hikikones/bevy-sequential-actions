@@ -1,14 +1,14 @@
 use bevy::prelude::*;
 
-pub mod command_action;
 pub mod despawn_action;
+pub mod lerp_action;
 pub mod move_action;
 pub mod quit_action;
 pub mod rotate_action;
 pub mod wait_action;
 
-pub use command_action::*;
 pub use despawn_action::*;
+pub use lerp_action::*;
 pub use move_action::*;
 pub use quit_action::*;
 pub use rotate_action::*;
@@ -42,28 +42,7 @@ impl Plugin for ActionsPlugin {
         app.add_stage_after(CoreStage::Update, ACTIONS_STAGE, SystemStage::parallel())
             .add_plugin(WaitActionPlugin)
             .add_plugin(MoveActionPlugin)
-            .add_plugin(RotateActionPlugin);
+            .add_plugin(RotateActionPlugin)
+            .add_plugin(LerpActionPlugin);
     }
-}
-
-fn random_f32(min: f32, max: f32) -> f32 {
-    assert!(min <= max);
-    assert!(min + 0.0 * (max - min) == min);
-    assert!(min + 1.0 * (max - min) == max);
-
-    min + fastrand::f32() * (max - min)
-}
-
-fn random_vec3(min: Vec3, max: Vec3) -> Vec3 {
-    let x = random_f32(min.x, max.x);
-    let y = random_f32(min.y, max.y);
-    let z = random_f32(min.z, max.z);
-    Vec3::new(x, y, z)
-}
-
-fn random_quat(euler_min: Vec3, euler_max: Vec3) -> Quat {
-    let x = random_f32(euler_min.x, euler_max.x);
-    let y = random_f32(euler_min.y, euler_max.y);
-    let z = random_f32(euler_min.z, euler_max.z);
-    Quat::from_euler(EulerRot::XYZ, x, y, z)
 }

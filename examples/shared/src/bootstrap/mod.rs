@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
+mod actor;
 mod assets;
 mod camera;
 mod level;
-mod player;
 
+pub use actor::*;
 pub use camera::*;
-pub use player::*;
 
 pub struct BootstrapPlugin;
 
@@ -24,9 +24,13 @@ impl Plugin for BootstrapPlugin {
                 SystemSet::new()
                     .after("load_assets")
                     .with_system(level::spawn_level)
-                    .with_system(player::spawn_player)
                     .with_system(camera::spawn_camera),
             )
-            .add_system(bevy::window::close_on_esc);
+            .add_system_set_to_stage(
+                CoreStage::PreUpdate,
+                SystemSet::new()
+                    .with_system(actor::load_actor)
+                    .with_system(bevy::window::close_on_esc),
+            );
     }
 }

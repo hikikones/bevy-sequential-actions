@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use super::{random_f32, ACTIONS_STAGE};
+use crate::extensions::RandomExt;
+
+use super::ACTIONS_STAGE;
 
 pub struct WaitActionPlugin;
 
@@ -75,7 +77,7 @@ impl WaitRandomAction {
 
 impl Action for WaitRandomAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let duration = self.current.unwrap_or(random_f32(self.min, self.max));
+        let duration = self.current.unwrap_or(f32::random(self.min, self.max));
         world.entity_mut(entity).insert(Wait(duration));
     }
 
