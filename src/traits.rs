@@ -82,6 +82,17 @@ pub trait Action: Send + Sync {
     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason);
 }
 
+impl<F> Action for F
+where
+    F: for<'w, 'a> FnMut(Entity, &'w mut World, &'a mut ActionCommands) + Send + Sync,
+{
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+        (self)(entity, world, commands);
+    }
+
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
 /// Conversion into an [`Action`].
 pub trait IntoAction {
     /// Convert `self` into `Box<dyn Action>`.

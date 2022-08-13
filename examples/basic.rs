@@ -59,6 +59,14 @@ fn setup(mut commands: Commands) {
     // Add a custom action that itself adds other actions
     commands.actions(actor).add(MyCustomAction);
 
+    // Add an anonymous action using a closure
+    commands.actions(actor).add(
+        |entity, _world: &mut World, commands: &mut ActionCommands| {
+            // Do something...
+            commands.actions(entity).finish();
+        },
+    );
+
     // Finally, quit the app
     commands.actions(actor).add(QuitAction);
 }
