@@ -84,7 +84,7 @@ pub trait Action: Send + Sync {
 
 impl<Start> Action for Start
 where
-    Start: for<'w, 'a> FnMut(Entity, &'w mut World, &'a mut ActionCommands) + Send + Sync,
+    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         (self)(entity, world, commands);
@@ -95,8 +95,8 @@ where
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: for<'w, 'a> FnMut(Entity, &'w mut World, &'a mut ActionCommands) + Send + Sync,
-    Stop: for<'w> FnMut(Entity, &'w mut World, StopReason) + Send + Sync,
+    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync,
+    Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         (self.0)(entity, world, commands);
