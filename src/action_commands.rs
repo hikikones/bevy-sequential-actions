@@ -26,7 +26,8 @@ pub struct EntityActions<'a> {
 }
 
 impl<'a> EntityActions<'a> {
-    /// Run a custom function `f` after [`Action::on_start`] has been called.
+    /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
+    /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
     pub fn custom<F>(self, f: F) -> Self
     where
         F: FnOnce(&mut World) + 'static,
