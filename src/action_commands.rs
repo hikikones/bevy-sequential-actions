@@ -26,6 +26,7 @@ pub struct EntityActions<'a> {
 }
 
 impl<'a> EntityActions<'a> {
+    /// Run a custom function `f` after [`Action::on_start`] has been called.
     pub fn custom<F>(self, f: F) -> Self
     where
         F: FnOnce(&mut World) + 'static,

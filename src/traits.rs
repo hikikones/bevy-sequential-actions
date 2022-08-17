@@ -148,6 +148,11 @@ impl IntoAction for Box<dyn Action> {
 ///
 ///         // Good
 ///         commands.actions(entity).finish();
+///
+///         // Also good
+///         commands.actions(entity).custom(move |w: &mut World| {
+///             w.actions(entity).finish();
+///         });
 ///     }
 ///
 ///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
