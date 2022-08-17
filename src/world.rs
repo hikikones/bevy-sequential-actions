@@ -30,17 +30,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
     }
 
     fn add<T: IntoAction>(mut self, action: T) -> Self {
-        let action_tuple = (action.into_boxed(), self.config.into());
-        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-        match self.config.order {
-            AddOrder::Front => actions.push_front(action_tuple),
-            AddOrder::Back => actions.push_back(action_tuple),
-        }
-
-        if self.config.start && !self.has_current_action() {
-            self.start_next_action();
-        }
-
+        self.add_action(action, self.config);
         self
     }
 
@@ -73,6 +63,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
                 actions.push_back((action, cfg));
             }
         }
+
         self
     }
 
@@ -119,13 +110,9 @@ impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
         self
     }
 
-    fn submit(self) -> Self::Modifier {
+    fn submit(mut self) -> Self::Modifier {
         for (action, config) in self.actions {
-            self.modifier
-                .world
-                .actions(self.modifier.entity)
-                .config(config)
-                .add(action);
+            self.modifier.add_action(action, config);
         }
 
         self.modifier
@@ -133,6 +120,19 @@ impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
 }
 
 impl EntityWorldActions<'_> {
+    fn add_action<T: IntoAction>(&mut self, action: T, config: AddConfig) {
+        let action_tuple = (action.into_boxed(), config.into());
+        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+        match config.order {
+            AddOrder::Front => actions.push_front(action_tuple),
+            AddOrder::Back => actions.push_back(action_tuple),
+        }
+
+        if config.start && !self.has_current_action() {
+            self.start_next_action();
+        }
+    }
+
     fn stop_current_action(&mut self, reason: StopReason) {
         if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_stop(self.entity, self.world, reason);
