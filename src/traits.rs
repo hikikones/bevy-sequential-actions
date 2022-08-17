@@ -134,6 +134,7 @@ impl IntoAction for Box<dyn Action> {
 ///
 /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
 /// Actions need to be properly queued, which is what [`ActionCommands`] does.
+/// If you need to use [`World`] for modifying actions, use [`EntityActions::custom`].
 ///
 /// ```rust,no_run
 /// # use bevy::prelude::*;
