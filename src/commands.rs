@@ -114,14 +114,12 @@ impl<'w, 's, 'a> ActionBuilder for ActionCommandsBuilder<'w, 's, 'a> {
     }
 
     fn submit(self) -> Self::Modifier {
-        for (action, config) in self.actions {
-            self.modifier.commands.add(move |world: &mut World| {
-                world
-                    .actions(self.modifier.entity)
-                    .config(config)
-                    .add(action);
-            });
-        }
+        self.modifier.commands.add(move |world: &mut World| {
+            let mut wa = world.actions(self.modifier.entity);
+            for (action, config) in self.actions {
+                wa = wa.config(config).add(action);
+            }
+        });
 
         self.modifier
     }
