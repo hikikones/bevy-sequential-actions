@@ -25,14 +25,14 @@ pub struct EntityActions<'a> {
     commands: &'a mut ActionCommands,
 }
 
-enum ActionCommand {
-    Add(Entity, AddConfig, Box<dyn Action>),
-    Next(Entity),
-    Finish(Entity),
-    Pause(Entity),
-    Stop(Entity, StopReason),
-    Skip(Entity),
-    Clear(Entity),
+impl<'a> EntityActions<'a> {
+    pub fn custom<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut World) + 'static,
+    {
+        self.commands.0.push(ActionCommand::Custom(Box::new(f)));
+        self
+    }
 }
 
 impl<'a> ModifyActions for EntityActions<'a> {
@@ -130,6 +130,17 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
     }
 }
 
+enum ActionCommand {
+    Add(Entity, AddConfig, Box<dyn Action>),
+    Next(Entity),
+    Finish(Entity),
+    Pause(Entity),
+    Stop(Entity, StopReason),
+    Skip(Entity),
+    Clear(Entity),
+    Custom(Box<dyn FnOnce(&mut World)>),
+}
+
 impl ActionCommands {
     pub(super) fn apply(self, world: &mut World) {
         for cmd in self.0 {
@@ -154,6 +165,9 @@ impl ActionCommands {
                 }
                 ActionCommand::Clear(entity) => {
                     world.actions(entity).clear();
+                }
+                ActionCommand::Custom(f) => {
+                    f(world);
                 }
             }
         }
