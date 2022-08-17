@@ -1,7 +1,11 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::LookRotationExt};
+use shared::{
+    actions::*,
+    bootstrap::*,
+    extensions::{LookRotationExt, RunSystemExt},
+};
 
 fn main() {
     App::new()
@@ -80,6 +84,9 @@ fn setup(mut commands: Commands) {
             },
         ));
 
+    // Get fancy...
+    commands.actions(actor).add(FancyAction);
+
     // Finally, quit the app
     commands.actions(actor).add(QuitAction);
 }
@@ -127,11 +134,39 @@ impl Action for MyCustomAction {
                 LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
                 0.5,
             ))
-            .push(WaitAction::new(1.0))
             .reverse()
             .submit()
             .finish();
     }
 
     fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
+struct FancyAction;
+
+impl Action for FancyAction {
+    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
+        // This action runs a system that adds another wait action.
+        // When modifying actions using world inside the Action trait,
+        // it is important that the modifications happens after the on_start method.
+
+        commands
+            .actions(entity)
+            // Mutate the world after on_start has been called.
+            .custom(|world| world.run_system(my_system))
+            .finish();
+    }
+
+    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
+fn my_system(actor_q: Query<Entity, With<ActionMarker>>, mut commands: Commands) {
+    let actor = actor_q.single();
+    commands
+        .actions(actor)
+        .config(AddConfig {
+            order: AddOrder::Front,
+            ..Default::default()
+        })
+        .add(WaitAction::new(1.0));
 }

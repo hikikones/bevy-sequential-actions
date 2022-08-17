@@ -134,6 +134,7 @@ impl IntoAction for Box<dyn Action> {
 ///
 /// Do not modify actions using [`World`] inside the implementation of an [`Action`].
 /// Actions need to be properly queued, which is what [`ActionCommands`] does.
+/// If you need to use [`World`] for modifying actions, use [`EntityActions::custom`].
 ///
 /// ```rust,no_run
 /// # use bevy::prelude::*;
@@ -148,6 +149,11 @@ impl IntoAction for Box<dyn Action> {
 ///
 ///         // Good
 ///         commands.actions(entity).finish();
+///
+///         // Also good
+///         commands.actions(entity).custom(move |w: &mut World| {
+///             w.actions(entity).finish();
+///         });
 ///     }
 ///
 ///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
