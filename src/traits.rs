@@ -74,7 +74,7 @@ use crate::*;
 ///     }
 /// }
 /// ```
-pub trait Action: Send + Sync {
+pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
 
@@ -84,7 +84,7 @@ pub trait Action: Send + Sync {
 
 impl<Start> Action for Start
 where
-    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync,
+    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         (self)(entity, world, commands);
@@ -95,8 +95,8 @@ where
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync,
-    Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync,
+    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync + 'static,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         (self.0)(entity, world, commands);
@@ -108,14 +108,14 @@ where
 }
 
 /// Conversion into an [`Action`].
-pub trait IntoAction {
+pub trait IntoAction: Send + Sync + 'static {
     /// Convert `self` into `Box<dyn Action>`.
     fn into_boxed(self) -> Box<dyn Action>;
 }
 
 impl<T> IntoAction for T
 where
-    T: Action + 'static,
+    T: Action,
 {
     fn into_boxed(self) -> Box<dyn Action> {
         Box::new(self)

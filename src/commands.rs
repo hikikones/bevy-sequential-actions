@@ -30,7 +30,6 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
     }
 
     fn add<T: IntoAction>(self, action: T) -> Self {
-        let action = action.into_boxed();
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).config(self.config).add(action);
         });
