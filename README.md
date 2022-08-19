@@ -47,5 +47,5 @@ Consider running with `--release` as debug builds can be quite slow.
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
-| 0.8  | 0.3                     |
+| 0.8  | 0.3 — 0.4               |
 | 0.7  | 0.1 — 0.2               |
