@@ -29,9 +29,25 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
         self
     }
 
-    fn add<T: IntoAction>(self, action: T) -> Self {
+    fn add<T>(self, action: T) -> Self
+    where
+        T: IntoAction,
+    {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).config(self.config).add(action);
+        });
+        self
+    }
+
+    fn add_many<T>(self, actions: T) -> Self
+    where
+        T: BoxedActionIter,
+    {
+        self.commands.add(move |world: &mut World| {
+            world
+                .actions(self.entity)
+                .config(self.config)
+                .add_many(actions);
         });
         self
     }

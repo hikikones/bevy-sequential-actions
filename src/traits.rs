@@ -128,6 +128,11 @@ impl IntoAction for BoxedAction {
     }
 }
 
+/// Blanket trait signature for adding a collection of actions.
+pub trait BoxedActionIter: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static {}
+
+impl BoxedActionIter for Box<dyn BoxedActionIter> {}
+
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
 ///
 /// # Warning
@@ -183,7 +188,7 @@ pub trait ModifyActions {
     /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
     fn add_many<T>(self, actions: T) -> Self
     where
-        T: DoubleEndedIterator<Item = BoxedAction>;
+        T: BoxedActionIter;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).

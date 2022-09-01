@@ -54,6 +54,18 @@ impl<'a> ModifyActions for EntityActions<'a> {
         self
     }
 
+    fn add_many<T>(self, actions: T) -> Self
+    where
+        T: BoxedActionIter,
+    {
+        self.commands.0.push(ActionCommand::AddMany(
+            self.entity,
+            self.config,
+            Box::new(actions),
+        ));
+        self
+    }
+
     fn next(self) -> Self {
         self.commands.0.push(ActionCommand::Next(self.entity));
         self
@@ -134,6 +146,7 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
 
 enum ActionCommand {
     Add(Entity, AddConfig, BoxedAction),
+    AddMany(Entity, AddConfig, Box<dyn BoxedActionIter>),
     Next(Entity),
     Finish(Entity),
     Pause(Entity),
@@ -149,6 +162,9 @@ impl ActionCommands {
             match cmd {
                 ActionCommand::Add(entity, config, action) => {
                     world.actions(entity).config(config).add(action);
+                }
+                ActionCommand::AddMany(entity, config, actions) => {
+                    world.actions(entity).config(config).add_many(actions);
                 }
                 ActionCommand::Next(entity) => {
                     world.actions(entity).next();
