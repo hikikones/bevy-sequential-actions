@@ -29,8 +29,37 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
         self
     }
 
-    fn add<T: IntoAction>(mut self, action: T) -> Self {
+    fn add<T>(mut self, action: T) -> Self
+    where
+        T: IntoAction,
+    {
         self.add_action(action, self.config);
+        self
+    }
+
+    fn add_many<T>(self, actions: T) -> Self
+    where
+        T: DoubleEndedIterator<Item = BoxedAction>,
+    {
+        let mut queue = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+
+        match self.config.order {
+            AddOrder::Back => {
+                for action in actions {
+                    queue.push_back((action, self.config.into()));
+                }
+            }
+            AddOrder::Front => {
+                for action in actions.into_iter().rev() {
+                    queue.push_back((action, self.config.into()));
+                }
+            }
+        }
+
+        if self.config.start && !self.has_current_action() {
+            self.start_next_action();
+        }
+
         self
     }
 
