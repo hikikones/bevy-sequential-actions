@@ -90,7 +90,7 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
 /// Build a list of actions using [`Commands`].
 pub struct ActionCommandsBuilder<'w, 's, 'a> {
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    actions: Vec<(BoxedAction, AddConfig)>,
     modifier: EntityCommandsActions<'w, 's, 'a>,
 }
 

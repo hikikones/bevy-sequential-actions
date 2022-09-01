@@ -98,7 +98,7 @@ impl<'a> ModifyActions for EntityActions<'a> {
 /// Build a list of actions using [`ActionCommands`].
 pub struct ActionsBuilder<'a> {
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    actions: Vec<(BoxedAction, AddConfig)>,
     modifier: EntityActions<'a>,
 }
 
@@ -133,7 +133,7 @@ impl<'a> ActionBuilder for ActionsBuilder<'a> {
 }
 
 enum ActionCommand {
-    Add(Entity, AddConfig, Box<dyn Action>),
+    Add(Entity, AddConfig, BoxedAction),
     Next(Entity),
     Finish(Entity),
     Pause(Entity),

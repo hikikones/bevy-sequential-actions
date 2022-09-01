@@ -88,7 +88,7 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 /// Build a list of actions using [`World`].
 pub struct ActionWorldBuilder<'a> {
     config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
+    actions: Vec<(BoxedAction, AddConfig)>,
     modifier: EntityWorldActions<'a>,
 }
 

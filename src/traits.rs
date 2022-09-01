@@ -109,21 +109,21 @@ where
 
 /// Conversion into an [`Action`].
 pub trait IntoAction: Send + Sync + 'static {
-    /// Convert `self` into `Box<dyn Action>`.
-    fn into_boxed(self) -> Box<dyn Action>;
+    /// Convert `self` into [`BoxedAction`].
+    fn into_boxed(self) -> BoxedAction;
 }
 
 impl<T> IntoAction for T
 where
     T: Action,
 {
-    fn into_boxed(self) -> Box<dyn Action> {
+    fn into_boxed(self) -> BoxedAction {
         Box::new(self)
     }
 }
 
-impl IntoAction for Box<dyn Action> {
-    fn into_boxed(self) -> Box<dyn Action> {
+impl IntoAction for BoxedAction {
+    fn into_boxed(self) -> BoxedAction {
         self
     }
 }
