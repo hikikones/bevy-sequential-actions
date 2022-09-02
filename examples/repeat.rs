@@ -20,8 +20,8 @@ fn setup(mut commands: Commands) {
         let actor = commands.spawn_actor(start, Quat::look_rotation(Vec3::Z, Vec3::Y));
 
         let repeat = match i {
-            3 => Repeat::Infinite,
-            _ => Repeat::Finite(i),
+            3 => AddRepeat::Infinite,
+            _ => AddRepeat::Finite(i),
         };
 
         commands

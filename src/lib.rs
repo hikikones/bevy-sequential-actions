@@ -37,7 +37,7 @@
 //!             // Start the next action in the queue if nothing is currently running
 //!             start: true,
 //!             // Repeat the action `n` times
-//!             repeat: Repeat::Finite(0),
+//!             repeat: AddRepeat::Finite(0),
 //!         })
 //!         .add(move_action)
 //!         .add(quit_action);
@@ -84,7 +84,7 @@ pub struct AddConfig {
     /// Start the next [`action`](Action) in the queue if nothing is currently running.
     pub start: bool,
     /// Specify how many times the [`action`](Action) should be repeated.
-    pub repeat: Repeat,
+    pub repeat: AddRepeat,
 }
 
 impl Default for AddConfig {
@@ -92,7 +92,7 @@ impl Default for AddConfig {
         Self {
             order: AddOrder::Back,
             start: true,
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         }
     }
 }
@@ -108,7 +108,7 @@ pub enum AddOrder {
 
 /// The repeat configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
-pub enum Repeat {
+pub enum AddRepeat {
     /// Repeat the [`action`](Action) `n` times.
     Finite(u32),
     /// Repeat the [`action`](Action) forever.
@@ -138,7 +138,7 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
-    repeat: Repeat,
+    repeat: AddRepeat,
 }
 
 impl From<AddConfig> for ActionConfig {

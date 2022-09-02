@@ -229,19 +229,19 @@ fn skip() {
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         })
         .add(EmptyAction)
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
-            repeat: Repeat::Finite(1),
+            repeat: AddRepeat::Finite(1),
         })
         .add(EmptyAction)
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
-            repeat: Repeat::Infinite,
+            repeat: AddRepeat::Infinite,
         })
         .add(EmptyAction);
 
@@ -335,13 +335,13 @@ fn repeat_finite() {
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         })
         .add(CountdownAction::new(0))
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
-            repeat: Repeat::Finite(1),
+            repeat: AddRepeat::Finite(1),
         })
         .add(CountdownAction::new(0));
 
@@ -372,7 +372,7 @@ fn repeat_infinite() {
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
-            repeat: Repeat::Infinite,
+            repeat: AddRepeat::Infinite,
         })
         .add(CountdownAction::new(0));
 
@@ -465,7 +465,7 @@ fn order() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         })
         .add_many(
             [
@@ -493,7 +493,7 @@ fn order() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         })
         .add_many(
             [
@@ -536,7 +536,7 @@ fn pause_resume() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: true,
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         })
         .add(CountdownAction::new(2));
 

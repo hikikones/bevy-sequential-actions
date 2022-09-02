@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
             // Start the next action in the queue if nothing is currently running
             start: true,
             // Repeat the action `n` times
-            repeat: Repeat::Finite(0),
+            repeat: AddRepeat::Finite(0),
         })
         .add(move_action)
         .add(quit_action);
