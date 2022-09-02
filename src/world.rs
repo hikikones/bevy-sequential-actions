@@ -31,15 +31,16 @@ impl ModifyActions for EntityWorldActions<'_> {
     where
         T: IntoBoxedAction,
     {
-        let mut queue = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-        let action_tuple = (action.into_boxed(), self.config.into());
+        let cfg = self.config;
+        let mut queue = self.get_action_queue();
+        let action_tuple = (action.into_boxed(), cfg.into());
 
-        match self.config.order {
+        match cfg.order {
             AddOrder::Back => queue.push_back(action_tuple),
             AddOrder::Front => queue.push_front(action_tuple),
         }
 
-        if self.config.start && !self.has_current_action() {
+        if cfg.start && !self.has_current_action() {
             self.start_next_action();
         }
 
@@ -50,17 +51,18 @@ impl ModifyActions for EntityWorldActions<'_> {
     where
         T: BoxedActionIter,
     {
-        let mut queue = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+        let cfg = self.config;
+        let mut queue = self.get_action_queue();
 
-        match self.config.order {
+        match cfg.order {
             AddOrder::Back => {
                 for action in actions {
-                    queue.push_back((action, self.config.into()));
+                    queue.push_back((action, cfg.into()));
                 }
             }
             AddOrder::Front => {
                 for action in actions.rev() {
-                    queue.push_front((action, self.config.into()));
+                    queue.push_front((action, cfg.into()));
                 }
             }
         }
@@ -95,58 +97,30 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn skip(mut self) -> Self {
-        if let Some((action, mut cfg)) = self.pop_next_action() {
-            match &mut cfg.repeat {
-                Repeat::Finite(n) => {
-                    if *n > 0 {
-                        *n -= 1;
-                        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                        actions.push_back((action, cfg));
-                    }
-                }
-                Repeat::Infinite => {
-                    let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                    actions.push_back((action, cfg));
-                }
-            }
+        if let Some((action, cfg)) = self.pop_next_action() {
+            self.handle_repeat(action, cfg);
         }
-
         self
     }
 
     fn clear(mut self) -> Self {
         self.stop_current_action(StopReason::Canceled);
-
-        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-        actions.clear();
-
+        self.get_action_queue().clear();
         self
     }
 }
 
 impl EntityWorldActions<'_> {
     fn stop_current_action(&mut self, reason: StopReason) {
-        if let Some((mut action, mut cfg)) = self.take_current_action() {
+        if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_stop(self.entity, self.world, reason);
 
             match reason {
-                StopReason::Finished | StopReason::Canceled => match &mut cfg.repeat {
-                    Repeat::Finite(n) => {
-                        if *n > 0 {
-                            *n -= 1;
-                            let mut actions =
-                                self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                            actions.push_back((action, cfg));
-                        }
-                    }
-                    Repeat::Infinite => {
-                        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                        actions.push_back((action, cfg));
-                    }
-                },
+                StopReason::Finished | StopReason::Canceled => {
+                    self.handle_repeat(action, cfg);
+                }
                 StopReason::Paused => {
-                    let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                    actions.push_front((action, cfg));
+                    self.get_action_queue().push_front((action, cfg));
                 }
             }
         }
@@ -165,6 +139,20 @@ impl EntityWorldActions<'_> {
         }
     }
 
+    fn handle_repeat(&mut self, action: BoxedAction, mut cfg: ActionConfig) {
+        match &mut cfg.repeat {
+            Repeat::Finite(n) => {
+                if *n > 0 {
+                    *n -= 1;
+                    self.get_action_queue().push_back((action, cfg));
+                }
+            }
+            Repeat::Infinite => {
+                self.get_action_queue().push_back((action, cfg));
+            }
+        }
+    }
+
     fn take_current_action(&mut self) -> Option<ActionTuple> {
         self.world
             .get_mut::<CurrentAction>(self.entity)
@@ -177,6 +165,10 @@ impl EntityWorldActions<'_> {
             .get_mut::<ActionQueue>(self.entity)
             .unwrap()
             .pop_front()
+    }
+
+    fn get_action_queue(&mut self) -> Mut<ActionQueue> {
+        self.world.get_mut::<ActionQueue>(self.entity).unwrap()
     }
 
     fn has_current_action(&self) -> bool {
