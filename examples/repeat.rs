@@ -26,7 +26,7 @@ fn setup(mut commands: Commands) {
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
-            repeat: true,
+            repeat: Repeat::Finite(1),
         })
         .add(WaitRandomAction::new(min_wait, max_wait))
         .add(MoveRandomAction::new(min_move, max_move));

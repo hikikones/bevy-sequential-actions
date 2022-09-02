@@ -32,7 +32,7 @@ fn setup(mut commands: Commands) {
             // Start action if nothing is currently running
             start: true,
             // Repeat the action
-            repeat: false,
+            repeat: Repeat::Finite(0),
         })
         .add(MoveAction::new(-Vec3::X * 2.0))
         .add(WaitAction::new(1.0))
@@ -128,7 +128,7 @@ impl Action for MyCustomAction {
             .config(AddConfig {
                 order: AddOrder::Front,
                 start: false,
-                repeat: false,
+                repeat: Repeat::Finite(0),
             })
             .add_many(actions.into_iter())
             .finish();

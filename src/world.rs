@@ -95,10 +95,19 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn skip(mut self) -> Self {
-        if let Some((action, cfg)) = self.pop_next_action() {
-            if cfg.repeat {
-                let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-                actions.push_back((action, cfg));
+        if let Some((action, mut cfg)) = self.pop_next_action() {
+            match &mut cfg.repeat {
+                Repeat::Finite(n) => {
+                    if *n > 0 {
+                        *n -= 1;
+                        let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                        actions.push_back((action, cfg));
+                    }
+                }
+                Repeat::Infinite => {
+                    let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                    actions.push_back((action, cfg));
+                }
             }
         }
 
@@ -117,16 +126,24 @@ impl ModifyActions for EntityWorldActions<'_> {
 
 impl EntityWorldActions<'_> {
     fn stop_current_action(&mut self, reason: StopReason) {
-        if let Some((mut action, cfg)) = self.take_current_action() {
+        if let Some((mut action, mut cfg)) = self.take_current_action() {
             action.on_stop(self.entity, self.world, reason);
 
             match reason {
-                StopReason::Finished | StopReason::Canceled => {
-                    if cfg.repeat {
+                StopReason::Finished | StopReason::Canceled => match &mut cfg.repeat {
+                    Repeat::Finite(n) => {
+                        if *n > 0 {
+                            *n -= 1;
+                            let mut actions =
+                                self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+                            actions.push_back((action, cfg));
+                        }
+                    }
+                    Repeat::Infinite => {
                         let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                         actions.push_back((action, cfg));
                     }
-                }
+                },
                 StopReason::Paused => {
                     let mut actions = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
                     actions.push_front((action, cfg));

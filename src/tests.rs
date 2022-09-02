@@ -229,14 +229,19 @@ fn skip() {
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
-            repeat: false,
+            repeat: Repeat::Finite(0),
         })
-        .add(EmptyAction)
         .add(EmptyAction)
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
-            repeat: true,
+            repeat: Repeat::Finite(1),
+        })
+        .add(EmptyAction)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::Infinite,
         })
         .add(EmptyAction);
 
@@ -245,6 +250,18 @@ fn skip() {
     ecs.actions(e).skip();
 
     assert!(ecs.get_action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.get_action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.get_action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.get_action_queue(e).len() == 1);
 
     ecs.actions(e).skip();
 
@@ -310,7 +327,7 @@ fn push() {
 }
 
 #[test]
-fn repeat() {
+fn repeat_finite() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
@@ -318,7 +335,44 @@ fn repeat() {
         .config(AddConfig {
             order: AddOrder::Back,
             start: true,
-            repeat: true,
+            repeat: Repeat::Finite(0),
+        })
+        .add(CountdownAction::new(0))
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: true,
+            repeat: Repeat::Finite(1),
+        })
+        .add(CountdownAction::new(0));
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 1);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+
+    assert!(ecs.get_current_action(e).is_none());
+}
+
+#[test]
+fn repeat_infinite() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: true,
+            repeat: Repeat::Infinite,
         })
         .add(CountdownAction::new(0));
 
@@ -411,7 +465,7 @@ fn order() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
-            repeat: false,
+            repeat: Repeat::Finite(0),
         })
         .add_many(
             [
@@ -439,7 +493,7 @@ fn order() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
-            repeat: false,
+            repeat: Repeat::Finite(0),
         })
         .add_many(
             [
@@ -482,7 +536,7 @@ fn pause_resume() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: true,
-            repeat: false,
+            repeat: Repeat::Finite(0),
         })
         .add(CountdownAction::new(2));
 
