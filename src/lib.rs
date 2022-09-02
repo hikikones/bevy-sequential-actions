@@ -36,8 +36,8 @@
 //!             order: AddOrder::Back,
 //!             // Start the next action in the queue if nothing is currently running
 //!             start: true,
-//!             // Repeat the action by adding it back to the queue when it is removed
-//!             repeat: false,
+//!             // Repeat the action `n` times
+//!             repeat: Repeat::Finite(0),
 //!         })
 //!         .add(move_action)
 //!         .add(quit_action);
@@ -106,9 +106,12 @@ impl Default for AddConfig {
     }
 }
 
+/// Specify how many times an [`Action`] should be repeated.
 #[derive(Clone, Copy)]
 pub enum Repeat {
+    /// Repeat the [`action`](Action) `n` times.
     Finite(usize),
+    /// Repeat the [`action`](Action) forever.
     Infinite,
 }
 

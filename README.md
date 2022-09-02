@@ -22,10 +22,10 @@ fn setup(mut commands: Commands) {
         .config(AddConfig {
             // Add each action to the back of the queue
             order: AddOrder::Back,
-            // Start action if nothing is currently running
+            // Start the next action in the queue if nothing is currently running
             start: true,
-            // Repeat the action
-            repeat: false,
+            // Repeat the action `n` times
+            repeat: Repeat::Finite(0),
         })
         .add(move_action)
         .add(quit_action);
