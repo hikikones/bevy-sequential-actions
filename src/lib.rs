@@ -92,8 +92,8 @@ pub struct AddConfig {
     pub order: AddOrder,
     /// Start the next [`action`](Action) in the queue if nothing is currently running.
     pub start: bool,
-    /// Repeat the [`action`](Action) by adding it back to the queue when it is removed.
-    pub repeat: bool,
+    /// Specify how many times the [`action`](Action) should run.
+    pub repeat: Repeat,
 }
 
 impl Default for AddConfig {
@@ -101,9 +101,15 @@ impl Default for AddConfig {
         Self {
             order: AddOrder::Back,
             start: true,
-            repeat: false,
+            repeat: Repeat::Finite(0),
         }
     }
+}
+
+#[derive(Clone, Copy)]
+pub enum Repeat {
+    Finite(usize),
+    Infinite,
 }
 
 /// The reason why an [`Action`] was stopped.
@@ -129,7 +135,7 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
-    repeat: bool,
+    repeat: Repeat,
 }
 
 impl From<AddConfig> for ActionConfig {
