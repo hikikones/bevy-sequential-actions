@@ -107,13 +107,13 @@ where
     }
 }
 
-/// Conversion into an [`Action`].
-pub trait IntoAction: Send + Sync + 'static {
+/// Conversion into a [`BoxedAction`].
+pub trait IntoBoxedAction: Send + Sync + 'static {
     /// Convert `self` into [`BoxedAction`].
     fn into_boxed(self) -> BoxedAction;
 }
 
-impl<T> IntoAction for T
+impl<T> IntoBoxedAction for T
 where
     T: Action,
 {
@@ -122,13 +122,13 @@ where
     }
 }
 
-impl IntoAction for BoxedAction {
+impl IntoBoxedAction for BoxedAction {
     fn into_boxed(self) -> BoxedAction {
         self
     }
 }
 
-/// Blanket trait signature for adding a collection of actions.
+/// Trait alias for a collection of actions.
 pub trait BoxedActionIter: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static {}
 
 impl<T> BoxedActionIter for T where
@@ -183,7 +183,7 @@ pub trait ModifyActions {
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
     fn add<T>(self, action: T) -> Self
     where
-        T: IntoAction;
+        T: IntoBoxedAction;
 
     /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
     fn add_many<T>(self, actions: T) -> Self

@@ -29,7 +29,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
     fn add<T>(mut self, action: T) -> Self
     where
-        T: IntoAction,
+        T: IntoBoxedAction,
     {
         let mut queue = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
         let action_tuple = (action.into_boxed(), self.config.into());
@@ -169,17 +169,3 @@ impl EntityWorldActions<'_> {
             .is_some()
     }
 }
-
-// pub(super) trait WorldHelperExt {
-//     fn add_action<T>(&mut self, entity: Entity, action: T, config: AddConfig)
-//     where
-//         T: IntoAction;
-//     fn add_many_actions<T>(&mut self, entity: Entity, actions: T)
-//     where
-//         T: DoubleEndedIterator<Item = BoxedAction>;
-//     fn stop_current_action(&mut self, entity: Entity, reason: StopReason);
-//     fn start_next_action(&mut self, entity: Entity);
-//     fn take_current_action(&mut self, entity: Entity) -> Option<ActionTuple>;
-//     fn pop_next_action(&mut self, entity: Entity) -> Option<ActionTuple>;
-//     fn has_current_action(&self, entity: Entity) -> bool;
-// }

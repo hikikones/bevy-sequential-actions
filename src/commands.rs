@@ -29,7 +29,7 @@ impl ModifyActions for EntityCommandsActions<'_, '_, '_> {
 
     fn add<T>(self, action: T) -> Self
     where
-        T: IntoAction,
+        T: IntoBoxedAction,
     {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).config(self.config).add(action);

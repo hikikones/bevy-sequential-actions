@@ -23,7 +23,7 @@ fn setup(mut commands: Commands) {
     let min_rot = Vec3::ZERO;
     let max_rot = Vec3::Y * std::f32::consts::PI * 2.0;
 
-    for _ in 0..1 {
+    for _ in 0..10 {
         let actor = commands.spawn_actor(
             Vec3::random(min_move, max_move),
             Quat::random(min_rot, max_rot),

@@ -43,7 +43,10 @@ impl ModifyActions for EntityActions<'_> {
         self
     }
 
-    fn add<T: IntoAction>(self, action: T) -> Self {
+    fn add<T>(self, action: T) -> Self
+    where
+        T: IntoBoxedAction,
+    {
         self.commands.0.push(ActionCommand::Add(
             self.entity,
             self.config,
