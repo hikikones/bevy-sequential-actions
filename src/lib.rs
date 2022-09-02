@@ -110,7 +110,7 @@ pub enum AddOrder {
 #[derive(Clone, Copy)]
 pub enum Repeat {
     /// Repeat the [`action`](Action) `n` times.
-    Finite(usize),
+    Finite(u32),
     /// Repeat the [`action`](Action) forever.
     Infinite,
 }

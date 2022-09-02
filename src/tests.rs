@@ -49,12 +49,12 @@ impl Ecs {
 }
 
 struct CountdownAction {
-    count: usize,
-    current: Option<usize>,
+    count: u32,
+    current: Option<u32>,
 }
 
 impl CountdownAction {
-    fn new(count: usize) -> Self {
+    fn new(count: u32) -> Self {
         Self {
             count,
             current: None,
@@ -63,7 +63,7 @@ impl CountdownAction {
 }
 
 #[derive(Component)]
-struct Countdown(usize);
+struct Countdown(u32);
 
 #[derive(Component)]
 struct Finished;
@@ -521,7 +521,7 @@ fn pause_resume() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
-    fn get_first_countdown_value(world: &mut World) -> usize {
+    fn get_first_countdown_value(world: &mut World) -> u32 {
         world.query::<&Countdown>().iter(world).next().unwrap().0
     }
 
