@@ -284,31 +284,26 @@ fn push() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
-    ecs.actions(e)
-        .builder()
-        .push(EmptyAction)
-        .push(EmptyAction)
-        .push(EmptyAction);
+    ecs.actions(e).add_many(
+        [
+            EmptyAction.into_boxed(),
+            EmptyAction.into_boxed(),
+            EmptyAction.into_boxed(),
+        ]
+        .into_iter(),
+    );
 
     assert!(ecs.get_current_action(e).is_none());
     assert!(ecs.get_action_queue(e).len() == 0);
 
-    ecs.actions(e)
-        .builder()
-        .push(EmptyAction)
-        .push(EmptyAction)
-        .push(EmptyAction)
-        .submit();
-
-    assert!(ecs.get_current_action(e).is_none());
-    assert!(ecs.get_action_queue(e).len() == 0);
-
-    ecs.actions(e)
-        .builder()
-        .push(CountdownAction::new(0))
-        .push(CountdownAction::new(0))
-        .push(CountdownAction::new(0))
-        .submit();
+    ecs.actions(e).add_many(
+        [
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+        ]
+        .into_iter(),
+    );
 
     assert!(ecs.get_current_action(e).is_some());
     assert!(ecs.get_action_queue(e).len() == 2);
@@ -391,10 +386,42 @@ fn order() {
     let e = ecs.spawn_action_entity();
 
     // A, B, C
+    ecs.actions(e).add_many(
+        [
+            Order::<A>::default().into_boxed(),
+            Order::<B>::default().into_boxed(),
+            Order::<C>::default().into_boxed(),
+        ]
+        .into_iter(),
+    );
+
+    assert!(ecs.world.entity(e).contains::<A>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<B>());
+
+    ecs.actions(e).finish();
+
+    assert!(ecs.world.entity(e).contains::<C>());
+
+    // A, B, C
     ecs.actions(e)
-        .add(Order::<A>::default())
-        .add(Order::<B>::default())
-        .add(Order::<C>::default());
+        .clear()
+        .config(AddConfig {
+            order: AddOrder::Front,
+            start: false,
+            repeat: false,
+        })
+        .add_many(
+            [
+                Order::<A>::default().into_boxed(),
+                Order::<B>::default().into_boxed(),
+                Order::<C>::default().into_boxed(),
+            ]
+            .into_iter(),
+        )
+        .next();
 
     assert!(ecs.world.entity(e).contains::<A>());
 
@@ -409,16 +436,19 @@ fn order() {
     // C, B, A
     ecs.actions(e)
         .clear()
-        .builder()
         .config(AddConfig {
             order: AddOrder::Front,
             start: false,
             repeat: false,
         })
-        .push(Order::<A>::default())
-        .push(Order::<B>::default())
-        .push(Order::<C>::default())
-        .submit()
+        .add_many(
+            [
+                Order::<C>::default().into_boxed(),
+                Order::<B>::default().into_boxed(),
+                Order::<A>::default().into_boxed(),
+            ]
+            .into_iter(),
+        )
         .next();
 
     assert!(ecs.world.entity(e).contains::<C>());
@@ -430,32 +460,6 @@ fn order() {
     ecs.actions(e).finish();
 
     assert!(ecs.world.entity(e).contains::<A>());
-
-    // A, B, C
-    ecs.actions(e)
-        .clear()
-        .builder()
-        .config(AddConfig {
-            order: AddOrder::Front,
-            start: false,
-            repeat: false,
-        })
-        .push(Order::<A>::default())
-        .push(Order::<B>::default())
-        .push(Order::<C>::default())
-        .reverse()
-        .submit()
-        .next();
-
-    assert!(ecs.world.entity(e).contains::<A>());
-
-    ecs.actions(e).finish();
-
-    assert!(ecs.world.entity(e).contains::<B>());
-
-    ecs.actions(e).finish();
-
-    assert!(ecs.world.entity(e).contains::<C>());
 }
 
 #[test]

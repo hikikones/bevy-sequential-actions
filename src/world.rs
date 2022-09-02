@@ -15,15 +15,13 @@ impl<'a> ActionsProxy<'a> for World {
 }
 
 /// Modify actions using [`World`].
-pub struct EntityWorldActions<'a> {
+pub struct EntityWorldActions<'w> {
     entity: Entity,
     config: AddConfig,
-    world: &'a mut World,
+    world: &'w mut World,
 }
 
-impl<'a> ModifyActions for EntityWorldActions<'a> {
-    type Builder = ActionWorldBuilder<'a>;
-
+impl ModifyActions for EntityWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -33,7 +31,18 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
     where
         T: IntoAction,
     {
-        self.add_action(action, self.config);
+        let mut queue = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
+        let action_tuple = (action.into_boxed(), self.config.into());
+
+        match self.config.order {
+            AddOrder::Back => queue.push_back(action_tuple),
+            AddOrder::Front => queue.push_front(action_tuple),
+        }
+
+        if self.config.start && !self.has_current_action() {
+            self.start_next_action();
+        }
+
         self
     }
 
@@ -50,8 +59,8 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
                 }
             }
             AddOrder::Front => {
-                for action in actions.into_iter().rev() {
-                    queue.push_back((action, self.config.into()));
+                for action in actions.rev() {
+                    queue.push_front((action, self.config.into()));
                 }
             }
         }
@@ -104,64 +113,9 @@ impl<'a> ModifyActions for EntityWorldActions<'a> {
 
         self
     }
-
-    fn builder(self) -> Self::Builder {
-        ActionWorldBuilder {
-            config: AddConfig::default(),
-            actions: Vec::new(),
-            modifier: self,
-        }
-    }
-}
-
-/// Build a list of actions using [`World`].
-pub struct ActionWorldBuilder<'a> {
-    config: AddConfig,
-    actions: Vec<(BoxedAction, AddConfig)>,
-    modifier: EntityWorldActions<'a>,
-}
-
-impl<'a> ActionBuilder for ActionWorldBuilder<'a> {
-    type Modifier = EntityWorldActions<'a>;
-
-    fn config(mut self, config: AddConfig) -> Self {
-        self.config = config;
-        self
-    }
-
-    fn push<T: IntoAction>(mut self, action: T) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
-        self
-    }
-
-    fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    fn submit(mut self) -> Self::Modifier {
-        for (action, config) in self.actions {
-            self.modifier.add_action(action, config);
-        }
-
-        self.modifier
-    }
 }
 
 impl EntityWorldActions<'_> {
-    fn add_action<T: IntoAction>(&mut self, action: T, config: AddConfig) {
-        let action_tuple = (action.into_boxed(), config.into());
-        let mut queue = self.world.get_mut::<ActionQueue>(self.entity).unwrap();
-        match config.order {
-            AddOrder::Front => queue.push_front(action_tuple),
-            AddOrder::Back => queue.push_back(action_tuple),
-        }
-
-        if config.start && !self.has_current_action() {
-            self.start_next_action();
-        }
-    }
-
     fn stop_current_action(&mut self, reason: StopReason) {
         if let Some((mut action, cfg)) = self.take_current_action() {
             action.on_stop(self.entity, self.world, reason);

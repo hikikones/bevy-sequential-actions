@@ -25,7 +25,7 @@ pub struct EntityActions<'a> {
     commands: &'a mut ActionCommands,
 }
 
-impl<'a> EntityActions<'a> {
+impl EntityActions<'_> {
     /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
     /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
     pub fn custom<F>(self, f: F) -> Self
@@ -37,9 +37,7 @@ impl<'a> EntityActions<'a> {
     }
 }
 
-impl<'a> ModifyActions for EntityActions<'a> {
-    type Builder = ActionsBuilder<'a>;
-
+impl ModifyActions for EntityActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
@@ -96,51 +94,6 @@ impl<'a> ModifyActions for EntityActions<'a> {
     fn clear(self) -> Self {
         self.commands.0.push(ActionCommand::Clear(self.entity));
         self
-    }
-
-    fn builder(self) -> Self::Builder {
-        ActionsBuilder {
-            config: AddConfig::default(),
-            actions: Vec::new(),
-            modifier: self,
-        }
-    }
-}
-
-/// Build a list of actions using [`ActionCommands`].
-pub struct ActionsBuilder<'a> {
-    config: AddConfig,
-    actions: Vec<(BoxedAction, AddConfig)>,
-    modifier: EntityActions<'a>,
-}
-
-impl<'a> ActionBuilder for ActionsBuilder<'a> {
-    type Modifier = EntityActions<'a>;
-
-    fn config(mut self, config: AddConfig) -> Self {
-        self.config = config;
-        self
-    }
-
-    fn push<T: IntoAction>(mut self, action: T) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
-        self
-    }
-
-    fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    fn submit(self) -> Self::Modifier {
-        for (action, config) in self.actions {
-            self.modifier
-                .commands
-                .0
-                .push(ActionCommand::Add(self.modifier.entity, config, action));
-        }
-
-        self.modifier
     }
 }
 
