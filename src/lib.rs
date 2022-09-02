@@ -76,15 +76,6 @@ pub struct ActionsBundle {
 #[derive(Default, Component)]
 pub struct ActionMarker;
 
-/// The queue order for an [`Action`] to be added.
-#[derive(Clone, Copy)]
-pub enum AddOrder {
-    /// An [`action`](Action) is added to the back of the queue.
-    Back,
-    /// An [`action`](Action) is added to the front of the queue.
-    Front,
-}
-
 /// Configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub struct AddConfig {
@@ -92,7 +83,7 @@ pub struct AddConfig {
     pub order: AddOrder,
     /// Start the next [`action`](Action) in the queue if nothing is currently running.
     pub start: bool,
-    /// Specify how many times the [`action`](Action) should run.
+    /// Specify how many times the [`action`](Action) should be repeated.
     pub repeat: Repeat,
 }
 
@@ -106,7 +97,16 @@ impl Default for AddConfig {
     }
 }
 
-/// Specify how many times an [`Action`] should be repeated.
+/// The queue order for an [`Action`] to be added.
+#[derive(Clone, Copy)]
+pub enum AddOrder {
+    /// An [`action`](Action) is added to the back of the queue.
+    Back,
+    /// An [`action`](Action) is added to the front of the queue.
+    Front,
+}
+
+/// The repeat configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum Repeat {
     /// Repeat the [`action`](Action) `n` times.

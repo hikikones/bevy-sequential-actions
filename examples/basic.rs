@@ -31,7 +31,7 @@ fn setup(mut commands: Commands) {
             order: AddOrder::Back,
             // Start action if nothing is currently running
             start: true,
-            // Repeat the action
+            // Repeat the action zero times, i.e. run only once
             repeat: Repeat::Finite(0),
         })
         .add(MoveAction::new(-Vec3::X * 2.0))
