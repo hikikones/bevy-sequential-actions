@@ -141,13 +141,13 @@ impl EntityWorldActions<'_> {
 
     fn handle_repeat(&mut self, action: BoxedAction, mut cfg: ActionConfig) {
         match &mut cfg.repeat {
-            AddRepeat::Finite(n) => {
+            Repeat::Amount(n) => {
                 if *n > 0 {
                     *n -= 1;
                     self.get_action_queue().push_back((action, cfg));
                 }
             }
-            AddRepeat::Infinite => {
+            Repeat::Forever => {
                 self.get_action_queue().push_back((action, cfg));
             }
         }
