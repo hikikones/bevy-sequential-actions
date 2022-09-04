@@ -25,7 +25,7 @@ pub struct EntityActions<'a> {
     commands: &'a mut ActionCommands,
 }
 
-impl<'a> EntityActions<'a> {
+impl EntityActions<'_> {
     /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
     /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
     pub fn custom<F>(self, f: F) -> Self
@@ -37,19 +37,32 @@ impl<'a> EntityActions<'a> {
     }
 }
 
-impl<'a> ModifyActions for EntityActions<'a> {
-    type Builder = ActionsBuilder<'a>;
-
+impl ModifyActions for EntityActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
     }
 
-    fn add<T: IntoAction>(self, action: T) -> Self {
+    fn add<T>(self, action: T) -> Self
+    where
+        T: IntoBoxedAction,
+    {
         self.commands.0.push(ActionCommand::Add(
             self.entity,
             self.config,
             action.into_boxed(),
+        ));
+        self
+    }
+
+    fn add_many<T>(self, actions: T) -> Self
+    where
+        T: BoxedActionIter,
+    {
+        self.commands.0.push(ActionCommand::AddMany(
+            self.entity,
+            self.config,
+            Box::new(actions),
         ));
         self
     }
@@ -85,55 +98,11 @@ impl<'a> ModifyActions for EntityActions<'a> {
         self.commands.0.push(ActionCommand::Clear(self.entity));
         self
     }
-
-    fn builder(self) -> Self::Builder {
-        ActionsBuilder {
-            config: AddConfig::default(),
-            actions: Vec::new(),
-            modifier: self,
-        }
-    }
-}
-
-/// Build a list of actions using [`ActionCommands`].
-pub struct ActionsBuilder<'a> {
-    config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
-    modifier: EntityActions<'a>,
-}
-
-impl<'a> ActionBuilder for ActionsBuilder<'a> {
-    type Modifier = EntityActions<'a>;
-
-    fn config(mut self, config: AddConfig) -> Self {
-        self.config = config;
-        self
-    }
-
-    fn push<T: IntoAction>(mut self, action: T) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
-        self
-    }
-
-    fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    fn submit(self) -> Self::Modifier {
-        for (action, config) in self.actions {
-            self.modifier
-                .commands
-                .0
-                .push(ActionCommand::Add(self.modifier.entity, config, action));
-        }
-
-        self.modifier
-    }
 }
 
 enum ActionCommand {
-    Add(Entity, AddConfig, Box<dyn Action>),
+    Add(Entity, AddConfig, BoxedAction),
+    AddMany(Entity, AddConfig, Box<dyn BoxedActionIter>),
     Next(Entity),
     Finish(Entity),
     Pause(Entity),
@@ -149,6 +118,9 @@ impl ActionCommands {
             match cmd {
                 ActionCommand::Add(entity, config, action) => {
                     world.actions(entity).config(config).add(action);
+                }
+                ActionCommand::AddMany(entity, config, actions) => {
+                    world.actions(entity).config(config).add_many(actions);
                 }
                 ActionCommand::Next(entity) => {
                     world.actions(entity).next();

@@ -39,22 +39,22 @@ fn setup(mut commands: Commands) {
         .add(MoveAction::new(Vec3::X * 3.0))
         .add(WaitAction::new(1.0));
 
-    // Build a list of actions
+    // Add a list of actions
     commands
         .actions(actor)
-        .builder()
         .config(AddConfig {
             // This time, add each action to the front of the queue
             order: AddOrder::Front,
             ..Default::default()
         })
-        .push(WaitAction::new(10.0))
-        .push(WaitAction::new(100.0))
-        .push(WaitAction::new(1000.0))
-        // Since we are adding to the front, reverse list to get increasing wait times
-        .reverse()
-        // Submit the list of actions
-        .submit()
+        .add_many(
+            [
+                WaitAction::new(10.0).into_boxed(),
+                WaitAction::new(100.0).into_boxed(),
+                WaitAction::new(1000.0).into_boxed(),
+            ]
+            .into_iter(),
+        )
         // Ain't nobody got time to wait that long, so skip'em
         .skip()
         .skip()
@@ -102,40 +102,35 @@ impl Action for MyCustomAction {
             .query_filtered::<Entity, With<CameraMain>>()
             .single(world);
 
+        let actions = [
+            MoveAction::new(Vec3::ZERO).into_boxed(),
+            WaitAction::new(1.0).into_boxed(),
+            LerpAction::new(camera, LerpType::Position(CAMERA_OFFSET * 0.5), 1.0).into_boxed(),
+            LerpAction::new(
+                entity,
+                LerpType::Rotation(Quat::look_rotation(Vec3::Z, Vec3::Y)),
+                1.0,
+            )
+            .into_boxed(),
+            WaitAction::new(1.0).into_boxed(),
+            LerpAction::new(camera, LerpType::Position(CAMERA_OFFSET), 1.0).into_boxed(),
+            WaitAction::new(0.5).into_boxed(),
+            LerpAction::new(
+                entity,
+                LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
+                0.5,
+            )
+            .into_boxed(),
+        ];
+
         commands
             .actions(entity)
-            .builder()
             .config(AddConfig {
                 order: AddOrder::Front,
                 start: false,
                 repeat: false,
             })
-            .push(MoveAction::new(Vec3::ZERO))
-            .push(WaitAction::new(1.0))
-            .push(LerpAction::new(
-                camera,
-                LerpType::Position(CAMERA_OFFSET * 0.5),
-                1.0,
-            ))
-            .push(LerpAction::new(
-                entity,
-                LerpType::Rotation(Quat::look_rotation(Vec3::Z, Vec3::Y)),
-                1.0,
-            ))
-            .push(WaitAction::new(1.0))
-            .push(LerpAction::new(
-                camera,
-                LerpType::Position(CAMERA_OFFSET),
-                1.0,
-            ))
-            .push(WaitAction::new(0.5))
-            .push(LerpAction::new(
-                entity,
-                LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
-                0.5,
-            ))
-            .reverse()
-            .submit()
+            .add_many(actions.into_iter())
             .finish();
     }
 

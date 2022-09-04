@@ -117,7 +117,10 @@ pub enum StopReason {
     Paused,
 }
 
-type ActionTuple = (Box<dyn Action>, ActionConfig);
+/// A boxed [`Action`].
+pub type BoxedAction = Box<dyn Action>;
+
+type ActionTuple = (BoxedAction, ActionConfig);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);

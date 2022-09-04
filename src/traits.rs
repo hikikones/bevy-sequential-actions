@@ -107,25 +107,33 @@ where
     }
 }
 
-/// Conversion into an [`Action`].
-pub trait IntoAction: Send + Sync + 'static {
-    /// Convert `self` into `Box<dyn Action>`.
-    fn into_boxed(self) -> Box<dyn Action>;
+/// Conversion into a [`BoxedAction`].
+pub trait IntoBoxedAction: Send + Sync + 'static {
+    /// Convert `self` into [`BoxedAction`].
+    fn into_boxed(self) -> BoxedAction;
 }
 
-impl<T> IntoAction for T
+impl<T> IntoBoxedAction for T
 where
     T: Action,
 {
-    fn into_boxed(self) -> Box<dyn Action> {
+    fn into_boxed(self) -> BoxedAction {
         Box::new(self)
     }
 }
 
-impl IntoAction for Box<dyn Action> {
-    fn into_boxed(self) -> Box<dyn Action> {
+impl IntoBoxedAction for BoxedAction {
+    fn into_boxed(self) -> BoxedAction {
         self
     }
+}
+
+/// Trait alias for a collection of actions.
+pub trait BoxedActionIter: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static {}
+
+impl<T> BoxedActionIter for T where
+    T: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static
+{
 }
 
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
@@ -169,14 +177,18 @@ pub trait ActionsProxy<'a> {
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
-    /// The type returned for building a list of actions.
-    type Builder: ActionBuilder;
-
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(self, config: AddConfig) -> Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
-    fn add<T: IntoAction>(self, action: T) -> Self;
+    fn add<T>(self, action: T) -> Self
+    where
+        T: IntoBoxedAction;
+
+    /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
+    fn add_many<T>(self, actions: T) -> Self
+    where
+        T: BoxedActionIter;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
@@ -198,26 +210,4 @@ pub trait ModifyActions {
     /// Clears the actions queue.
     /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(self) -> Self;
-
-    /// Build a list of actions.
-    fn builder(self) -> Self::Builder;
-}
-
-/// Methods for building a list of actions.
-pub trait ActionBuilder {
-    /// The type that is returned after [`submit`](Self::submit) is called.
-    type Modifier: ModifyActions;
-
-    /// Sets the current [`config`](AddConfig) for actions to be pushed.
-    fn config(self, config: AddConfig) -> Self;
-
-    /// Pushes an [`action`](Action) to a list with the current [`config`](AddConfig).
-    /// Pushed actions will not be added to the queue until [`submit`](Self::submit) is called.
-    fn push<T: IntoAction>(self, action: T) -> Self;
-
-    /// Reverses the order of the [`pushed`](Self::push) actions.
-    fn reverse(self) -> Self;
-
-    /// Submits the [`pushed`](Self::push) actions by consuming the list and adding them to the queue.
-    fn submit(self) -> Self::Modifier;
 }

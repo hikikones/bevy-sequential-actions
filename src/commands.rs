@@ -2,10 +2,10 @@ use bevy_ecs::prelude::*;
 
 use crate::*;
 
-impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
-    type Modifier = EntityCommandsActions<'w, 's, 'a>;
+impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
+    type Modifier = EntityCommandsActions<'c, 'w, 's>;
 
-    fn actions(&'a mut self, entity: Entity) -> EntityCommandsActions<'w, 's, 'a> {
+    fn actions(&'c mut self, entity: Entity) -> EntityCommandsActions<'c, 'w, 's> {
         EntityCommandsActions {
             entity,
             config: AddConfig::default(),
@@ -15,23 +15,37 @@ impl<'w: 'a, 's: 'a, 'a> ActionsProxy<'a> for Commands<'w, 's> {
 }
 
 /// Modify actions using [`Commands`].
-pub struct EntityCommandsActions<'w, 's, 'a> {
+pub struct EntityCommandsActions<'c, 'w, 's> {
     entity: Entity,
     config: AddConfig,
-    commands: &'a mut Commands<'w, 's>,
+    commands: &'c mut Commands<'w, 's>,
 }
 
-impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
-    type Builder = ActionCommandsBuilder<'w, 's, 'a>;
-
+impl ModifyActions for EntityCommandsActions<'_, '_, '_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self
     }
 
-    fn add<T: IntoAction>(self, action: T) -> Self {
+    fn add<T>(self, action: T) -> Self
+    where
+        T: IntoBoxedAction,
+    {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).config(self.config).add(action);
+        });
+        self
+    }
+
+    fn add_many<T>(self, actions: T) -> Self
+    where
+        T: BoxedActionIter,
+    {
+        self.commands.add(move |world: &mut World| {
+            world
+                .actions(self.entity)
+                .config(self.config)
+                .add_many(actions);
         });
         self
     }
@@ -76,50 +90,5 @@ impl<'w, 's, 'a> ModifyActions for EntityCommandsActions<'w, 's, 'a> {
             world.actions(self.entity).clear();
         });
         self
-    }
-
-    fn builder(self) -> Self::Builder {
-        ActionCommandsBuilder {
-            config: AddConfig::default(),
-            actions: Vec::new(),
-            modifier: self,
-        }
-    }
-}
-
-/// Build a list of actions using [`Commands`].
-pub struct ActionCommandsBuilder<'w, 's, 'a> {
-    config: AddConfig,
-    actions: Vec<(Box<dyn Action>, AddConfig)>,
-    modifier: EntityCommandsActions<'w, 's, 'a>,
-}
-
-impl<'w, 's, 'a> ActionBuilder for ActionCommandsBuilder<'w, 's, 'a> {
-    type Modifier = EntityCommandsActions<'w, 's, 'a>;
-
-    fn config(mut self, config: AddConfig) -> Self {
-        self.config = config;
-        self
-    }
-
-    fn push<T: IntoAction>(mut self, action: T) -> Self {
-        self.actions.push((action.into_boxed(), self.config));
-        self
-    }
-
-    fn reverse(mut self) -> Self {
-        self.actions.reverse();
-        self
-    }
-
-    fn submit(self) -> Self::Modifier {
-        self.modifier.commands.add(move |world: &mut World| {
-            let mut wa = world.actions(self.modifier.entity);
-            for (action, config) in self.actions {
-                wa = wa.config(config).add(action);
-            }
-        });
-
-        self.modifier
     }
 }
