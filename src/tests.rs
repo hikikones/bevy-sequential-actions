@@ -327,7 +327,7 @@ fn push() {
 }
 
 #[test]
-fn repeat_finite() {
+fn repeat_amount() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
@@ -364,7 +364,7 @@ fn repeat_finite() {
 }
 
 #[test]
-fn repeat_infinite() {
+fn repeat_forever() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
