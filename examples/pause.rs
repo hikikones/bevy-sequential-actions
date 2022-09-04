@@ -34,7 +34,7 @@ fn setup(mut commands: Commands) {
             .config(AddConfig {
                 order: AddOrder::Back,
                 start: true,
-                repeat: true,
+                repeat: Repeat::Forever,
             })
             .add(WaitRandomAction::new(min_wait, max_wait))
             .add(RotateRandomAction::new(min_rot, max_rot))

@@ -36,8 +36,8 @@
 //!             order: AddOrder::Back,
 //!             // Start the next action in the queue if nothing is currently running
 //!             start: true,
-//!             // Repeat the action by adding it back to the queue when it is removed
-//!             repeat: false,
+//!             // Repeat the action `n` times
+//!             repeat: Repeat::Amount(0),
 //!         })
 //!         .add(move_action)
 //!         .add(quit_action);
@@ -76,6 +76,27 @@ pub struct ActionsBundle {
 #[derive(Default, Component)]
 pub struct ActionMarker;
 
+/// Configuration for an [`Action`] to be added.
+#[derive(Clone, Copy)]
+pub struct AddConfig {
+    /// Specify the queue order for the [`action`](Action) to be added.
+    pub order: AddOrder,
+    /// Start the next [`action`](Action) in the queue if nothing is currently running.
+    pub start: bool,
+    /// Specify how many times the [`action`](Action) should be repeated.
+    pub repeat: Repeat,
+}
+
+impl Default for AddConfig {
+    fn default() -> Self {
+        Self {
+            order: AddOrder::Back,
+            start: true,
+            repeat: Repeat::Amount(0),
+        }
+    }
+}
+
 /// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
@@ -85,25 +106,13 @@ pub enum AddOrder {
     Front,
 }
 
-/// Configuration for an [`Action`] to be added.
+/// The repeat configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
-pub struct AddConfig {
-    /// Specify the queue order for the [`action`](Action) to be added.
-    pub order: AddOrder,
-    /// Start the next [`action`](Action) in the queue if nothing is currently running.
-    pub start: bool,
-    /// Repeat the [`action`](Action) by adding it back to the queue when it is removed.
-    pub repeat: bool,
-}
-
-impl Default for AddConfig {
-    fn default() -> Self {
-        Self {
-            order: AddOrder::Back,
-            start: true,
-            repeat: false,
-        }
-    }
+pub enum Repeat {
+    /// Repeat the [`action`](Action) `n` times.
+    Amount(u32),
+    /// Repeat the [`action`](Action) forever.
+    Forever,
 }
 
 /// The reason why an [`Action`] was stopped.
@@ -129,7 +138,7 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 struct ActionConfig {
-    repeat: bool,
+    repeat: Repeat,
 }
 
 impl From<AddConfig> for ActionConfig {
