@@ -1,53 +1,39 @@
 use bevy::prelude::*;
 
 pub trait MoveTowardsExt {
-    type Target;
-
-    fn move_towards(&mut self, target: Self::Target, max_delta: f32) -> bool;
+    fn move_towards(self, target: Self, max_delta: f32) -> Self;
 }
 
 impl MoveTowardsExt for f32 {
-    type Target = Self;
-
-    fn move_towards(&mut self, target: Self, max_delta: f32) -> bool {
+    fn move_towards(self, target: Self, max_delta: f32) -> Self {
         assert!(max_delta > 0.0);
 
-        if (target - *self).abs() <= max_delta {
-            *self = target;
-            return true;
+        if (target - self).abs() <= max_delta {
+            return target;
         }
 
-        *self += (target - *self).signum() * max_delta;
-
-        false
+        self + (target - self).signum() * max_delta
     }
 }
 
 impl MoveTowardsExt for Vec3 {
-    type Target = Self;
-
-    fn move_towards(&mut self, target: Self, max_delta: f32) -> bool {
+    fn move_towards(self, target: Self, max_delta: f32) -> Self {
         assert!(max_delta > 0.0);
 
         if self.distance(target) <= max_delta {
-            *self = target;
-            return true;
+            return target;
         }
 
-        *self += (target - *self).normalize() * max_delta;
-
-        false
+        self + (target - self).normalize() * max_delta
     }
 }
 
-impl MoveTowardsExt for Transform {
-    type Target = Vec3;
+pub trait MoveTowardsTransformExt {
+    fn move_towards(&mut self, target: Vec3, max_delta: f32);
+}
 
-    fn move_towards(&mut self, target: Self::Target, max_delta: f32) -> bool {
-        let mut pos = self.translation;
-        let reached_target = pos.move_towards(target, max_delta);
-        self.translation = pos;
-
-        reached_target
+impl MoveTowardsTransformExt for Transform {
+    fn move_towards(&mut self, target: Vec3, max_delta: f32) {
+        self.translation = self.translation.move_towards(target, max_delta);
     }
 }

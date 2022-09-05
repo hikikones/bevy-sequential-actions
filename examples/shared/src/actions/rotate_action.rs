@@ -1,15 +1,16 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{RandomExt, RotateTowardsExt};
+use crate::extensions::{RandomExt, RotateTowardsTransformExt};
 
-use super::ACTIONS_STAGE;
+use super::CHECK_ACTIONS_STAGE;
 
 pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(ACTIONS_STAGE, rotate_system);
+        app.add_system(rotate_system)
+            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_rotate_status);
     }
 }
 
@@ -46,13 +47,15 @@ struct Target(Quat);
 #[derive(Component)]
 struct Speed(f32);
 
-fn rotate_system(
-    mut move_q: Query<(Entity, &mut Transform, &Target, &Speed)>,
-    time: Res<Time>,
-    mut commands: Commands,
-) {
-    for (entity, mut transform, target, speed) in move_q.iter_mut() {
-        if transform.rotate_towards(target.0, speed.0 * time.delta_seconds()) {
+fn rotate_system(mut rotate_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+    for (mut transform, target, speed) in rotate_q.iter_mut() {
+        transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
+    }
+}
+
+fn check_rotate_status(check_q: Query<(Entity, &Transform, &Target)>, mut commands: Commands) {
+    for (entity, transform, target) in check_q.iter() {
+        if transform.rotation == target.0 {
             commands.actions(entity).finish();
         }
     }

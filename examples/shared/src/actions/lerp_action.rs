@@ -1,13 +1,14 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use super::ACTIONS_STAGE;
+use super::CHECK_ACTIONS_STAGE;
 
 pub(super) struct LerpActionPlugin;
 
 impl Plugin for LerpActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(ACTIONS_STAGE, lerp_system);
+        app.add_system(lerp_system)
+            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_lerp_status);
     }
 }
 
@@ -93,12 +94,11 @@ enum Lerp {
 }
 
 fn lerp_system(
-    mut lerp_q: Query<(Entity, &mut LerpTimer, &LerpTarget, &Lerp)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp)>,
     mut transform_q: Query<&mut Transform>,
     time: Res<Time>,
-    mut commands: Commands,
 ) {
-    for (entity, mut timer, target, lerp) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -117,11 +117,22 @@ fn lerp_system(
                     transform.rotation = start.rotation.slerp(end.rotation, smoothstep);
                 }
             }
+        }
+    }
+}
 
-            if timer.0.finished() {
-                commands.actions(entity).finish();
-            }
-        } else {
+fn check_lerp_status(
+    lerp_q: Query<(Entity, &LerpTimer, &LerpTarget)>,
+    transform_q: Query<&Transform>,
+    mut commands: Commands,
+) {
+    for (entity, timer, target) in lerp_q.iter() {
+        if timer.0.finished() {
+            commands.actions(entity).finish();
+            continue;
+        }
+
+        if transform_q.get(target.0).is_err() {
             commands.actions(entity).next();
         }
     }
