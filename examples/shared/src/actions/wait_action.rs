@@ -3,13 +3,14 @@ use bevy_sequential_actions::*;
 
 use crate::extensions::RandomExt;
 
-use super::ACTIONS_STAGE;
+use super::CHECK_ACTIONS_STAGE;
 
 pub struct WaitActionPlugin;
 
 impl Plugin for WaitActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set_to_stage(ACTIONS_STAGE, SystemSet::new().with_system(wait_system));
+        app.add_system(wait_system)
+            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_wait_status);
     }
 }
 
@@ -50,9 +51,14 @@ impl Action for WaitAction {
 #[derive(Component)]
 struct Wait(f32);
 
-fn wait_system(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-    for (entity, mut wait) in wait_q.iter_mut() {
+fn wait_system(mut wait_q: Query<&mut Wait>, time: Res<Time>) {
+    for mut wait in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
+    }
+}
+
+fn check_wait_status(wait_q: Query<(Entity, &Wait)>, mut commands: Commands) {
+    for (entity, wait) in wait_q.iter() {
         if wait.0 <= 0.0 {
             commands.actions(entity).finish();
         }

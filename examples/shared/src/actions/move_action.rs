@@ -1,20 +1,17 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{LookRotationExt, MoveTowardsExt, RandomExt};
+use crate::extensions::{LookRotationExt, MoveTowardsTransformExt, RandomExt};
 
-use super::ACTIONS_STAGE;
+use super::CHECK_ACTIONS_STAGE;
 
 pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set_to_stage(
-            ACTIONS_STAGE,
-            SystemSet::new()
-                .with_system(move_system)
-                .with_system(rotate_system),
-        );
+        app.add_system(move_system)
+            .add_system(rotate_system)
+            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_move_status);
     }
 }
 
@@ -51,15 +48,9 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
-fn move_system(
-    mut move_q: Query<(Entity, &mut Transform, &Target, &Speed)>,
-    time: Res<Time>,
-    mut commands: Commands,
-) {
-    for (entity, mut transform, target, speed) in move_q.iter_mut() {
-        if transform.move_towards(target.0, speed.0 * time.delta_seconds()) {
-            commands.actions(entity).finish();
-        }
+fn move_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+    for (mut transform, target, speed) in move_q.iter_mut() {
+        transform.move_towards(target.0, speed.0 * time.delta_seconds());
     }
 }
 
@@ -76,6 +67,14 @@ fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res
             Quat::look_rotation(dir, Vec3::Y),
             speed.0 * 2.0 * time.delta_seconds(),
         );
+    }
+}
+
+fn check_move_status(check_q: Query<(Entity, &Transform, &Target)>, mut commands: Commands) {
+    for (entity, transform, target) in check_q.iter() {
+        if transform.translation == target.0 {
+            commands.actions(entity).finish();
+        }
     }
 }
 
