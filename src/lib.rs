@@ -139,13 +139,18 @@ pub enum ExecutionMode {
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
-type ActionTuple = (BoxedAction, ActionConfig);
+type ActionTuple = (ActionType, ActionConfig);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
 
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
+
+enum ActionType {
+    Single(BoxedAction),
+    Many(Box<[BoxedAction]>),
+}
 
 // TODO: Rename to ActionState
 struct ActionConfig {

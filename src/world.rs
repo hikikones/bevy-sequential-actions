@@ -54,15 +54,26 @@ impl ModifyActions for EntityWorldActions<'_> {
         let cfg = self.config;
         let mut queue = self.get_action_queue();
 
-        match cfg.order {
-            AddOrder::Back => {
-                for action in actions {
-                    queue.push_back((action, cfg.into()));
+        let mode = ExecutionMode::Sequential; // todo
+
+        match mode {
+            ExecutionMode::Sequential => match cfg.order {
+                AddOrder::Back => {
+                    for action in actions {
+                        queue.push_back((ActionType::Single(action), cfg.into()));
+                    }
                 }
-            }
-            AddOrder::Front => {
-                for action in actions.rev() {
-                    queue.push_front((action, cfg.into()));
+                AddOrder::Front => {
+                    for action in actions.rev() {
+                        queue.push_front((ActionType::Single(action), cfg.into()));
+                    }
+                }
+            },
+            ExecutionMode::Parallel => {
+                let action = ActionType::Many(actions.collect::<Box<[_]>>());
+                match cfg.order {
+                    AddOrder::Back => queue.push_back((action, cfg.into())),
+                    AddOrder::Front => queue.push_front((action, cfg.into())),
                 }
             }
         }
@@ -113,7 +124,16 @@ impl ModifyActions for EntityWorldActions<'_> {
 impl EntityWorldActions<'_> {
     fn stop_current_action(&mut self, reason: StopReason) {
         if let Some((mut action, cfg)) = self.take_current_action() {
-            action.on_stop(self.entity, self.world, reason);
+            match &mut action {
+                ActionType::Single(action) => {
+                    action.on_stop(self.entity, self.world, reason);
+                }
+                ActionType::Many(actions) => {
+                    for action in actions.iter_mut() {
+                        action.on_stop(self.entity, self.world, reason);
+                    }
+                }
+            }
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
@@ -129,7 +149,17 @@ impl EntityWorldActions<'_> {
     fn start_next_action(&mut self) {
         if let Some((mut action, cfg)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
-            action.on_start(self.entity, self.world, &mut commands);
+
+            match &mut action {
+                ActionType::Single(action) => {
+                    action.on_start(self.entity, self.world, &mut commands);
+                }
+                ActionType::Many(actions) => {
+                    for action in actions.iter_mut() {
+                        action.on_start(self.entity, self.world, &mut commands);
+                    }
+                }
+            }
 
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
                 **current = Some((action, cfg));
@@ -139,7 +169,7 @@ impl EntityWorldActions<'_> {
         }
     }
 
-    fn handle_repeat(&mut self, action: BoxedAction, mut cfg: ActionConfig) {
+    fn handle_repeat(&mut self, action: ActionType, mut cfg: ActionConfig) {
         match &mut cfg.repeat {
             Repeat::Amount(n) => {
                 if *n > 0 {
