@@ -13,6 +13,12 @@ impl ActionCommands {
     {
         self.0.push(Box::new(f));
     }
+
+    pub(super) fn apply(self, world: &mut World) {
+        for cmd in self.0 {
+            cmd(world);
+        }
+    }
 }
 
 impl<'a> ActionsProxy<'a> for ActionCommands {
@@ -26,8 +32,6 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
         }
     }
 }
-
-// pub struct MyActionCommands(Vec<Box<dyn FnOnce(&mut World)>>);
 
 /// Modify actions using [`ActionCommands`].
 pub struct EntityActions<'a> {
@@ -58,8 +62,8 @@ impl ModifyActions for EntityActions<'_> {
     where
         T: IntoBoxedAction,
     {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).add(action);
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).add(action);
         });
         self
     }
@@ -68,102 +72,54 @@ impl ModifyActions for EntityActions<'_> {
     where
         T: BoxedActionIter,
     {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).add_many(actions);
+        self.commands.push(move |world| {
+            world
+                .actions(self.entity)
+                .config(self.config)
+                .add_many(actions);
         });
         self
     }
 
     fn next(self) -> Self {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).next();
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).next();
         });
         self
     }
 
     fn finish(self) -> Self {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).finish();
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).finish();
         });
         self
     }
 
     fn pause(self) -> Self {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).pause();
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).pause();
         });
         self
     }
 
     fn stop(self, reason: StopReason) -> Self {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).stop(reason);
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).stop(reason);
         });
         self
     }
 
     fn skip(self) -> Self {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).skip();
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).skip();
         });
         self
     }
 
     fn clear(self) -> Self {
-        self.commands.push(move |w| {
-            w.actions(self.entity).config(self.config).clear();
+        self.commands.push(move |world| {
+            world.actions(self.entity).config(self.config).clear();
         });
         self
-    }
-}
-
-// enum ActionCommand {
-//     Add(Entity, AddConfig, BoxedAction),
-//     AddMany(Entity, AddConfig, Box<dyn BoxedActionIter>),
-//     Next(Entity),
-//     Finish(Entity),
-//     Pause(Entity),
-//     Stop(Entity, StopReason),
-//     Skip(Entity),
-//     Clear(Entity),
-//     Custom(Box<dyn FnOnce(&mut World)>),
-// }
-
-impl ActionCommands {
-    pub(super) fn apply(self, world: &mut World) {
-        for cmd in self.0 {
-            cmd(world);
-        }
-        // for cmd in self.0 {
-        //     match cmd {
-        //         ActionCommand::Add(entity, config, action) => {
-        //             world.actions(entity).config(config).add(action);
-        //         }
-        //         ActionCommand::AddMany(entity, config, actions) => {
-        //             world.actions(entity).config(config).add_many(actions);
-        //         }
-        //         ActionCommand::Next(entity) => {
-        //             world.actions(entity).next();
-        //         }
-        //         ActionCommand::Finish(entity) => {
-        //             world.actions(entity).finish();
-        //         }
-        //         ActionCommand::Pause(entity) => {
-        //             world.actions(entity).pause();
-        //         }
-        //         ActionCommand::Stop(entity, reason) => {
-        //             world.actions(entity).stop(reason);
-        //         }
-        //         ActionCommand::Skip(entity) => {
-        //             world.actions(entity).skip();
-        //         }
-        //         ActionCommand::Clear(entity) => {
-        //             world.actions(entity).clear();
-        //         }
-        //         ActionCommand::Custom(f) => {
-        //             f(world);
-        //         }
-        //     }
-        // }
     }
 }
