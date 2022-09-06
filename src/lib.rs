@@ -126,6 +126,16 @@ pub enum StopReason {
     Paused,
 }
 
+// TODO: Parallel.
+// List of list of actions.
+// Count finished. Reset every frame.
+// Choose exec mode in add_many.
+
+pub enum ExecutionMode {
+    Sequential,
+    Parallel,
+}
+
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
@@ -137,8 +147,10 @@ struct ActionQueue(VecDeque<ActionTuple>);
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
 
+// TODO: Rename to ActionState
 struct ActionConfig {
     repeat: Repeat,
+    // TODO: Count finished int
 }
 
 impl From<AddConfig> for ActionConfig {
