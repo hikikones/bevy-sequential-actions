@@ -11,7 +11,8 @@ impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(move_system)
             .add_system(rotate_system)
-            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_move_status);
+            .add_system(check_move_status);
+        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_move_status);
     }
 }
 
