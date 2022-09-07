@@ -186,7 +186,7 @@ pub trait ModifyActions {
         T: IntoBoxedAction;
 
     /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
-    fn add_many<T>(self, actions: T) -> Self
+    fn add_many<T>(self, mode: ExecutionMode, actions: T) -> Self
     where
         T: BoxedActionIter;
 

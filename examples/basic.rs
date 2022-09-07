@@ -48,6 +48,7 @@ fn setup(mut commands: Commands) {
             ..Default::default()
         })
         .add_many(
+            ExecutionMode::Sequential,
             [
                 WaitAction::new(10.0).into_boxed(),
                 WaitAction::new(100.0).into_boxed(),
@@ -130,7 +131,7 @@ impl Action for MyCustomAction {
                 start: false,
                 repeat: Repeat::Amount(0),
             })
-            .add_many(actions.into_iter())
+            .add_many(ExecutionMode::Sequential, actions.into_iter())
             .finish();
     }
 

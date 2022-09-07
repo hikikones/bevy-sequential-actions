@@ -53,6 +53,7 @@ use bevy_ecs::prelude::*;
 
 mod action_commands;
 mod commands;
+mod plugin;
 mod traits;
 mod world;
 
@@ -61,6 +62,7 @@ mod tests;
 
 pub use action_commands::*;
 pub use commands::*;
+pub use plugin::*;
 pub use traits::*;
 pub use world::*;
 
@@ -155,12 +157,15 @@ enum ActionType {
 // TODO: Rename to ActionState
 struct ActionConfig {
     repeat: Repeat,
-    // TODO: Count finished int
+    finished: u32,
 }
 
 impl From<AddConfig> for ActionConfig {
     fn from(cfg: AddConfig) -> Self {
-        Self { repeat: cfg.repeat }
+        Self {
+            repeat: cfg.repeat,
+            finished: 0,
+        }
     }
 }
 

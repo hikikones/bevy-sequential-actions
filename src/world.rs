@@ -47,14 +47,12 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
-    fn add_many<T>(mut self, actions: T) -> Self
+    fn add_many<T>(mut self, mode: ExecutionMode, actions: T) -> Self
     where
         T: BoxedActionIter,
     {
         let cfg = self.config;
         let mut queue = self.get_action_queue();
-
-        let mode = ExecutionMode::Sequential; // todo
 
         match mode {
             ExecutionMode::Sequential => match cfg.order {
@@ -92,8 +90,19 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn finish(mut self) -> Self {
-        self.stop_current_action(StopReason::Finished);
-        self.start_next_action();
+        // self.stop_current_action(StopReason::Finished);
+        // self.start_next_action();
+
+        if let Some((_, cfg)) = self
+            .world
+            .get_mut::<CurrentAction>(self.entity)
+            .unwrap()
+            .0
+            .as_mut()
+        {
+            cfg.finished += 1;
+        }
+
         self
     }
 

@@ -13,6 +13,7 @@ readme = "README.md"
 
 [dependencies]
 bevy_ecs = "0.8"
+bevy_app = "0.8"
 
 [dev-dependencies]
 shared = { path = "examples/shared" }

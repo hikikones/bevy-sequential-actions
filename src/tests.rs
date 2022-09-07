@@ -302,6 +302,7 @@ fn push() {
     let e = ecs.spawn_action_entity();
 
     ecs.actions(e).add_many(
+        ExecutionMode::Sequential,
         [
             EmptyAction.into_boxed(),
             EmptyAction.into_boxed(),
@@ -314,6 +315,7 @@ fn push() {
     assert!(ecs.get_action_queue(e).len() == 0);
 
     ecs.actions(e).add_many(
+        ExecutionMode::Sequential,
         [
             CountdownAction::new(0).into_boxed(),
             CountdownAction::new(0).into_boxed(),
@@ -441,6 +443,7 @@ fn order() {
 
     // A, B, C
     ecs.actions(e).add_many(
+        ExecutionMode::Sequential,
         [
             Order::<A>::default().into_boxed(),
             Order::<B>::default().into_boxed(),
@@ -468,6 +471,7 @@ fn order() {
             repeat: Repeat::Amount(0),
         })
         .add_many(
+            ExecutionMode::Sequential,
             [
                 Order::<A>::default().into_boxed(),
                 Order::<B>::default().into_boxed(),
@@ -496,6 +500,7 @@ fn order() {
             repeat: Repeat::Amount(0),
         })
         .add_many(
+            ExecutionMode::Sequential,
             [
                 Order::<C>::default().into_boxed(),
                 Order::<B>::default().into_boxed(),

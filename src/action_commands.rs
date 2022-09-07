@@ -69,7 +69,7 @@ impl ModifyActions for EntityActions<'_> {
         self
     }
 
-    fn add_many<T>(self, actions: T) -> Self
+    fn add_many<T>(self, mode: ExecutionMode, actions: T) -> Self
     where
         T: BoxedActionIter,
     {
@@ -77,7 +77,7 @@ impl ModifyActions for EntityActions<'_> {
             world
                 .actions(self.entity)
                 .config(self.config)
-                .add_many(actions);
+                .add_many(mode, actions);
         });
         self
     }
