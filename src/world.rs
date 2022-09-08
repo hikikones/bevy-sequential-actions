@@ -32,8 +32,8 @@ impl ModifyActions for EntityWorldActions<'_> {
         T: IntoBoxedAction,
     {
         let cfg = self.config;
-        let mut queue = self.get_action_queue();
         let action_tuple = (action.into_boxed(), cfg.into());
+        let mut queue = self.get_action_queue();
 
         match cfg.order {
             AddOrder::Back => queue.push_back(action_tuple),
@@ -67,7 +67,7 @@ impl ModifyActions for EntityWorldActions<'_> {
             }
         }
 
-        if self.config.start && !self.has_current_action() {
+        if cfg.start && !self.has_current_action() {
             self.start_next_action();
         }
 
