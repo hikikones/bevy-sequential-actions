@@ -3,7 +3,7 @@
 //! # Bevy Sequential Actions
 //!
 //! A [Bevy](https://bevyengine.org) library
-//! that aims to execute a list of actions in a sequential manner.
+//! that aims to execute a list of various actions in a sequential manner.
 //! This generally means that one action runs at a time, and when it is done,
 //! the next action will start and so on until the list is empty.
 //!
@@ -34,9 +34,9 @@
 //!         .config(AddConfig {
 //!             // Add each action to the back of the queue
 //!             order: AddOrder::Back,
-//!             // Start the next action in the queue if nothing is currently running
+//!             // Start the next action if nothing is currently running
 //!             start: true,
-//!             // Repeat the action `n` times
+//!             // Repeat the action
 //!             repeat: Repeat::Amount(0),
 //!         })
 //!         .add(move_action)
