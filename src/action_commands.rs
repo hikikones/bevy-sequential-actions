@@ -4,6 +4,7 @@ use crate::*;
 
 /// Commands for modifying actions inside the [`Action`] trait.
 #[derive(Default)]
+#[allow(clippy::type_complexity)]
 pub struct ActionCommands(Vec<Box<dyn FnOnce(&mut World)>>);
 
 impl ActionCommands {
