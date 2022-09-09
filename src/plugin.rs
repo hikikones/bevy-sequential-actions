@@ -19,6 +19,7 @@ use crate::*;
 ///         .run();
 /// }
 /// ```
+#[allow(clippy::needless_doctest_main)]
 pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {
@@ -34,6 +35,7 @@ impl Plugin for SequentialActionsPlugin {
 
 pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
 
+#[allow(clippy::type_complexity)]
 pub(super) fn check_actions(
     mut q: Query<
         (Entity, &CurrentAction, &mut ActionFinished),
