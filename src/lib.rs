@@ -154,7 +154,7 @@ pub enum ExecutionMode {
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
-type ActionTuple = (ActionType, ActionConfig);
+type ActionTuple = (ActionType, ActionState);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
@@ -168,17 +168,13 @@ enum ActionType {
 }
 
 // TODO: Rename to ActionState
-struct ActionConfig {
+struct ActionState {
     repeat: Repeat,
-    finished: u32,
 }
 
-impl From<AddConfig> for ActionConfig {
+impl From<AddConfig> for ActionState {
     fn from(cfg: AddConfig) -> Self {
-        Self {
-            repeat: cfg.repeat,
-            finished: 0,
-        }
+        Self { repeat: cfg.repeat }
     }
 }
 

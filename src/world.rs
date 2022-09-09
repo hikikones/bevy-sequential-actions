@@ -117,8 +117,8 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn skip(mut self) -> Self {
-        if let Some((action, cfg)) = self.pop_next_action() {
-            self.handle_repeat(action, cfg);
+        if let Some((action, state)) = self.pop_next_action() {
+            self.handle_repeat(action, state);
         }
         self
     }
@@ -132,7 +132,7 @@ impl ModifyActions for EntityWorldActions<'_> {
 
 impl EntityWorldActions<'_> {
     fn stop_current_action(&mut self, reason: StopReason) {
-        if let Some((mut action, cfg)) = self.take_current_action() {
+        if let Some((mut action, state)) = self.take_current_action() {
             match &mut action {
                 ActionType::Single(action) => {
                     action.on_stop(self.entity, self.world, reason);
@@ -146,17 +146,17 @@ impl EntityWorldActions<'_> {
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
-                    self.handle_repeat(action, cfg);
+                    self.handle_repeat(action, state);
                 }
                 StopReason::Paused => {
-                    self.get_action_queue().push_front((action, cfg));
+                    self.get_action_queue().push_front((action, state));
                 }
             }
         }
     }
 
     fn start_next_action(&mut self) {
-        if let Some((mut action, cfg)) = self.pop_next_action() {
+        if let Some((mut action, state)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
 
             match &mut action {
@@ -171,23 +171,23 @@ impl EntityWorldActions<'_> {
             }
 
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
-                **current = Some((action, cfg));
+                **current = Some((action, state));
             }
 
             commands.apply(self.world);
         }
     }
 
-    fn handle_repeat(&mut self, action: ActionType, mut cfg: ActionConfig) {
-        match &mut cfg.repeat {
+    fn handle_repeat(&mut self, action: ActionType, mut state: ActionState) {
+        match &mut state.repeat {
             Repeat::Amount(n) => {
                 if *n > 0 {
                     *n -= 1;
-                    self.get_action_queue().push_back((action, cfg));
+                    self.get_action_queue().push_back((action, state));
                 }
             }
             Repeat::Forever => {
-                self.get_action_queue().push_back((action, cfg));
+                self.get_action_queue().push_back((action, state));
             }
         }
     }
