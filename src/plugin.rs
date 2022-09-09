@@ -3,41 +3,18 @@ use bevy_ecs::{schedule::SystemStage, system::Query};
 
 use crate::*;
 
-pub struct SequentialActionsPlugin {
-    app_init: Box<dyn Fn(&mut App) + Send + Sync>,
-}
+pub struct SequentialActionsPlugin;
 
-impl SequentialActionsPlugin {
-    pub fn new<F>(app_init: F) -> Self
-    where
-        F: Fn(&mut App) + Send + Sync + 'static,
-    {
-        Self {
-            app_init: Box::new(app_init),
-        }
-    }
-}
-
-impl Default for SequentialActionsPlugin {
-    fn default() -> Self {
-        Self::new(|app| {
-            app.add_stage_after(
-                CoreStage::PostUpdate,
-                "check_actions",
-                SystemStage::parallel(),
-            )
-            .add_system_set_to_stage(
-                "check_actions",
-                SystemSet::new().with_system(check_actions),
-                // .with_system(reset_action_status.after(check_action_status)),
-            );
-        })
-    }
-}
+const CHECK_ACTIONS_STAGE: &str = "check_actions";
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        (self.app_init)(app);
+        app.add_stage_after(
+            CoreStage::PostUpdate,
+            CHECK_ACTIONS_STAGE,
+            SystemStage::parallel(),
+        )
+        .add_system_to_stage(CHECK_ACTIONS_STAGE, check_actions);
     }
 }
 
@@ -55,15 +32,12 @@ fn check_actions(
                 ActionType::Many(actions) => status.finished_count == actions.len() as u32,
             };
 
-            dbg!(status.finished_count);
-            status.finished_count = 0;
-
-            // dbg!(cfg.finished);
-            // cfg.finished = 0;
-
             if is_finished {
                 commands.actions(entity).finish();
             }
+
+            dbg!(status.finished_count);
+            status.finished_count = 0;
         }
     }
 }

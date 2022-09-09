@@ -45,7 +45,7 @@ impl Plugin for ActionsPlugin {
         //     CHECK_ACTIONS_STAGE,
         //     SystemStage::parallel(),
         // )
-        app.add_plugin(SequentialActionsPlugin::default())
+        app.add_plugin(SequentialActionsPlugin)
             .add_plugin(WaitActionPlugin)
             .add_plugin(MoveActionPlugin)
             .add_plugin(RotateActionPlugin)
