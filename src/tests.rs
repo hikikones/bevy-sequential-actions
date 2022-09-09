@@ -4,6 +4,8 @@ use bevy::prelude::*;
 
 use crate::*;
 
+const UPDATE_STAGE: &str = "update";
+
 struct Ecs {
     world: World,
     schedule: Schedule,
@@ -13,7 +15,10 @@ impl Ecs {
     fn new() -> Self {
         let world = World::new();
         let mut schedule = Schedule::default();
-        schedule.add_stage("update", SystemStage::parallel());
+
+        schedule.add_stage(UPDATE_STAGE, SystemStage::parallel());
+        schedule.add_stage_after(UPDATE_STAGE, CHECK_ACTIONS_STAGE, SystemStage::parallel());
+        schedule.add_system_to_stage(CHECK_ACTIONS_STAGE, check_actions);
 
         let mut ecs = Self { world, schedule };
         ecs.add_system(countdown_system);
@@ -21,7 +26,7 @@ impl Ecs {
     }
 
     fn add_system<Param, S: IntoSystem<(), (), Param>>(&mut self, system: S) {
-        self.schedule.add_system_to_stage("update", system);
+        self.schedule.add_system_to_stage(UPDATE_STAGE, system);
     }
 
     fn run(&mut self) {
@@ -102,23 +107,14 @@ impl Action for CountdownAction {
     }
 }
 
-fn countdown_system(mut countdown_q: Query<(Entity, &mut Countdown)>, mut commands: Commands) {
-    for (entity, mut countdown) in countdown_q.iter_mut() {
+fn countdown_system(mut countdown_q: Query<(&mut Countdown, &mut ActionStatus)>) {
+    for (mut countdown, mut status) in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
+
         if countdown.0 == 0 {
-            commands.actions(entity).finish();
+            status.finish();
         }
     }
-}
-
-struct EmptyAction;
-
-impl Action for EmptyAction {
-    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
-        commands.actions(entity).finish();
-    }
-
-    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 #[test]
@@ -145,7 +141,55 @@ fn add() {
 fn add_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
-    ecs.actions(e).add(EmptyAction);
+    ecs.actions(e).add(CountdownAction::new(0));
+}
+
+#[test]
+fn add_many_sequential() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e).add_many(
+        ExecutionMode::Sequential,
+        [
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+        ]
+        .into_iter(),
+    );
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 2);
+}
+
+#[test]
+fn add_many_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e).add_many(
+        ExecutionMode::Parallel,
+        [
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+        ]
+        .into_iter(),
+    );
+
+    assert!(ecs.get_current_action(e).is_some());
+    assert!(ecs.get_action_queue(e).len() == 0);
+
+    ecs.run();
+    ecs.run();
+    ecs.run();
+    ecs.run();
+    ecs.run();
+    ecs.run();
+
+    // TODO? Same actions will overwrite, so finished count never reaches list length.
+    assert!(ecs.get_current_action(e).is_none());
 }
 
 #[test]
@@ -231,19 +275,19 @@ fn skip() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add(EmptyAction)
+        .add(CountdownAction::new(0))
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Amount(1),
         })
-        .add(EmptyAction)
+        .add(CountdownAction::new(0))
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Forever,
         })
-        .add(EmptyAction);
+        .add(CountdownAction::new(0));
 
     assert!(ecs.get_action_queue(e).len() == 3);
 
@@ -294,38 +338,6 @@ fn clear_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
     ecs.actions(e).clear();
-}
-
-#[test]
-fn push() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
-
-    ecs.actions(e).add_many(
-        ExecutionMode::Sequential,
-        [
-            EmptyAction.into_boxed(),
-            EmptyAction.into_boxed(),
-            EmptyAction.into_boxed(),
-        ]
-        .into_iter(),
-    );
-
-    assert!(ecs.get_current_action(e).is_none());
-    assert!(ecs.get_action_queue(e).len() == 0);
-
-    ecs.actions(e).add_many(
-        ExecutionMode::Sequential,
-        [
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-        ]
-        .into_iter(),
-    );
-
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 2);
 }
 
 #[test]
@@ -393,7 +405,6 @@ fn repeat_forever() {
 }
 
 #[test]
-#[should_panic]
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
@@ -409,13 +420,11 @@ fn despawn() {
     ecs.actions(e)
         .add(CountdownAction::new(0))
         .add(DespawnAction)
-        .add(EmptyAction);
+        .add(CountdownAction::new(0));
 
     ecs.run();
 
     assert!(ecs.world.get_entity(e).is_none());
-
-    ecs.actions(e).add(EmptyAction);
 }
 
 #[test]

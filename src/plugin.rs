@@ -5,8 +5,6 @@ use crate::*;
 
 pub struct SequentialActionsPlugin;
 
-const CHECK_ACTIONS_STAGE: &str = "check_actions";
-
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_stage_after(
@@ -18,7 +16,9 @@ impl Plugin for SequentialActionsPlugin {
     }
 }
 
-fn check_actions(
+pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
+
+pub(super) fn check_actions(
     mut q: Query<
         (Entity, &CurrentAction, &mut ActionStatus),
         (Changed<ActionStatus>, With<ActionMarker>),
