@@ -158,7 +158,7 @@ struct CurrentAction(Option<ActionTuple>);
 
 enum ActionType {
     Single(BoxedAction),
-    Many(Box<[BoxedAction]>),
+    Multiple(Box<[BoxedAction]>),
 }
 
 struct ActionState {

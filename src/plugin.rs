@@ -29,7 +29,7 @@ pub(super) fn check_actions(
         if let Some((action_type, _)) = &current_action.0 {
             let is_finished = match action_type {
                 ActionType::Single(_) => finished.count == 1,
-                ActionType::Many(actions) => finished.count == actions.len() as u32,
+                ActionType::Multiple(actions) => finished.count == actions.len() as u32,
             };
 
             if is_finished {

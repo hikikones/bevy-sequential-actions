@@ -68,7 +68,7 @@ impl ModifyActions for EntityWorldActions<'_> {
                 }
             },
             ExecutionMode::Parallel => {
-                let action = ActionType::Many(actions.collect::<Box<[_]>>());
+                let action = ActionType::Multiple(actions.collect::<Box<[_]>>());
                 match cfg.order {
                     AddOrder::Back => queue.push_back((action, cfg.into())),
                     AddOrder::Front => queue.push_front((action, cfg.into())),
@@ -126,7 +126,7 @@ impl EntityWorldActions<'_> {
                 ActionType::Single(action) => {
                     action.on_stop(self.entity, self.world, reason);
                 }
-                ActionType::Many(actions) => {
+                ActionType::Multiple(actions) => {
                     for action in actions.iter_mut() {
                         action.on_stop(self.entity, self.world, reason);
                     }
@@ -152,7 +152,7 @@ impl EntityWorldActions<'_> {
                 ActionType::Single(action) => {
                     action.on_start(self.entity, self.world, &mut commands);
                 }
-                ActionType::Many(actions) => {
+                ActionType::Multiple(actions) => {
                     for action in actions.iter_mut() {
                         action.on_start(self.entity, self.world, &mut commands);
                     }
