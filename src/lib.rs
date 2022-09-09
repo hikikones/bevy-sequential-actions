@@ -87,6 +87,10 @@ impl ActionFinished {
     pub fn confirm(&mut self) {
         self.count += 1;
     }
+
+    fn reset(&mut self) {
+        self.count = 0;
+    }
 }
 
 /// Marker component for entities with [`ActionsBundle`].

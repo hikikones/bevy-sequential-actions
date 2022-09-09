@@ -141,6 +141,11 @@ impl EntityWorldActions<'_> {
                     self.get_action_queue().push_front((action_type, state));
                 }
             }
+
+            self.world
+                .get_mut::<ActionFinished>(self.entity)
+                .unwrap()
+                .reset();
         }
     }
 

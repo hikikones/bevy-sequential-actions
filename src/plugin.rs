@@ -52,9 +52,9 @@ pub(super) fn check_actions(
 
             if is_finished {
                 commands.actions(entity).finish();
+            } else {
+                finished.reset();
             }
-
-            finished.count = 0;
         }
     }
 }
