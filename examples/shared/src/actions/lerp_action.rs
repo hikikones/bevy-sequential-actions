@@ -7,8 +7,8 @@ pub(super) struct LerpActionPlugin;
 
 impl Plugin for LerpActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(lerp_system)
-            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_lerp_status);
+        app.add_system(lerp_system);
+        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_lerp_status);
     }
 }
 
@@ -94,11 +94,11 @@ enum Lerp {
 }
 
 fn lerp_system(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionStatus)>,
     mut transform_q: Query<&mut Transform>,
     time: Res<Time>,
 ) {
-    for (mut timer, target, lerp) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp, mut status) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -117,6 +117,12 @@ fn lerp_system(
                     transform.rotation = start.rotation.slerp(end.rotation, smoothstep);
                 }
             }
+
+            if timer.0.finished() {
+                status.finish();
+            }
+        } else {
+            status.finish();
         }
     }
 }

@@ -54,6 +54,7 @@ fn move_system(
 ) {
     for (mut transform, target, speed, mut status) in move_q.iter_mut() {
         transform.move_towards(target.0, speed.0 * time.delta_seconds());
+
         if transform.translation == target.0 {
             status.finish();
         }

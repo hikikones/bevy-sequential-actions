@@ -9,8 +9,8 @@ pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(rotate_system)
-            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_rotate_status);
+        app.add_system(rotate_system);
+        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_rotate_status);
     }
 }
 
@@ -47,9 +47,16 @@ struct Target(Quat);
 #[derive(Component)]
 struct Speed(f32);
 
-fn rotate_system(mut rotate_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
-    for (mut transform, target, speed) in rotate_q.iter_mut() {
+fn rotate_system(
+    mut rotate_q: Query<(&mut Transform, &Target, &Speed, &mut ActionStatus)>,
+    time: Res<Time>,
+) {
+    for (mut transform, target, speed, mut status) in rotate_q.iter_mut() {
         transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
+
+        if transform.rotation == target.0 {
+            status.finish();
+        }
     }
 }
 
