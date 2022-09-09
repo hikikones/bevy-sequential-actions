@@ -3,14 +3,11 @@ use bevy_sequential_actions::*;
 
 use crate::extensions::{RandomExt, RotateTowardsTransformExt};
 
-use super::CHECK_ACTIONS_STAGE;
-
 pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(rotate_system);
-        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_rotate_status);
     }
 }
 
@@ -56,14 +53,6 @@ fn rotate_system(
 
         if transform.rotation == target.0 {
             finished.confirm();
-        }
-    }
-}
-
-fn check_rotate_status(check_q: Query<(Entity, &Transform, &Target)>, mut commands: Commands) {
-    for (entity, transform, target) in check_q.iter() {
-        if transform.rotation == target.0 {
-            commands.actions(entity).finish();
         }
     }
 }

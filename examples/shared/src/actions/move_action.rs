@@ -3,15 +3,11 @@ use bevy_sequential_actions::*;
 
 use crate::extensions::{LookRotationExt, MoveTowardsTransformExt, RandomExt};
 
-use super::CHECK_ACTIONS_STAGE;
-
 pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(move_system).add_system(rotate_system);
-        // .add_system(check_move_status);
-        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_move_status);
     }
 }
 
@@ -74,14 +70,6 @@ fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res
             Quat::look_rotation(dir, Vec3::Y),
             speed.0 * 2.0 * time.delta_seconds(),
         );
-    }
-}
-
-fn check_move_status(check_q: Query<(Entity, &Transform, &Target)>, mut commands: Commands) {
-    for (entity, transform, target) in check_q.iter() {
-        if transform.translation == target.0 {
-            commands.actions(entity).finish();
-        }
     }
 }
 

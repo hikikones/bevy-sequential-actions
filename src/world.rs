@@ -92,17 +92,6 @@ impl ModifyActions for EntityWorldActions<'_> {
     fn finish(mut self) -> Self {
         self.stop_current_action(StopReason::Finished);
         self.start_next_action();
-
-        // if let Some((_, cfg)) = self
-        //     .world
-        //     .get_mut::<CurrentAction>(self.entity)
-        //     .unwrap()
-        //     .0
-        //     .as_mut()
-        // {
-        //     cfg.finished += 1;
-        // }
-
         self
     }
 
@@ -132,8 +121,8 @@ impl ModifyActions for EntityWorldActions<'_> {
 
 impl EntityWorldActions<'_> {
     fn stop_current_action(&mut self, reason: StopReason) {
-        if let Some((mut action, state)) = self.take_current_action() {
-            match &mut action {
+        if let Some((mut action_type, state)) = self.take_current_action() {
+            match &mut action_type {
                 ActionType::Single(action) => {
                     action.on_stop(self.entity, self.world, reason);
                 }
@@ -146,20 +135,20 @@ impl EntityWorldActions<'_> {
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
-                    self.handle_repeat(action, state);
+                    self.handle_repeat(action_type, state);
                 }
                 StopReason::Paused => {
-                    self.get_action_queue().push_front((action, state));
+                    self.get_action_queue().push_front((action_type, state));
                 }
             }
         }
     }
 
     fn start_next_action(&mut self) {
-        if let Some((mut action, state)) = self.pop_next_action() {
+        if let Some((mut action_type, state)) = self.pop_next_action() {
             let mut commands = ActionCommands::default();
 
-            match &mut action {
+            match &mut action_type {
                 ActionType::Single(action) => {
                     action.on_start(self.entity, self.world, &mut commands);
                 }
@@ -171,7 +160,7 @@ impl EntityWorldActions<'_> {
             }
 
             if let Some(mut current) = self.world.get_mut::<CurrentAction>(self.entity) {
-                **current = Some((action, state));
+                **current = Some((action_type, state));
             }
 
             commands.apply(self.world);

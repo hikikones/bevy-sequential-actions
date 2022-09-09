@@ -1,14 +1,11 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use super::CHECK_ACTIONS_STAGE;
-
 pub(super) struct LerpActionPlugin;
 
 impl Plugin for LerpActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(lerp_system);
-        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_lerp_status);
     }
 }
 
@@ -123,23 +120,6 @@ fn lerp_system(
             }
         } else {
             finished.confirm();
-        }
-    }
-}
-
-fn check_lerp_status(
-    lerp_q: Query<(Entity, &LerpTimer, &LerpTarget)>,
-    transform_q: Query<&Transform>,
-    mut commands: Commands,
-) {
-    for (entity, timer, target) in lerp_q.iter() {
-        if timer.0.finished() {
-            commands.actions(entity).finish();
-            continue;
-        }
-
-        if transform_q.get(target.0).is_err() {
-            commands.actions(entity).next();
         }
     }
 }

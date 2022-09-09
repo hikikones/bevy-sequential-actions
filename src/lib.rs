@@ -75,7 +75,6 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
-// TODO: rename to FinishedCount?
 #[derive(Default, Component)]
 pub struct ActionFinished {
     count: u32,
@@ -141,11 +140,6 @@ pub enum StopReason {
     Paused,
 }
 
-// TODO: Parallel.
-// List of list of actions.
-// Count finished. Reset every frame.
-// Choose exec mode in add_many.
-
 pub enum ExecutionMode {
     Sequential,
     Parallel,
@@ -167,7 +161,6 @@ enum ActionType {
     Many(Box<[BoxedAction]>),
 }
 
-// TODO: Rename to ActionState
 struct ActionState {
     repeat: Repeat,
 }

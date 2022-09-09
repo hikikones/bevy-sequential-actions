@@ -36,14 +36,7 @@ pub(super) fn check_actions(
                 commands.actions(entity).finish();
             }
 
-            dbg!(finished.count);
             finished.count = 0;
         }
-    }
-}
-
-fn reset_action_status(mut q: Query<&mut ActionFinished, With<ActionMarker>>) {
-    for mut finished in q.iter_mut() {
-        finished.count = 0;
     }
 }
