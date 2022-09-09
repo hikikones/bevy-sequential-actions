@@ -75,12 +75,15 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
+/// Component for confirming that an [`Action`] has finished.
+/// Part of [`ActionsBundle`].
 #[derive(Default, Component)]
 pub struct ActionFinished {
     count: u32,
 }
 
 impl ActionFinished {
+    /// Confirm that an [`Action`] has finished.
     pub fn confirm(&mut self) {
         self.count += 1;
     }
@@ -140,8 +143,11 @@ pub enum StopReason {
     Paused,
 }
 
+/// The execution mode for a collection of [`actions`](Action) to be added.
 pub enum ExecutionMode {
+    /// Execute the [`actions`](Action) in sequence.
     Sequential,
+    /// Execute the [`actions`](Action) in parallel.
     Parallel,
 }
 

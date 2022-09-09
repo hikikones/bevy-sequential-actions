@@ -132,7 +132,7 @@ impl Action for MyCustomAction {
                 repeat: Repeat::Amount(0),
             })
             .add_many(ExecutionMode::Sequential, actions.into_iter())
-            .finish();
+            .finish(); // TODO
     }
 
     fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}

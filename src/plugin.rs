@@ -3,6 +3,22 @@ use bevy_ecs::{schedule::SystemStage, system::Query};
 
 use crate::*;
 
+/// The [Plugin] for `bevy-sequential-actions`.
+/// This must be added to [App] in order for everything to work.
+///
+/// # Example
+///
+/// ```rust,no_run
+/// use bevy::prelude::*;
+/// use bevy_sequential_actions::*;
+///
+/// fn main() {
+///     App::new()
+///         .add_plugins(DefaultPlugins)
+///         .add_plugin(SequentialActionsPlugin)
+///         .run();
+/// }
+/// ```
 pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {
