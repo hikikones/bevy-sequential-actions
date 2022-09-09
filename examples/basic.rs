@@ -132,7 +132,7 @@ impl Action for MyCustomAction {
                 repeat: Repeat::Amount(0),
             })
             .add_many(ExecutionMode::Sequential, actions.into_iter())
-            .finish(); // TODO
+            .finish(); // TODO: Use .next() instead? Removing .finish() from trait makes sort of sense...
     }
 
     fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
