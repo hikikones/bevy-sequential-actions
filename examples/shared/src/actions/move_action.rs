@@ -9,9 +9,8 @@ pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(move_system)
-            .add_system(rotate_system)
-            .add_system(check_move_status);
+        app.add_system(move_system).add_system(rotate_system);
+        // .add_system(check_move_status);
         // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_move_status);
     }
 }
@@ -49,9 +48,15 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
-fn move_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
-    for (mut transform, target, speed) in move_q.iter_mut() {
+fn move_system(
+    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionStatus)>,
+    time: Res<Time>,
+) {
+    for (mut transform, target, speed, mut status) in move_q.iter_mut() {
         transform.move_towards(target.0, speed.0 * time.delta_seconds());
+        if transform.translation == target.0 {
+            status.finish();
+        }
     }
 }
 

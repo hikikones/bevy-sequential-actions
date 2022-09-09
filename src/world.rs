@@ -90,18 +90,18 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 
     fn finish(mut self) -> Self {
-        // self.stop_current_action(StopReason::Finished);
-        // self.start_next_action();
+        self.stop_current_action(StopReason::Finished);
+        self.start_next_action();
 
-        if let Some((_, cfg)) = self
-            .world
-            .get_mut::<CurrentAction>(self.entity)
-            .unwrap()
-            .0
-            .as_mut()
-        {
-            cfg.finished += 1;
-        }
+        // if let Some((_, cfg)) = self
+        //     .world
+        //     .get_mut::<CurrentAction>(self.entity)
+        //     .unwrap()
+        //     .0
+        //     .as_mut()
+        // {
+        //     cfg.finished += 1;
+        // }
 
         self
     }

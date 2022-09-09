@@ -9,7 +9,8 @@ pub struct WaitActionPlugin;
 
 impl Plugin for WaitActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(wait_system).add_system(check_wait_status);
+        app.add_system(wait_system);
+        // app.add_system(wait_system).add_system(check_wait_status);
         // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_wait_status);
     }
 }
@@ -51,9 +52,13 @@ impl Action for WaitAction {
 #[derive(Component)]
 struct Wait(f32);
 
-fn wait_system(mut wait_q: Query<&mut Wait>, time: Res<Time>) {
-    for mut wait in wait_q.iter_mut() {
+fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionStatus)>, time: Res<Time>) {
+    for (mut wait, mut status) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
+
+        if wait.0 <= 0.0 {
+            status.finish();
+        }
     }
 }
 

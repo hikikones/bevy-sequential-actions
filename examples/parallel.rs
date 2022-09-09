@@ -17,11 +17,11 @@ fn setup(mut commands: Commands) {
 
     commands
         .actions(actor)
-        .add(WaitAction::new(1.0))
+        .add(WaitAction::new(0.5))
         .add_many(
             ExecutionMode::Parallel,
             [
-                WaitAction::new(5.0).into_boxed(),
+                WaitAction::new(3.0).into_boxed(),
                 MoveAction::new(Vec3::X).into_boxed(),
             ]
             .into_iter(),
