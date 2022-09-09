@@ -69,21 +69,21 @@ pub use world::*;
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
-    status: ActionStatus,
+    finished: ActionFinished,
+    marker: ActionMarker,
     queue: ActionQueue,
     current: CurrentAction,
-    marker: ActionMarker,
 }
 
 // TODO: rename to FinishedCount?
 #[derive(Default, Component)]
-pub struct ActionStatus {
-    finished_count: u32,
+pub struct ActionFinished {
+    count: u32,
 }
 
-impl ActionStatus {
-    pub fn finish(&mut self) {
-        self.finished_count += 1;
+impl ActionFinished {
+    pub fn confirm(&mut self) {
+        self.count += 1;
     }
 }
 

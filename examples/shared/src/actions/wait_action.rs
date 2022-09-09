@@ -52,12 +52,12 @@ impl Action for WaitAction {
 #[derive(Component)]
 struct Wait(f32);
 
-fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionStatus)>, time: Res<Time>) {
-    for (mut wait, mut status) in wait_q.iter_mut() {
+fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
+    for (mut wait, mut finished) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
 
         if wait.0 <= 0.0 {
-            status.finish();
+            finished.confirm();
         }
     }
 }

@@ -94,11 +94,11 @@ enum Lerp {
 }
 
 fn lerp_system(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionStatus)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionFinished)>,
     mut transform_q: Query<&mut Transform>,
     time: Res<Time>,
 ) {
-    for (mut timer, target, lerp, mut status) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp, mut finished) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -119,10 +119,10 @@ fn lerp_system(
             }
 
             if timer.0.finished() {
-                status.finish();
+                finished.confirm();
             }
         } else {
-            status.finish();
+            finished.confirm();
         }
     }
 }
