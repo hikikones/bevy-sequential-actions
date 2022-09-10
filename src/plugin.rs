@@ -27,10 +27,8 @@ impl Plugin for SequentialActionsPlugin {
         app.add_stage_after(
             CoreStage::PostUpdate,
             CHECK_ACTIONS_STAGE,
-            // SystemStage::parallel(),
             SystemStage::single(check_actions),
         );
-        // .add_system_to_stage(CHECK_ACTIONS_STAGE, check_actions);
     }
 }
 
