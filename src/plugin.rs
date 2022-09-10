@@ -52,8 +52,9 @@ pub(super) fn check_actions(
             };
 
             if is_finished {
-                // commands.actions(entity).finish();
-                todo!()
+                commands.add(move |world: &mut World| {
+                    world.finish_action(entity);
+                });
             }
 
             finished.0 = 0;

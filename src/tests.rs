@@ -536,15 +536,15 @@ fn pause_resume() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
 
-    fn get_first_countdown_value(world: &mut World) -> u32 {
-        world.query::<&Countdown>().iter(world).next().unwrap().0
+    fn countdown_value(w: &mut World) -> u32 {
+        w.query::<&Countdown>().single(w).0
     }
 
     ecs.actions(e).add(CountdownAction::new(100));
 
     ecs.run();
 
-    assert!(get_first_countdown_value(&mut ecs.world) == 99);
+    assert!(countdown_value(&mut ecs.world) == 99);
 
     ecs.actions(e)
         .pause()
@@ -559,5 +559,5 @@ fn pause_resume() {
     ecs.run();
     ecs.run();
 
-    assert!(get_first_countdown_value(&mut ecs.world) == 98);
+    assert!(countdown_value(&mut ecs.world) == 98);
 }

@@ -65,7 +65,7 @@ impl ModifyActions for EntityWorldActions<'_> {
     }
 }
 
-pub(super) trait WorldExt {
+pub(super) trait WorldActionsExt {
     fn add_action(&mut self, entity: Entity, config: AddConfig, action: impl IntoBoxedAction);
     fn add_actions(
         &mut self,
@@ -75,6 +75,8 @@ pub(super) trait WorldExt {
         actions: impl BoxedActionIter,
     );
     fn next_action(&mut self, entity: Entity);
+    fn finish_action(&mut self, entity: Entity);
+    fn cancel_action(&mut self, entity: Entity);
     fn pause_action(&mut self, entity: Entity);
     fn skip_action(&mut self, entity: Entity);
     fn clear_actions(&mut self, entity: Entity);
@@ -87,7 +89,7 @@ pub(super) trait WorldExt {
     fn action_queue<'a>(&'a mut self, entity: Entity) -> Mut<'a, ActionQueue>;
 }
 
-impl WorldExt for World {
+impl WorldActionsExt for World {
     fn add_action(&mut self, entity: Entity, config: AddConfig, action: impl IntoBoxedAction) {
         let action_tuple = (ActionType::Single(action.into_boxed()), config.into());
         let mut queue = self.action_queue(entity);
@@ -143,9 +145,18 @@ impl WorldExt for World {
         self.start_next_action(entity);
     }
 
+    fn finish_action(&mut self, entity: Entity) {
+        self.stop_current_action(entity, StopReason::Finished);
+        self.start_next_action(entity);
+    }
+
+    fn cancel_action(&mut self, entity: Entity) {
+        self.stop_current_action(entity, StopReason::Canceled);
+        self.start_next_action(entity);
+    }
+
     fn pause_action(&mut self, entity: Entity) {
         self.stop_current_action(entity, StopReason::Paused);
-        self.start_next_action(entity);
     }
 
     fn skip_action(&mut self, entity: Entity) {
