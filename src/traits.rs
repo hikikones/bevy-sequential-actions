@@ -20,8 +20,8 @@ use crate::*;
 ///
 /// impl Action for EmptyAction {
 ///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Action is finished.
-///         commands.actions(entity).finish();
+///         // Issue next.
+///         commands.actions(entity).next();
 ///     }
 ///
 ///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
@@ -64,12 +64,12 @@ use crate::*;
 /// #[derive(Component)]
 /// struct Wait(f32);
 ///
-/// fn wait(mut wait_q: Query<(Entity, &mut Wait)>, time: Res<Time>, mut commands: Commands) {
-///     for (entity, mut wait) in wait_q.iter_mut() {
+/// fn wait(mut wait_q: Query<(&mut Wait, &mut FinishedCount)>, time: Res<Time>) {
+///     for (mut wait, mut finish) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
 ///             // Action is finished.
-///             commands.actions(entity).finish();
+///             finish.increment();
 ///         }
 ///     }
 /// }
@@ -153,15 +153,18 @@ impl<T> BoxedActionIter for T where
 /// impl Action for EmptyAction {
 ///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
-///         world.actions(entity).finish();
+///         world.actions(entity).next();
 ///
 ///         // Good
-///         commands.actions(entity).finish();
+///         commands.actions(entity).next();
 ///
 ///         // Also good
 ///         commands.actions(entity).custom(move |w: &mut World| {
-///             w.actions(entity).finish();
+///             w.actions(entity).next();
 ///         });
+///
+///         // Also good if you want to mark it as finished
+///         world.get_mut::<FinishedCount>(entity).unwrap().increment();
 ///     }
 ///
 ///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
