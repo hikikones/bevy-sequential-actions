@@ -17,8 +17,11 @@ impl Ecs {
         let mut schedule = Schedule::default();
 
         schedule.add_stage(UPDATE_STAGE, SystemStage::parallel());
-        schedule.add_stage_after(UPDATE_STAGE, CHECK_ACTIONS_STAGE, SystemStage::parallel());
-        schedule.add_system_to_stage(CHECK_ACTIONS_STAGE, check_actions);
+        schedule.add_stage_after(
+            UPDATE_STAGE,
+            CHECK_ACTIONS_STAGE,
+            SystemStage::single(check_actions),
+        );
 
         let mut ecs = Self { world, schedule };
         ecs.add_system(countdown_system);
