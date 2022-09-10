@@ -220,6 +220,22 @@ fn finish() {
 }
 
 #[test]
+fn cancel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_action_entity();
+
+    ecs.actions(e).add(CountdownAction::new(0));
+
+    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Canceled>());
+
+    ecs.actions(e).cancel();
+
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Canceled>());
+}
+
+#[test]
 fn pause() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_action_entity();
