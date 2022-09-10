@@ -29,52 +29,49 @@ impl ModifyActions for EntityCommandsActions<'_, '_, '_> {
 
     fn add(self, action: impl IntoBoxedAction) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).config(self.config).add(action);
+            world.add_action(self.entity, self.config, action);
         });
         self
     }
 
     fn add_many(self, mode: ExecutionMode, actions: impl BoxedActionIter) -> Self {
         self.commands.add(move |world: &mut World| {
-            world
-                .actions(self.entity)
-                .config(self.config)
-                .add_many(mode, actions);
+            world.add_actions(self.entity, self.config, mode, actions);
         });
         self
     }
 
     fn next(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).next();
+            world.next_action(self.entity);
         });
         self
     }
 
     fn cancel(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).cancel();
+            world.cancel_action(self.entity);
         });
         self
     }
 
     fn pause(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).pause();
+            world.pause_action(self.entity);
         });
         self
     }
 
     fn skip(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).skip();
+            world.skip_action(self.entity);
         });
         self
     }
 
     fn clear(self) -> Self {
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).clear();
+            world.clear_actions(self.entity);
         });
         self
     }
