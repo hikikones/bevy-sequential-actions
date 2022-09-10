@@ -16,20 +16,14 @@ impl Ecs {
         let world = World::new();
         let mut schedule = Schedule::default();
 
-        schedule.add_stage(UPDATE_STAGE, SystemStage::parallel());
+        schedule.add_stage(UPDATE_STAGE, SystemStage::single(countdown_system));
         schedule.add_stage_after(
             UPDATE_STAGE,
             CHECK_ACTIONS_STAGE,
             SystemStage::single(check_actions),
         );
 
-        let mut ecs = Self { world, schedule };
-        ecs.add_system(countdown_system);
-        ecs
-    }
-
-    fn add_system<Param, S: IntoSystem<(), (), Param>>(&mut self, system: S) {
-        self.schedule.add_system_to_stage(UPDATE_STAGE, system);
+        Self { world, schedule }
     }
 
     fn run(&mut self) {
