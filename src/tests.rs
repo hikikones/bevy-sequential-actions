@@ -107,12 +107,12 @@ impl Action for CountdownAction {
     }
 }
 
-fn countdown_system(mut countdown_q: Query<(&mut Countdown, &mut ActionFinished)>) {
+fn countdown_system(mut countdown_q: Query<(&mut Countdown, &mut FinishedCount)>) {
     for (mut countdown, mut finished) in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
 
         if countdown.0 == 0 {
-            finished.confirm();
+            finished.increment();
         }
     }
 }

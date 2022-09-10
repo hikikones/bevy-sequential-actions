@@ -133,6 +133,8 @@ impl Action for MyCustomAction {
             })
             .add_many(ExecutionMode::Sequential, actions.into_iter())
             .finish(); // TODO: Use .next() instead? Removing .finish() from trait makes sort of sense...
+                       // Or keep finished() as a deferred way to advance queue.
+                       // Make finished() increase counter instead.
     }
 
     fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}

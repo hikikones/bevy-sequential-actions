@@ -45,14 +45,14 @@ struct Target(Quat);
 struct Speed(f32);
 
 fn rotate_system(
-    mut rotate_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
+    mut rotate_q: Query<(&mut Transform, &Target, &Speed, &mut FinishedCount)>,
     time: Res<Time>,
 ) {
     for (mut transform, target, speed, mut finished) in rotate_q.iter_mut() {
         transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
 
         if transform.rotation == target.0 {
-            finished.confirm();
+            finished.increment();
         }
     }
 }

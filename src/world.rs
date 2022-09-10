@@ -142,9 +142,9 @@ impl EntityWorldActions<'_> {
                 }
             }
 
-            let mut finished = self.world.get_mut::<ActionFinished>(self.entity).unwrap();
-            if finished.count != 0 {
-                finished.count = 0;
+            let mut finished = self.world.get_mut::<FinishedCount>(self.entity).unwrap();
+            if finished.0 != 0 {
+                finished.0 = 0;
             }
         }
     }
