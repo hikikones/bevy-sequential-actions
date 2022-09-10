@@ -216,21 +216,10 @@ fn finish() {
     assert!(ecs.world.entity(e).contains::<Countdown>());
     assert!(!ecs.world.entity(e).contains::<Finished>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.run();
 
     assert!(!ecs.world.entity(e).contains::<Countdown>());
     assert!(ecs.world.entity(e).contains::<Finished>());
-}
-
-#[test]
-#[should_panic]
-fn finish_panic() {
-    let mut ecs = Ecs::new();
-    let e = ecs.world.spawn().id();
-
-    todo!();
-    // ecs.actions(e).finish();
 }
 
 #[test]
@@ -254,9 +243,7 @@ fn pause() {
 fn pause_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
-
-    todo!();
-    // ecs.actions(e).stop(StopReason::Paused);
+    ecs.actions(e).pause();
 }
 
 #[test]
@@ -458,13 +445,11 @@ fn order() {
 
     assert!(ecs.world.entity(e).contains::<A>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<B>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<C>());
 
@@ -489,13 +474,11 @@ fn order() {
 
     assert!(ecs.world.entity(e).contains::<A>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<B>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<C>());
 
@@ -520,13 +503,11 @@ fn order() {
 
     assert!(ecs.world.entity(e).contains::<C>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<B>());
 
-    todo!();
-    // ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<A>());
 }
