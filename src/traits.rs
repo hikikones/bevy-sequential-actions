@@ -65,11 +65,11 @@ use crate::*;
 /// struct Wait(f32);
 ///
 /// fn wait(mut wait_q: Query<(&mut Wait, &mut FinishedCount)>, time: Res<Time>) {
-///     for (mut wait, mut finish) in wait_q.iter_mut() {
+///     for (mut wait, mut finished) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
 ///             // Action is finished.
-///             finish.increment();
+///             finished.increment();
 ///         }
 ///     }
 /// }
