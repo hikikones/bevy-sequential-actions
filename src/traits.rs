@@ -194,7 +194,8 @@ pub trait ModifyActions {
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    // TODO: Add cancel()
+    /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`canceled`](StopReason::Canceled).
+    fn cancel(self) -> Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
     fn pause(self) -> Self;

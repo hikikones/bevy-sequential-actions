@@ -49,6 +49,11 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
+    fn cancel(self) -> Self {
+        self.world.cancel_action(self.entity);
+        self
+    }
+
     fn pause(self) -> Self {
         self.world.pause_action(self.entity);
         self
