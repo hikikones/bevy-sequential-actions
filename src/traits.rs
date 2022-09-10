@@ -181,14 +181,10 @@ pub trait ModifyActions {
     fn config(self, config: AddConfig) -> Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
-    fn add<T>(self, action: T) -> Self
-    where
-        T: IntoBoxedAction;
+    fn add(self, action: impl IntoBoxedAction) -> Self;
 
     /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
-    fn add_many<T>(self, mode: ExecutionMode, actions: T) -> Self
-    where
-        T: BoxedActionIter;
+    fn add_many(self, mode: ExecutionMode, actions: impl BoxedActionIter) -> Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).

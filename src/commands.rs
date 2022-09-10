@@ -27,20 +27,14 @@ impl ModifyActions for EntityCommandsActions<'_, '_, '_> {
         self
     }
 
-    fn add<T>(self, action: T) -> Self
-    where
-        T: IntoBoxedAction,
-    {
+    fn add(self, action: impl IntoBoxedAction) -> Self {
         self.commands.add(move |world: &mut World| {
             world.actions(self.entity).config(self.config).add(action);
         });
         self
     }
 
-    fn add_many<T>(self, mode: ExecutionMode, actions: T) -> Self
-    where
-        T: BoxedActionIter,
-    {
+    fn add_many(self, mode: ExecutionMode, actions: impl BoxedActionIter) -> Self {
         self.commands.add(move |world: &mut World| {
             world
                 .actions(self.entity)
