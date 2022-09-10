@@ -49,17 +49,9 @@ impl ModifyActions for EntityWorldActions<'_> {
         self
     }
 
-    fn finish(self) -> Self {
-        todo!()
-    }
-
     fn pause(self) -> Self {
         self.world.pause_action(self.entity);
         self
-    }
-
-    fn stop(self, reason: StopReason) -> Self {
-        todo!()
     }
 
     fn skip(self) -> Self {

@@ -194,15 +194,8 @@ pub trait ModifyActions {
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(self) -> Self;
 
-    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
-    /// Current action is [`stopped`](Action::on_stop) as [`finished`](StopReason::Finished).
-    fn finish(self) -> Self;
-
     /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
     fn pause(self) -> Self;
-
-    /// [`Stops`](Action::on_stop) the current [`action`](Action) with specified [`reason`](StopReason).
-    fn stop(self, reason: StopReason) -> Self;
 
     /// Skips the next [`action`](Action) in the queue.
     fn skip(self) -> Self;

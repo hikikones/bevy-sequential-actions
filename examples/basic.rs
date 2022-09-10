@@ -71,14 +71,14 @@ fn setup(mut commands: Commands) {
         .add(
             |entity, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
-                commands.actions(entity).finish();
+                commands.actions(entity).next();
             },
         )
         // Tuple closure for both the on_start and on_stop methods
         .add((
             |entity, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
-                commands.actions(entity).finish();
+                commands.actions(entity).next();
             },
             |_entity, _world: &mut World, _reason| {
                 // on_stop
@@ -97,7 +97,7 @@ struct MyCustomAction;
 impl Action for MyCustomAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
         // This action adds a bunch of other actions to the front.
-        // Every action must signal when they are done, so we call finish() at the end.
+        // Since this is all that it does, we call next() at the end.
 
         let camera = world
             .query_filtered::<Entity, With<CameraMain>>()
@@ -132,9 +132,7 @@ impl Action for MyCustomAction {
                 repeat: Repeat::Amount(0),
             })
             .add_many(ExecutionMode::Sequential, actions.into_iter())
-            .finish(); // TODO: Use .next() instead? Removing .finish() from trait makes sort of sense...
-                       // Or keep finished() as a deferred way to advance queue.
-                       // Make finished() increase counter instead.
+            .next();
     }
 
     fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
@@ -152,7 +150,7 @@ impl Action for FancyAction {
             .actions(entity)
             // Mutate the world after on_start has been called.
             .custom(|world| world.run_system(my_system))
-            .finish();
+            .next();
     }
 
     fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}

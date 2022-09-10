@@ -89,23 +89,9 @@ impl ModifyActions for EntityActions<'_> {
         self
     }
 
-    fn finish(self) -> Self {
-        self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).finish();
-        });
-        self
-    }
-
     fn pause(self) -> Self {
         self.commands.push(move |world| {
             world.actions(self.entity).config(self.config).pause();
-        });
-        self
-    }
-
-    fn stop(self, reason: StopReason) -> Self {
-        self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).stop(reason);
         });
         self
     }
