@@ -69,21 +69,22 @@ pub use world::*;
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
-    finished: FinishedCount,
+    finished: ActionFinished,
     marker: ActionMarker,
     queue: ActionQueue,
     current: CurrentAction,
 }
 
-/// Component for counting how many [`actions`](Action) have finished.
-/// Part of [`ActionsBundle`].
+/// Component for tracking how many [`actions`](Action) have finished.
 #[derive(Default, Component)]
-pub struct FinishedCount(u32);
+pub struct ActionFinished {
+    count: u32,
+}
 
-impl FinishedCount {
-    /// Increments the counter for finished [`actions`](Action).
-    pub fn increment(&mut self) {
-        self.0 += 1;
+impl ActionFinished {
+    /// Confirms that an [`Action`] has finished.
+    pub fn confirm(&mut self) {
+        self.count += 1;
     }
 }
 

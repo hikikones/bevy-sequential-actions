@@ -91,7 +91,7 @@ enum Lerp {
 }
 
 fn lerp_system(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut FinishedCount)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionFinished)>,
     mut transform_q: Query<&mut Transform>,
     time: Res<Time>,
 ) {
@@ -116,10 +116,10 @@ fn lerp_system(
             }
 
             if timer.0.finished() {
-                finished.increment();
+                finished.confirm();
             }
         } else {
-            finished.increment();
+            finished.confirm();
         }
     }
 }

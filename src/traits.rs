@@ -64,12 +64,12 @@ use crate::*;
 /// #[derive(Component)]
 /// struct Wait(f32);
 ///
-/// fn wait(mut wait_q: Query<(&mut Wait, &mut FinishedCount)>, time: Res<Time>) {
+/// fn wait(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
 ///     for (mut wait, mut finished) in wait_q.iter_mut() {
 ///         wait.0 -= time.delta_seconds();
 ///         if wait.0 <= 0.0 {
 ///             // Action is finished.
-///             finished.increment();
+///             finished.confirm();
 ///         }
 ///     }
 /// }
@@ -164,7 +164,7 @@ impl<T> BoxedActionIter for T where
 ///         });
 ///
 ///         // Also good if you want to mark it as finished
-///         world.get_mut::<FinishedCount>(entity).unwrap().increment();
+///         world.get_mut::<ActionFinished>(entity).unwrap().confirm();
 ///     }
 ///
 ///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}

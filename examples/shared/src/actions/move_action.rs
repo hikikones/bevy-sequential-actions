@@ -45,14 +45,14 @@ struct Target(Vec3);
 struct Speed(f32);
 
 fn move_system(
-    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut FinishedCount)>,
+    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
     time: Res<Time>,
 ) {
     for (mut transform, target, speed, mut finished) in move_q.iter_mut() {
         transform.move_towards(target.0, speed.0 * time.delta_seconds());
 
         if transform.translation == target.0 {
-            finished.increment();
+            finished.confirm();
         }
     }
 }

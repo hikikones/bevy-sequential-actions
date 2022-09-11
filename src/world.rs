@@ -84,8 +84,8 @@ pub(super) trait WorldActionsExt {
     fn start_next_action(&mut self, entity: Entity);
     fn take_current_action(&mut self, entity: Entity) -> Option<ActionTuple>;
     fn pop_next_action(&mut self, entity: Entity) -> Option<ActionTuple>;
-    fn has_current_action(&self, entity: Entity) -> bool;
     fn action_queue(&mut self, entity: Entity) -> Mut<ActionQueue>;
+    fn has_current_action(&self, entity: Entity) -> bool;
 }
 
 impl WorldActionsExt for World {
@@ -191,9 +191,9 @@ impl WorldActionsExt for World {
                 }
             }
 
-            let mut finished = self.get_mut::<FinishedCount>(entity).unwrap();
-            if finished.0 != 0 {
-                finished.0 = 0;
+            let mut finished = self.get_mut::<ActionFinished>(entity).unwrap();
+            if finished.count != 0 {
+                finished.count = 0;
             }
         }
     }
@@ -243,11 +243,11 @@ impl WorldActionsExt for World {
         self.action_queue(entity).pop_front()
     }
 
-    fn has_current_action(&self, entity: Entity) -> bool {
-        self.get::<CurrentAction>(entity).unwrap().is_some()
-    }
-
     fn action_queue(&mut self, entity: Entity) -> Mut<ActionQueue> {
         self.get_mut::<ActionQueue>(entity).unwrap()
+    }
+
+    fn has_current_action(&self, entity: Entity) -> bool {
+        self.get::<CurrentAction>(entity).unwrap().is_some()
     }
 }

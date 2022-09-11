@@ -37,16 +37,16 @@ pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
 #[allow(clippy::type_complexity)]
 pub(super) fn check_actions(
     mut q: Query<
-        (Entity, &CurrentAction, &mut FinishedCount),
-        (Changed<FinishedCount>, With<ActionMarker>),
+        (Entity, &CurrentAction, &mut ActionFinished),
+        (Changed<ActionFinished>, With<ActionMarker>),
     >,
     mut commands: Commands,
 ) {
     for (entity, current_action, mut finished) in q.iter_mut() {
         if let Some((action_type, _)) = &current_action.0 {
             let is_finished = match action_type {
-                ActionType::Single(_) => finished.0 == 1,
-                ActionType::Multiple(actions) => finished.0 == actions.len() as u32,
+                ActionType::Single(_) => finished.count == 1,
+                ActionType::Multiple(actions) => finished.count == actions.len() as u32,
             };
 
             if is_finished {
@@ -55,7 +55,7 @@ pub(super) fn check_actions(
                 });
             }
 
-            finished.0 = 0;
+            finished.count = 0;
         }
     }
 }
