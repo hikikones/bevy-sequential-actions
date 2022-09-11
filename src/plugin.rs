@@ -44,12 +44,12 @@ pub(super) fn check_actions(
 ) {
     for (entity, current_action, mut finished) in q.iter_mut() {
         if let Some((action_type, _)) = &current_action.0 {
-            let is_finished = match action_type {
-                ActionType::Single(_) => finished.count == 1,
-                ActionType::Multiple(actions) => finished.count == actions.len() as u32,
+            let action_count = match action_type {
+                ActionType::Single(_) => 1,
+                ActionType::Multiple(actions) => actions.len() as u32,
             };
 
-            if is_finished {
+            if finished.count == action_count {
                 commands.add(move |world: &mut World| {
                     world.finish_action(entity);
                 });
