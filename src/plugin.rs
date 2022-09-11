@@ -3,8 +3,8 @@ use bevy_ecs::{schedule::SystemStage, system::Query};
 
 use crate::*;
 
-/// The [Plugin] for `bevy-sequential-actions`.
-/// This must be added to [App] in order for everything to work.
+/// The [`Plugin`] for `bevy-sequential-actions`.
+/// This must be added to [`App`] in order for everything to work.
 ///
 /// # Example
 ///
