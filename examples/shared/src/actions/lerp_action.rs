@@ -13,7 +13,8 @@ pub struct LerpAction {
     target: Entity,
     lerp_type: LerpType,
     duration: f32,
-    paused_bundle: Option<LerpBundle>,
+    executor: Option<Entity>,
+    current: Option<LerpBundle>,
 }
 
 impl LerpAction {
@@ -22,7 +23,8 @@ impl LerpAction {
             target,
             lerp_type,
             duration,
-            paused_bundle: None,
+            executor: None,
+            current: None,
         }
     }
 }
@@ -35,38 +37,45 @@ pub enum LerpType {
 
 impl Action for LerpAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        if let Some(bundle) = self.paused_bundle.take() {
-            world.entity_mut(entity).insert_bundle(bundle);
-            return;
-        }
+        let lerp_bundle = if let Some(bundle) = self.current.take() {
+            bundle
+        } else {
+            let lerp = match self.lerp_type {
+                LerpType::Position(target) => {
+                    let start = world.get::<Transform>(self.target).unwrap().translation;
+                    Lerp::Position(start, target)
+                }
+                LerpType::Rotation(target) => {
+                    let start = world.get::<Transform>(self.target).unwrap().rotation;
+                    Lerp::Rotation(start, target)
+                }
+                LerpType::Transform(target) => {
+                    let start = world.get::<Transform>(self.target).unwrap();
+                    Lerp::Transform(start.clone(), target)
+                }
+            };
 
-        let lerp = match self.lerp_type {
-            LerpType::Position(target) => {
-                let start = world.get::<Transform>(self.target).unwrap().translation;
-                Lerp::Position(start, target)
-            }
-            LerpType::Rotation(target) => {
-                let start = world.get::<Transform>(self.target).unwrap().rotation;
-                Lerp::Rotation(start, target)
-            }
-            LerpType::Transform(target) => {
-                let start = world.get::<Transform>(self.target).unwrap();
-                Lerp::Transform(start.clone(), target)
+            LerpBundle {
+                lerp,
+                target: LerpTarget(self.target),
+                timer: LerpTimer(Timer::from_seconds(self.duration, false)),
+                agent: Agent(entity),
             }
         };
 
-        world.entity_mut(entity).insert_bundle(LerpBundle {
-            lerp,
-            target: LerpTarget(self.target),
-            timer: LerpTimer(Timer::from_seconds(self.duration, false)),
-        });
+        let executor = world.spawn().insert_bundle(lerp_bundle).id();
+        self.executor = Some(executor);
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        let bundle = world.entity_mut(entity).remove_bundle::<LerpBundle>();
+    fn on_stop(&mut self, _entity: Entity, world: &mut World, reason: StopReason) {
+        let executor = self.executor.unwrap();
+
+        let bundle = world.entity_mut(executor).remove_bundle::<LerpBundle>();
         if let StopReason::Paused = reason {
-            self.paused_bundle = bundle;
+            self.current = bundle;
         }
+
+        world.despawn(executor);
     }
 }
 
@@ -75,6 +84,14 @@ struct LerpBundle {
     lerp: Lerp,
     target: LerpTarget,
     timer: LerpTimer,
+    agent: Agent,
+}
+
+#[derive(Component)]
+enum Lerp {
+    Position(Vec3, Vec3),
+    Rotation(Quat, Quat),
+    Transform(Transform, Transform),
 }
 
 #[derive(Component)]
@@ -84,18 +101,15 @@ struct LerpTarget(Entity);
 struct LerpTimer(Timer);
 
 #[derive(Component)]
-enum Lerp {
-    Position(Vec3, Vec3),
-    Rotation(Quat, Quat),
-    Transform(Transform, Transform),
-}
+struct Agent(Entity);
 
 fn lerp_system(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionFinished)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &Agent)>,
     mut transform_q: Query<&mut Transform>,
+    mut action_finished_q: Query<&mut ActionFinished>,
     time: Res<Time>,
 ) {
-    for (mut timer, target, lerp, mut finished) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp, agent) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -116,10 +130,44 @@ fn lerp_system(
             }
 
             if timer.0.finished() {
-                finished.confirm();
+                action_finished_q.get_mut(agent.0).unwrap().confirm();
             }
         } else {
-            finished.confirm();
+            action_finished_q.get_mut(agent.0).unwrap().confirm();
         }
     }
 }
+
+// fn lerp_system(
+//     mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionFinished)>,
+//     mut transform_q: Query<&mut Transform>,
+//     time: Res<Time>,
+// ) {
+//     for (mut timer, target, lerp, mut finished) in lerp_q.iter_mut() {
+//         if let Ok(mut transform) = transform_q.get_mut(target.0) {
+//             timer.0.tick(time.delta());
+
+//             let t = timer.0.percent();
+//             let smoothstep = 3.0 * t * t - 2.0 * t * t * t;
+
+//             match *lerp {
+//                 Lerp::Position(start, end) => {
+//                     transform.translation = start.lerp(end, smoothstep);
+//                 }
+//                 Lerp::Rotation(start, end) => {
+//                     transform.rotation = start.slerp(end, smoothstep);
+//                 }
+//                 Lerp::Transform(start, end) => {
+//                     transform.translation = start.translation.lerp(end.translation, smoothstep);
+//                     transform.rotation = start.rotation.slerp(end.rotation, smoothstep);
+//                 }
+//             }
+
+//             if timer.0.finished() {
+//                 finished.confirm();
+//             }
+//         } else {
+//             finished.confirm();
+//         }
+//     }
+// }
