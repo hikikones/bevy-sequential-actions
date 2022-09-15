@@ -14,6 +14,8 @@ pub use quit_action::*;
 pub use rotate_action::*;
 pub use wait_action::*;
 
+use crate::extensions::RandomExt;
+
 pub struct ActionsPlugin;
 
 impl Plugin for ActionsPlugin {
@@ -23,5 +25,73 @@ impl Plugin for ActionsPlugin {
             .add_plugin(MoveActionPlugin)
             .add_plugin(RotateActionPlugin)
             .add_plugin(LerpActionPlugin);
+    }
+}
+
+// pub trait MyValue
+// where
+//     Self: Send + Sync + 'static,
+// {
+//     fn value(self) -> Self;
+// }
+
+// impl MyValue for f32 {
+//     fn value(self) -> Self {
+//         self
+//     }
+// }
+
+pub trait IntoValue<T = Self>
+where
+    Self: Send + Sync + 'static,
+    T: Copy + Clone,
+{
+    fn value(&self) -> T;
+}
+
+impl IntoValue for f32 {
+    fn value(&self) -> Self {
+        *self
+    }
+}
+
+impl IntoValue for Vec3 {
+    fn value(&self) -> Self {
+        *self
+    }
+}
+
+impl IntoValue for Quat {
+    fn value(&self) -> Self {
+        *self
+    }
+}
+
+pub struct Random<T>
+where
+    T: RandomExt,
+    T::Bound: Clone + Copy,
+{
+    min: T::Bound,
+    max: T::Bound,
+}
+
+impl<T> Random<T>
+where
+    T: RandomExt,
+    T::Bound: Clone + Copy,
+{
+    pub fn new(min: T::Bound, max: T::Bound) -> Self {
+        Self { min, max }
+    }
+}
+
+impl<T> IntoValue<T> for Random<T>
+where
+    T: RandomExt + IntoValue<T> + Clone + Copy,
+    T::Bound: Clone + Copy + Send + Sync,
+{
+    fn value(&self) -> T {
+        T::random(self.min, self.max)
     }
 }

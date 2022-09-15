@@ -13,10 +13,67 @@ fn main() {
         .run();
 }
 
+// struct MyAction<F, V>
+// where
+//     F: IntoValue<f32>,
+//     V: IntoValue<Vec3>,
+// {
+//     float: F,
+//     vec3: V,
+// }
+
+// impl<F, V> Action for MyAction<F, V>
+// where
+//     F: IntoValue<f32> + Send + Sync + Clone + Copy + 'static,
+//     V: IntoValue<Vec3> + Send + Sync + Clone + Copy + 'static,
+// {
+//     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+//         todo!()
+//     }
+
+//     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+//         todo!()
+//     }
+// }
+
+struct MyAction<F, V>
+where
+    F: IntoValue<f32>,
+    V: IntoValue<Vec3>,
+{
+    float: F,
+    vec3: V,
+}
+
+impl<F, V> Action for MyAction<F, V>
+where
+    F: IntoValue<f32>,
+    V: IntoValue<Vec3>,
+{
+    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+        println!("FLOAT: {}", self.float.value());
+        println!("VEC3: {}", self.vec3.value());
+        commands.actions(entity).next();
+    }
+
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
+}
+
 fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraMain>>) {
     let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
 
     let camera = camera_q.single();
+
+    commands
+        .actions(actor)
+        .add(MyAction {
+            float: 5.0,
+            vec3: Vec3::new(1.0, 2.0, 3.0),
+        })
+        .add(MyAction {
+            float: Random::new(0.0, 5.0),
+            vec3: Random::new(Vec3::ZERO, Vec3::splat(5.0)),
+        });
 
     commands
         .actions(actor)
