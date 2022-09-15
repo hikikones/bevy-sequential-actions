@@ -7,7 +7,7 @@ pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(move_system).add_system(rotate_system);
+        app.add_system(movement).add_system(rotation);
     }
 }
 
@@ -44,7 +44,7 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
-fn move_system(
+fn movement(
     mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
     time: Res<Time>,
 ) {
@@ -57,7 +57,7 @@ fn move_system(
     }
 }
 
-fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+fn rotation(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
     for (mut transform, target, speed) in move_q.iter_mut() {
         let dir = target.0 - transform.translation;
 
@@ -76,7 +76,7 @@ fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res
 pub struct MoveRandomAction {
     min: Vec3,
     max: Vec3,
-    target: Option<Vec3>,
+    move_action: MoveAction,
 }
 
 impl MoveRandomAction {
@@ -84,32 +84,21 @@ impl MoveRandomAction {
         Self {
             min,
             max,
-            target: None,
+            move_action: MoveAction::new(Vec3::random(min, max)),
         }
     }
 }
 
 impl Action for MoveRandomAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let target = if let Some(target) = self.target {
-            target
-        } else {
-            let random = Vec3::random(self.min, self.max);
-            self.target = Some(random);
-            random
-        };
-
-        world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(target),
-            speed: Speed(4.0),
-        });
+        self.move_action.on_start(entity, world, _commands);
     }
 
     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+        self.move_action.on_stop(entity, world, reason);
 
         if let StopReason::Finished | StopReason::Canceled = reason {
-            self.target = None;
+            self.move_action.0 = Vec3::random(self.min, self.max);
         }
     }
 }

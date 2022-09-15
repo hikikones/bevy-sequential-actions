@@ -7,7 +7,7 @@ pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(rotate_system);
+        app.add_system(rotation);
     }
 }
 
@@ -44,7 +44,7 @@ struct Target(Quat);
 #[derive(Component)]
 struct Speed(f32);
 
-fn rotate_system(
+fn rotation(
     mut rotate_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
     time: Res<Time>,
 ) {
@@ -60,7 +60,7 @@ fn rotate_system(
 pub struct RotateRandomAction {
     euler_min: Vec3,
     euler_max: Vec3,
-    target: Option<Quat>,
+    rotate: RotateAction,
 }
 
 impl RotateRandomAction {
@@ -68,32 +68,21 @@ impl RotateRandomAction {
         Self {
             euler_min,
             euler_max,
-            target: None,
+            rotate: RotateAction::new(Quat::random(euler_min, euler_max)),
         }
     }
 }
 
 impl Action for RotateRandomAction {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let target = if let Some(target) = self.target {
-            target
-        } else {
-            let random = Quat::random(self.euler_min, self.euler_max);
-            self.target = Some(random);
-            random
-        };
-
-        world.entity_mut(entity).insert_bundle(RotateBundle {
-            target: Target(target),
-            speed: Speed(4.0),
-        });
+        self.rotate.on_start(entity, world, _commands);
     }
 
     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        world.entity_mut(entity).remove_bundle::<RotateBundle>();
+        self.rotate.on_stop(entity, world, reason);
 
         if let StopReason::Finished | StopReason::Canceled = reason {
-            self.target = None;
+            self.rotate.0 = Quat::random(self.euler_min, self.euler_max);
         }
     }
 }

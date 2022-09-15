@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_sequential_actions::SequentialActionsPlugin;
 
 pub mod despawn_action;
 pub mod lerp_action;
@@ -19,7 +18,7 @@ pub struct ActionsPlugin;
 
 impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(SequentialActionsPlugin)
+        app.add_plugin(bevy_sequential_actions::SequentialActionsPlugin)
             .add_plugin(WaitActionPlugin)
             .add_plugin(MoveActionPlugin)
             .add_plugin(RotateActionPlugin)

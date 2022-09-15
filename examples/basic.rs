@@ -29,7 +29,7 @@ fn setup(mut commands: Commands) {
         .config(AddConfig {
             // Add each action to the back of the queue
             order: AddOrder::Back,
-            // Start action if nothing is currently running
+            // Start the next action if nothing is currently running
             start: true,
             // Repeat the action zero times, i.e. run only once
             repeat: Repeat::Amount(0),
