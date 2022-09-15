@@ -28,23 +28,9 @@ impl Plugin for ActionsPlugin {
     }
 }
 
-// pub trait MyValue
-// where
-//     Self: Send + Sync + 'static,
-// {
-//     fn value(self) -> Self;
-// }
-
-// impl MyValue for f32 {
-//     fn value(self) -> Self {
-//         self
-//     }
-// }
-
 pub trait IntoValue<T = Self>
 where
     Self: Send + Sync + 'static,
-    T: Copy + Clone,
 {
     fn value(&self) -> T;
 }
@@ -61,12 +47,7 @@ impl IntoValue for Vec3 {
     }
 }
 
-impl IntoValue for Quat {
-    fn value(&self) -> Self {
-        *self
-    }
-}
-
+#[derive(Clone, Copy)]
 pub struct Random<T>
 where
     T: RandomExt,
@@ -88,7 +69,7 @@ where
 
 impl<T> IntoValue<T> for Random<T>
 where
-    T: RandomExt + IntoValue<T> + Clone + Copy,
+    T: Clone + Copy + RandomExt + IntoValue<T>,
     T::Bound: Clone + Copy + Send + Sync,
 {
     fn value(&self) -> T {

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::RandomExt};
+use shared::{actions::*, bootstrap::*, extensions::LookRotationExt};
 
 fn main() {
     App::new()
@@ -14,19 +14,14 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let min_wait = 0.5;
-    let max_wait = 2.0;
-
-    let min_move = Vec3::new(-7.0, 0.0, -4.0);
-    let max_move = min_move * -1.0;
-
-    let min_rot = Vec3::ZERO;
-    let max_rot = Vec3::Y * std::f32::consts::PI * 2.0;
+    let seconds = Random::new(0.5, 2.0);
+    let rotation = Random::new(Vec3::ZERO, Vec3::Y * std::f32::consts::TAU);
+    let position = Random::new(Vec3::new(-7.0, 0.0, -4.0), Vec3::new(7.0, 0.0, 4.0));
 
     for _ in 0..10 {
         let actor = commands.spawn_actor(
-            Vec3::random(min_move, max_move),
-            Quat::random(min_rot, max_rot),
+            position.value(),
+            Quat::look_rotation(rotation.value(), Vec3::Y),
         );
 
         commands
@@ -36,10 +31,10 @@ fn setup(mut commands: Commands) {
                 start: true,
                 repeat: Repeat::Forever,
             })
-            .add(WaitRandomAction::new(min_wait, max_wait))
-            .add(RotateRandomAction::new(min_rot, max_rot))
-            .add(WaitRandomAction::new(min_wait, max_wait))
-            .add(MoveRandomAction::new(min_move, max_move));
+            .add(WaitAction::new(seconds))
+            .add(RotateAction::new(rotation))
+            .add(WaitAction::new(seconds))
+            .add(MoveAction::new(position));
     }
 }
 

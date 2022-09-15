@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{RandomExt, RotateTowardsTransformExt};
+use crate::extensions::RotateTowardsTransformExt;
+
+use super::IntoValue;
 
 pub struct RotateActionPlugin;
 
@@ -11,24 +13,46 @@ impl Plugin for RotateActionPlugin {
     }
 }
 
-pub struct RotateAction(Quat);
+pub struct RotateAction<T>
+where
+    T: IntoValue<Vec3>,
+{
+    euler: T,
+    current: Option<Quat>,
+}
 
-impl RotateAction {
-    pub fn new(target: Quat) -> Self {
-        Self(target)
+impl<T> RotateAction<T>
+where
+    T: IntoValue<Vec3>,
+{
+    pub fn new(target: T) -> Self {
+        Self {
+            euler: target,
+            current: None,
+        }
     }
 }
 
-impl Action for RotateAction {
+impl<T> Action for RotateAction<T>
+where
+    T: IntoValue<Vec3>,
+{
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        let target = self.current.take().unwrap_or_else(|| {
+            let euler = self.euler.value();
+            Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z)
+        });
         world.entity_mut(entity).insert_bundle(RotateBundle {
-            target: Target(self.0),
+            target: Target(target),
             speed: Speed(4.0),
         });
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
-        world.entity_mut(entity).remove_bundle::<RotateBundle>();
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+        let bundle = world.entity_mut(entity).remove_bundle::<RotateBundle>();
+        if let StopReason::Paused = reason {
+            self.current = Some(bundle.unwrap().target.0);
+        }
     }
 }
 
@@ -53,36 +77,6 @@ fn rotation(
 
         if transform.rotation == target.0 {
             finished.confirm();
-        }
-    }
-}
-
-pub struct RotateRandomAction {
-    euler_min: Vec3,
-    euler_max: Vec3,
-    rotate: RotateAction,
-}
-
-impl RotateRandomAction {
-    pub fn new(euler_min: Vec3, euler_max: Vec3) -> Self {
-        Self {
-            euler_min,
-            euler_max,
-            rotate: RotateAction::new(Quat::random(euler_min, euler_max)),
-        }
-    }
-}
-
-impl Action for RotateRandomAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        self.rotate.on_start(entity, world, _commands);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        self.rotate.on_stop(entity, world, reason);
-
-        if let StopReason::Finished | StopReason::Canceled = reason {
-            self.rotate.0 = Quat::random(self.euler_min, self.euler_max);
         }
     }
 }

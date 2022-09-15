@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::RandomExt;
+use super::IntoValue;
 
 pub struct WaitActionPlugin;
 
@@ -11,14 +11,20 @@ impl Plugin for WaitActionPlugin {
     }
 }
 
-pub struct WaitAction {
-    duration: f32,
+pub struct WaitAction<T>
+where
+    T: IntoValue<f32>,
+{
+    duration: T,
     executor: Option<Entity>,
     current: Option<f32>,
 }
 
-impl WaitAction {
-    pub fn new(seconds: f32) -> Self {
+impl<T> WaitAction<T>
+where
+    T: IntoValue<f32>,
+{
+    pub fn new(seconds: T) -> Self {
         Self {
             duration: seconds,
             executor: None,
@@ -27,9 +33,12 @@ impl WaitAction {
     }
 }
 
-impl Action for WaitAction {
+impl<T> Action for WaitAction<T>
+where
+    T: IntoValue<f32>,
+{
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let duration = self.current.take().unwrap_or(self.duration);
+        let duration = self.current.take().unwrap_or(self.duration.value());
         let executor = world
             .spawn()
             .insert_bundle(WaitBundle {
@@ -73,36 +82,6 @@ fn check_wait(wait_q: Query<(&Wait, &ActionActor)>, mut finished_q: Query<&mut A
     for (wait, actor) in wait_q.iter() {
         if wait.0 <= 0.0 {
             finished_q.get_mut(actor.0).unwrap().confirm();
-        }
-    }
-}
-
-pub struct WaitRandomAction {
-    min: f32,
-    max: f32,
-    wait: WaitAction,
-}
-
-impl WaitRandomAction {
-    pub fn new(min: f32, max: f32) -> Self {
-        Self {
-            min,
-            max,
-            wait: WaitAction::new(f32::random(min, max)),
-        }
-    }
-}
-
-impl Action for WaitRandomAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        self.wait.on_start(entity, world, _commands);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        self.wait.on_stop(entity, world, reason);
-
-        if let StopReason::Finished | StopReason::Canceled = reason {
-            self.wait.duration = f32::random(self.min, self.max);
         }
     }
 }
