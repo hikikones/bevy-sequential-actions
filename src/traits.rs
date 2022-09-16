@@ -86,7 +86,7 @@ impl<T> BoxedActionIter for T where
 ///         commands.actions(agent).next();
 ///
 ///         // Also good
-///         commands.actions(agent).custom(move |w: &mut World| {
+///         commands.custom(move |w: &mut World| {
 ///             w.actions(agent).next();
 ///         });
 ///
