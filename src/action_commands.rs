@@ -18,6 +18,16 @@ impl ActionCommands {
             cmd(world);
         }
     }
+
+    /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
+    /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
+    pub fn custom<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnOnce(&mut World) + 'static,
+    {
+        self.push(f);
+        self
+    }
 }
 
 impl<'a> ActionsProxy<'a> for ActionCommands {
@@ -37,18 +47,6 @@ pub struct AgentActions<'a> {
     agent: Entity,
     config: AddConfig,
     commands: &'a mut ActionCommands,
-}
-
-impl AgentActions<'_> {
-    /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
-    /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
-    pub fn custom<F>(self, f: F) -> Self
-    where
-        F: FnOnce(&mut World) + 'static,
-    {
-        self.commands.push(f);
-        self
-    }
 }
 
 impl ModifyActions for AgentActions<'_> {
