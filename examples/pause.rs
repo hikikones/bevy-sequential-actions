@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::LookRotationExt};
+use shared::{actions::*, bootstrap::*, extensions::FromVec3Ext};
 
 fn main() {
     App::new()
@@ -19,10 +19,7 @@ fn setup(mut commands: Commands) {
     let position = Random::new(Vec3::new(-7.0, 0.0, -4.0), Vec3::new(7.0, 0.0, 4.0));
 
     for _ in 0..10 {
-        let actor = commands.spawn_actor(
-            position.value(),
-            Quat::look_rotation(rotation.value(), Vec3::Y),
-        );
+        let actor = commands.spawn_actor(position.value(), Quat::from_vec3(rotation.value()));
 
         commands
             .actions(actor)

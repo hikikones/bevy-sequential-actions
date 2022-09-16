@@ -4,7 +4,7 @@ use bevy_sequential_actions::*;
 use shared::{
     actions::*,
     bootstrap::*,
-    extensions::{LookRotationExt, RunSystemExt},
+    extensions::{FromLookExt, RunSystemExt},
 };
 
 fn main() {
@@ -109,7 +109,7 @@ impl Action for MyCustomAction {
             LerpAction::new(camera, LerpType::Position(CAMERA_OFFSET * 0.5), 1.0).into_boxed(),
             LerpAction::new(
                 entity,
-                LerpType::Rotation(Quat::look_rotation(Vec3::Z, Vec3::Y)),
+                LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
                 1.0,
             )
             .into_boxed(),
@@ -118,7 +118,7 @@ impl Action for MyCustomAction {
             WaitAction::new(0.5).into_boxed(),
             LerpAction::new(
                 entity,
-                LerpType::Rotation(Quat::look_rotation(-Vec3::Z, Vec3::Y)),
+                LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
                 0.5,
             )
             .into_boxed(),

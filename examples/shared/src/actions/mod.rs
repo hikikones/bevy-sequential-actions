@@ -51,18 +51,16 @@ impl IntoValue for Vec3 {
 pub struct Random<T>
 where
     T: RandomExt,
-    T::Bound: Clone + Copy,
 {
-    min: T::Bound,
-    max: T::Bound,
+    min: T,
+    max: T,
 }
 
 impl<T> Random<T>
 where
     T: RandomExt,
-    T::Bound: Clone + Copy,
 {
-    pub fn new(min: T::Bound, max: T::Bound) -> Self {
+    pub fn new(min: T, max: T) -> Self {
         Self { min, max }
     }
 }
@@ -70,7 +68,6 @@ where
 impl<T> IntoValue<T> for Random<T>
 where
     T: Clone + Copy + RandomExt + IntoValue<T>,
-    T::Bound: Clone + Copy + Send + Sync,
 {
     fn value(&self) -> T {
         T::random(self.min, self.max)

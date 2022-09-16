@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::RotateTowardsTransformExt;
+use crate::extensions::{FromVec3Ext, RotateTowardsTransformExt};
 
 use super::IntoValue;
 
@@ -38,10 +38,11 @@ where
     T: IntoValue<Vec3>,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let target = self.current.take().unwrap_or_else(|| {
-            let euler = self.euler.value();
-            Quat::from_euler(EulerRot::XYZ, euler.x, euler.y, euler.z)
-        });
+        let target = self
+            .current
+            .take()
+            .unwrap_or(Quat::from_vec3(self.euler.value()));
+
         world.entity_mut(entity).insert_bundle(RotateBundle {
             target: Target(target),
             speed: Speed(4.0),
@@ -50,6 +51,7 @@ where
 
     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
         let bundle = world.entity_mut(entity).remove_bundle::<RotateBundle>();
+
         if let StopReason::Paused = reason {
             self.current = Some(bundle.unwrap().target.0);
         }

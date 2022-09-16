@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::LookRotationExt};
+use shared::{actions::*, bootstrap::*, extensions::FromLookExt};
 
 fn main() {
     App::new()
@@ -13,15 +13,19 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    for i in 0..4 {
-        let start = Vec3::new(-3.0, 0.0, -2.0) + Vec3::X * i as f32 * 2.0;
+    let range = 0..4;
+    let last = (range.len() - 1) as u32;
+    let x = last as f32;
+
+    for i in range {
+        let start = Vec3::new(-x, 0.0, -2.0) + Vec3::X * i as f32 * 2.0;
         let end = start + Vec3::Z * 4.0;
 
-        let actor = commands.spawn_actor(start, Quat::look_rotation(Vec3::Z, Vec3::Y));
+        let actor = commands.spawn_actor(start, Quat::from_look(Vec3::Z, Vec3::Y));
 
         let repeat = match i {
-            3 => Repeat::Forever,
-            _ => Repeat::Amount(i),
+            i if i < last => Repeat::Amount(i),
+            _ => Repeat::Forever,
         };
 
         commands

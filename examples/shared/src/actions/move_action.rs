@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{LookRotationExt, MoveTowardsTransformExt, RandomExt};
+use crate::extensions::{FromLookExt, MoveTowardsTransformExt};
+
+use super::IntoValue;
 
 pub struct MoveActionPlugin;
 
@@ -11,24 +13,45 @@ impl Plugin for MoveActionPlugin {
     }
 }
 
-pub struct MoveAction(Vec3);
+pub struct MoveAction<T>
+where
+    T: IntoValue<Vec3>,
+{
+    target: T,
+    current: Option<Vec3>,
+}
 
-impl MoveAction {
-    pub fn new(target: Vec3) -> Self {
-        Self(target)
+impl<T> MoveAction<T>
+where
+    T: IntoValue<Vec3>,
+{
+    pub fn new(target: T) -> Self {
+        Self {
+            target,
+            current: None,
+        }
     }
 }
 
-impl Action for MoveAction {
+impl<T> Action for MoveAction<T>
+where
+    T: IntoValue<Vec3>,
+{
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        let target = self.current.take().unwrap_or(self.target.value());
+
         world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(self.0),
+            target: Target(target),
             speed: Speed(4.0),
         });
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
-        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
+        let bundle = world.entity_mut(entity).remove_bundle::<MoveBundle>();
+
+        if let StopReason::Paused = reason {
+            self.current = Some(bundle.unwrap().target.0);
+        }
     }
 }
 
@@ -67,38 +90,8 @@ fn rotation(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time
 
         transform.rotation = Quat::slerp(
             transform.rotation,
-            Quat::look_rotation(dir, Vec3::Y),
+            Quat::from_look(dir, Vec3::Y),
             speed.0 * 2.0 * time.delta_seconds(),
         );
-    }
-}
-
-pub struct MoveRandomAction {
-    min: Vec3,
-    max: Vec3,
-    move_action: MoveAction,
-}
-
-impl MoveRandomAction {
-    pub fn new(min: Vec3, max: Vec3) -> Self {
-        Self {
-            min,
-            max,
-            move_action: MoveAction::new(Vec3::random(min, max)),
-        }
-    }
-}
-
-impl Action for MoveRandomAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        self.move_action.on_start(entity, world, _commands);
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        self.move_action.on_stop(entity, world, reason);
-
-        if let StopReason::Finished | StopReason::Canceled = reason {
-            self.move_action.0 = Vec3::random(self.min, self.max);
-        }
     }
 }

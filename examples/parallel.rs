@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::LookRotationExt};
+use shared::{actions::*, bootstrap::*, extensions::FromLookExt};
 
 fn main() {
     App::new()
@@ -43,7 +43,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraMain>>) {
             [
                 LerpAction::new(
                     actor,
-                    LerpType::Rotation(Quat::look_rotation(Vec3::Z, Vec3::Y)),
+                    LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
                     3.0,
                 )
                 .into_boxed(),
