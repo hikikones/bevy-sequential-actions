@@ -36,8 +36,16 @@ fn setup(mut commands: Commands) {
                 repeat,
             })
             .add(WaitAction::new(0.5))
-            .add(MoveAction::new(end))
+            .add(MoveAction::new(MoveConfig {
+                target: end,
+                speed: 4.0,
+                rotate: true,
+            }))
             .add(WaitAction::new(0.5))
-            .add(MoveAction::new(start));
+            .add(MoveAction::new(MoveConfig {
+                target: start,
+                speed: 4.0,
+                rotate: true,
+            }));
     }
 }

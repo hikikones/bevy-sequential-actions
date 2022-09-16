@@ -24,15 +24,20 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraMain>>) {
         .add_many(
             ExecutionMode::Parallel,
             [
-                MoveAction::new(Vec3::X).into_boxed(),
+                MoveAction::new(MoveConfig {
+                    target: Vec3::X,
+                    speed: 4.0,
+                    rotate: true,
+                })
+                .into_boxed(),
                 UniqueWaitAction::new(1.0).into_boxed(),
                 UniqueWaitAction::new(2.0).into_boxed(),
                 UniqueWaitAction::new(3.0).into_boxed(),
-                LerpAction::new(
-                    camera,
-                    LerpType::Position(CAMERA_OFFSET * 0.5 + Vec3::X),
-                    4.0,
-                )
+                LerpAction::new(LerpConfig {
+                    target: camera,
+                    lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5 + Vec3::X),
+                    duration: 4.0,
+                })
                 .into_boxed(),
             ]
             .into_iter(),
@@ -41,14 +46,18 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraMain>>) {
         .add_many(
             ExecutionMode::Parallel,
             [
-                LerpAction::new(
-                    actor,
-                    LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
-                    3.0,
-                )
+                LerpAction::new(LerpConfig {
+                    target: actor,
+                    lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
+                    duration: 3.0,
+                })
                 .into_boxed(),
-                LerpAction::new(camera, LerpType::Position(CAMERA_OFFSET + Vec3::X), 4.0)
-                    .into_boxed(),
+                LerpAction::new(LerpConfig {
+                    target: camera,
+                    lerp_type: LerpType::Position(CAMERA_OFFSET + Vec3::X),
+                    duration: 4.0,
+                })
+                .into_boxed(),
             ]
             .into_iter(),
         )

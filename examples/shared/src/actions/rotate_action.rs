@@ -13,47 +13,56 @@ impl Plugin for RotateActionPlugin {
     }
 }
 
-pub struct RotateAction<T>
+pub struct RotateAction<V, F>
 where
-    T: IntoValue<Vec3>,
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
 {
-    euler: T,
-    current: Option<Quat>,
+    config: RotateConfig<V, F>,
+    bundle: Option<RotateBundle>,
 }
 
-impl<T> RotateAction<T>
+pub struct RotateConfig<V, F>
 where
-    T: IntoValue<Vec3>,
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
 {
-    pub fn new(target: T) -> Self {
+    pub target: V,
+    pub speed: F,
+}
+
+impl<V, F> RotateAction<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    pub fn new(config: RotateConfig<V, F>) -> Self {
         Self {
-            euler: target,
-            current: None,
+            config,
+            bundle: None,
         }
     }
 }
 
-impl<T> Action for RotateAction<T>
+impl<V, F> Action for RotateAction<V, F>
 where
-    T: IntoValue<Vec3>,
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let target = self
-            .current
-            .take()
-            .unwrap_or(Quat::from_vec3(self.euler.value()));
-
-        world.entity_mut(entity).insert_bundle(RotateBundle {
-            target: Target(target),
-            speed: Speed(4.0),
+        let rotate_bundle = self.bundle.take().unwrap_or(RotateBundle {
+            target: Target(Quat::from_vec3(self.config.target.value())),
+            speed: Speed(self.config.speed.value()),
         });
+
+        world.entity_mut(entity).insert_bundle(rotate_bundle);
     }
 
     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
         let bundle = world.entity_mut(entity).remove_bundle::<RotateBundle>();
 
         if let StopReason::Paused = reason {
-            self.current = Some(bundle.unwrap().target.0);
+            self.bundle = bundle;
         }
     }
 }

@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
+use super::IntoValue;
+
 pub(super) struct LerpActionPlugin;
 
 impl Plugin for LerpActionPlugin {
@@ -9,22 +11,33 @@ impl Plugin for LerpActionPlugin {
     }
 }
 
-pub struct LerpAction {
-    target: Entity,
-    lerp_type: LerpType,
-    duration: f32,
+pub struct LerpAction<F>
+where
+    F: IntoValue<f32>,
+{
+    config: LerpConfig<F>,
     executor: Option<Entity>,
-    current: Option<LerpBundle>,
+    bundle: Option<LerpBundle>,
 }
 
-impl LerpAction {
-    pub fn new(target: Entity, lerp_type: LerpType, duration: f32) -> Self {
+pub struct LerpConfig<F>
+where
+    F: IntoValue<f32>,
+{
+    pub target: Entity,
+    pub lerp_type: LerpType,
+    pub duration: F,
+}
+
+impl<F> LerpAction<F>
+where
+    F: IntoValue<f32>,
+{
+    pub fn new(config: LerpConfig<F>) -> Self {
         Self {
-            target,
-            lerp_type,
-            duration,
+            config,
             executor: None,
-            current: None,
+            bundle: None,
         }
     }
 }
@@ -35,43 +48,46 @@ pub enum LerpType {
     Transform(Transform),
 }
 
-impl Action for LerpAction {
+impl<F> Action for LerpAction<F>
+where
+    F: IntoValue<f32>,
+{
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let lerp_bundle = if let Some(bundle) = self.current.take() {
-            bundle
-        } else {
-            let lerp = match self.lerp_type {
+        let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
+            let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {
-                    let start = world.get::<Transform>(self.target).unwrap().translation;
+                    let start = world
+                        .get::<Transform>(self.config.target)
+                        .unwrap()
+                        .translation;
                     Lerp::Position(start, target)
                 }
                 LerpType::Rotation(target) => {
-                    let start = world.get::<Transform>(self.target).unwrap().rotation;
+                    let start = world.get::<Transform>(self.config.target).unwrap().rotation;
                     Lerp::Rotation(start, target)
                 }
                 LerpType::Transform(target) => {
-                    let start = world.get::<Transform>(self.target).unwrap();
+                    let start = world.get::<Transform>(self.config.target).unwrap();
                     Lerp::Transform(start.clone(), target)
                 }
             };
 
             LerpBundle {
-                lerp,
-                target: LerpTarget(self.target),
-                timer: LerpTimer(Timer::from_seconds(self.duration, false)),
+                lerp: lerp_type,
+                target: LerpTarget(self.config.target),
+                timer: LerpTimer(Timer::from_seconds(self.config.duration.value(), false)),
                 actor: ActionActor(entity),
             }
-        };
+        });
 
-        let executor = world.spawn().insert_bundle(lerp_bundle).id();
-        self.executor = Some(executor);
+        self.executor = Some(world.spawn().insert_bundle(lerp_bundle).id());
     }
 
     fn on_stop(&mut self, _entity: Entity, world: &mut World, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         if let StopReason::Paused = reason {
-            self.current = world.entity_mut(executor).remove_bundle::<LerpBundle>();
+            self.bundle = world.entity_mut(executor).remove_bundle::<LerpBundle>();
         }
 
         world.despawn(executor);

@@ -11,20 +11,20 @@ impl Plugin for WaitActionPlugin {
     }
 }
 
-pub struct WaitAction<T>
+pub struct WaitAction<F>
 where
-    T: IntoValue<f32>,
+    F: IntoValue<f32>,
 {
-    duration: T,
+    duration: F,
     executor: Option<Entity>,
     current: Option<f32>,
 }
 
-impl<T> WaitAction<T>
+impl<F> WaitAction<F>
 where
-    T: IntoValue<f32>,
+    F: IntoValue<f32>,
 {
-    pub fn new(seconds: T) -> Self {
+    pub fn new(seconds: F) -> Self {
         Self {
             duration: seconds,
             executor: None,
@@ -33,20 +33,22 @@ where
     }
 }
 
-impl<T> Action for WaitAction<T>
+impl<F> Action for WaitAction<F>
 where
-    T: IntoValue<f32>,
+    F: IntoValue<f32>,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
-        let executor = world
-            .spawn()
-            .insert_bundle(WaitBundle {
-                wait: Wait(duration),
-                actor: ActionActor(entity),
-            })
-            .id();
-        self.executor = Some(executor);
+
+        self.executor = Some(
+            world
+                .spawn()
+                .insert_bundle(WaitBundle {
+                    wait: Wait(duration),
+                    actor: ActionActor(entity),
+                })
+                .id(),
+        );
     }
 
     fn on_stop(&mut self, _entity: Entity, world: &mut World, reason: StopReason) {

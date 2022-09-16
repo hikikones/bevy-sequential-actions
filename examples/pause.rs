@@ -29,9 +29,16 @@ fn setup(mut commands: Commands) {
                 repeat: Repeat::Forever,
             })
             .add(WaitAction::new(seconds))
-            .add(RotateAction::new(rotation))
+            .add(RotateAction::new(RotateConfig {
+                target: rotation,
+                speed: Random::new(2.0, 4.0),
+            }))
             .add(WaitAction::new(seconds))
-            .add(MoveAction::new(position));
+            .add(MoveAction::new(MoveConfig {
+                target: position,
+                speed: Random::new(2.0, 5.0),
+                rotate: true,
+            }));
     }
 }
 

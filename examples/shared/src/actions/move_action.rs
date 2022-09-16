@@ -13,44 +13,65 @@ impl Plugin for MoveActionPlugin {
     }
 }
 
-pub struct MoveAction<T>
+pub struct MoveAction<V, F>
 where
-    T: IntoValue<Vec3>,
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
 {
-    target: T,
-    current: Option<Vec3>,
+    config: MoveConfig<V, F>,
+    bundle: Option<MoveBundle>,
 }
 
-impl<T> MoveAction<T>
+pub struct MoveConfig<V, F>
 where
-    T: IntoValue<Vec3>,
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
 {
-    pub fn new(target: T) -> Self {
+    pub target: V,
+    pub speed: F,
+    pub rotate: bool,
+}
+
+impl<V, F> MoveAction<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    pub fn new(config: MoveConfig<V, F>) -> Self {
         Self {
-            target,
-            current: None,
+            config,
+            bundle: None,
         }
     }
 }
 
-impl<T> Action for MoveAction<T>
+impl<V, F> Action for MoveAction<V, F>
 where
-    T: IntoValue<Vec3>,
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
 {
     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let target = self.current.take().unwrap_or(self.target.value());
-
-        world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(target),
-            speed: Speed(4.0),
+        let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
+            target: Target(self.config.target.value()),
+            speed: Speed(self.config.speed.value()),
         });
+
+        world.entity_mut(entity).insert_bundle(move_bundle);
+
+        if self.config.rotate {
+            world.entity_mut(entity).insert(RotateMarker);
+        }
     }
 
     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
         let bundle = world.entity_mut(entity).remove_bundle::<MoveBundle>();
 
         if let StopReason::Paused = reason {
-            self.current = Some(bundle.unwrap().target.0);
+            self.bundle = bundle;
+        }
+
+        if self.config.rotate {
+            world.entity_mut(entity).remove::<RotateMarker>();
         }
     }
 }
@@ -67,6 +88,9 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
+#[derive(Component)]
+struct RotateMarker;
+
 fn movement(
     mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
     time: Res<Time>,
@@ -80,7 +104,10 @@ fn movement(
     }
 }
 
-fn rotation(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+fn rotation(
+    mut move_q: Query<(&mut Transform, &Target, &Speed), With<RotateMarker>>,
+    time: Res<Time>,
+) {
     for (mut transform, target, speed) in move_q.iter_mut() {
         let dir = target.0 - transform.translation;
 
