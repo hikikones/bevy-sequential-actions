@@ -21,7 +21,7 @@ fn setup(mut commands: Commands) {
         let start = Vec3::new(-x, 0.0, -2.0) + Vec3::X * i as f32 * 2.0;
         let end = start + Vec3::Z * 4.0;
 
-        let actor = commands.spawn_actor(start, Quat::from_look(Vec3::Z, Vec3::Y));
+        let agent = commands.spawn_agent(start, Quat::from_look(Vec3::Z, Vec3::Y));
 
         let repeat = match i {
             i if i < last => Repeat::Amount(i),
@@ -29,7 +29,7 @@ fn setup(mut commands: Commands) {
         };
 
         commands
-            .actions(actor)
+            .actions(agent)
             .config(AddConfig {
                 order: AddOrder::Back,
                 start: true,

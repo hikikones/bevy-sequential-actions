@@ -52,7 +52,7 @@ impl<F> Action for LerpAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
             let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {
@@ -76,14 +76,14 @@ where
                 lerp: lerp_type,
                 target: LerpTarget(self.config.target),
                 timer: LerpTimer(Timer::from_seconds(self.config.duration.value(), false)),
-                actor: ActionActor(entity),
+                agent: Agent(agent),
             }
         });
 
         self.executor = Some(world.spawn().insert_bundle(lerp_bundle).id());
     }
 
-    fn on_stop(&mut self, _entity: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         if let StopReason::Paused = reason {
@@ -99,7 +99,7 @@ struct LerpBundle {
     lerp: Lerp,
     target: LerpTarget,
     timer: LerpTimer,
-    actor: ActionActor,
+    agent: Agent,
 }
 
 #[derive(Component)]
@@ -116,15 +116,15 @@ struct LerpTarget(Entity);
 struct LerpTimer(Timer);
 
 #[derive(Component)]
-struct ActionActor(Entity);
+struct Agent(Entity);
 
 fn lerp(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &ActionActor)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &Agent)>,
     mut transform_q: Query<&mut Transform>,
     mut finished_q: Query<&mut ActionFinished>,
     time: Res<Time>,
 ) {
-    for (mut timer, target, lerp, actor) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp, agent) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -145,10 +145,10 @@ fn lerp(
             }
 
             if timer.0.finished() {
-                finished_q.get_mut(actor.0).unwrap().confirm();
+                finished_q.get_mut(agent.0).unwrap().confirm();
             }
         } else {
-            finished_q.get_mut(actor.0).unwrap().confirm();
+            finished_q.get_mut(agent.0).unwrap().confirm();
         }
     }
 }

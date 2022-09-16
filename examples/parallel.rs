@@ -14,12 +14,12 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraMain>>) {
-    let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
+    let agent = commands.spawn_agent(Vec3::ZERO, Quat::IDENTITY);
 
     let camera = camera_q.single();
 
     commands
-        .actions(actor)
+        .actions(agent)
         .add(UniqueWaitAction::new(0.5))
         .add_many(
             ExecutionMode::Parallel,
@@ -47,7 +47,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraMain>>) {
             ExecutionMode::Parallel,
             [
                 LerpAction::new(LerpConfig {
-                    target: actor,
+                    target: agent,
                     lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
                     duration: 3.0,
                 })
@@ -82,19 +82,19 @@ impl UniqueWaitAction {
 }
 
 impl Action for UniqueWaitAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration);
         let executor = world
             .spawn()
             .insert_bundle(WaitBundle {
                 wait: Wait(duration),
-                agent: Agent(entity),
+                agent: Agent(agent),
             })
             .id();
         self.executor = Some(executor);
     }
 
-    fn on_stop(&mut self, _entity: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         let bundle = world.entity_mut(executor).remove_bundle::<WaitBundle>();

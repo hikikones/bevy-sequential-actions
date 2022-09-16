@@ -19,10 +19,10 @@ fn setup(mut commands: Commands) {
     let position = Random::new(Vec3::new(-7.0, 0.0, -4.0), Vec3::new(7.0, 0.0, 4.0));
 
     for _ in 0..10 {
-        let actor = commands.spawn_actor(position.value(), Quat::from_vec3(rotation.value()));
+        let agent = commands.spawn_agent(position.value(), Quat::from_vec3(rotation.value()));
 
         commands
-            .actions(actor)
+            .actions(agent)
             .config(AddConfig {
                 order: AddOrder::Back,
                 start: true,
@@ -44,16 +44,16 @@ fn setup(mut commands: Commands) {
 
 fn input(
     keyboard: Res<Input<KeyCode>>,
-    actors_q: Query<Entity, With<ActionMarker>>,
+    agents_q: Query<Entity, With<ActionMarker>>,
     mut commands: Commands,
     mut is_paused: Local<bool>,
 ) {
     if keyboard.just_pressed(KeyCode::Space) {
-        for actor in actors_q.iter() {
+        for agent in agents_q.iter() {
             if *is_paused {
-                commands.actions(actor).next();
+                commands.actions(agent).next();
             } else {
-                commands.actions(actor).pause();
+                commands.actions(agent).pause();
             }
         }
 

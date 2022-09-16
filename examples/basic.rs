@@ -18,14 +18,14 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     // Create entity with ActionsBundle
-    let actor = commands.spawn_actor(Vec3::ZERO, Quat::IDENTITY);
+    let agent = commands.spawn_agent(Vec3::ZERO, Quat::IDENTITY);
 
     // Add a single action with default config
-    commands.actions(actor).add(WaitAction::new(1.0));
+    commands.actions(agent).add(WaitAction::new(1.0));
 
     // Add multiple actions with custom config
     commands
-        .actions(actor)
+        .actions(agent)
         .config(AddConfig {
             // Add each action to the back of the queue
             order: AddOrder::Back,
@@ -49,7 +49,7 @@ fn setup(mut commands: Commands) {
 
     // Add a list of actions
     commands
-        .actions(actor)
+        .actions(agent)
         .config(AddConfig {
             // This time, add each action to the front of the queue
             order: AddOrder::Front,
@@ -70,40 +70,38 @@ fn setup(mut commands: Commands) {
         .skip();
 
     // Add a custom action that itself adds other actions
-    commands.actions(actor).add(MyCustomAction);
+    commands.actions(agent).add(MyCustomAction);
 
     // Add an anonymous action using a closure
     commands
-        .actions(actor)
+        .actions(agent)
         // Single closure for only the on_start method
-        .add(
-            |entity, _world: &mut World, commands: &mut ActionCommands| {
-                // on_start
-                commands.actions(entity).next();
-            },
-        )
+        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
+            // on_start
+            commands.actions(agent).next();
+        })
         // Tuple closure for both the on_start and on_stop methods
         .add((
-            |entity, _world: &mut World, commands: &mut ActionCommands| {
+            |agent, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
-                commands.actions(entity).next();
+                commands.actions(agent).next();
             },
-            |_entity, _world: &mut World, _reason| {
+            |_agent, _world: &mut World, _reason| {
                 // on_stop
             },
         ));
 
     // Get fancy...
-    commands.actions(actor).add(FancyAction);
+    commands.actions(agent).add(FancyAction);
 
     // Finally, quit the app
-    commands.actions(actor).add(QuitAction);
+    commands.actions(agent).add(QuitAction);
 }
 
 struct MyCustomAction;
 
 impl Action for MyCustomAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
         // This action adds a bunch of other actions to the front.
         // Since this is all that it does, we call next() at the end.
 
@@ -126,7 +124,7 @@ impl Action for MyCustomAction {
             })
             .into_boxed(),
             LerpAction::new(LerpConfig {
-                target: entity,
+                target: agent,
                 lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
                 duration: 1.0,
             })
@@ -140,7 +138,7 @@ impl Action for MyCustomAction {
             .into_boxed(),
             WaitAction::new(0.5).into_boxed(),
             LerpAction::new(LerpConfig {
-                target: entity,
+                target: agent,
                 lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
                 duration: 1.0,
             })
@@ -148,7 +146,7 @@ impl Action for MyCustomAction {
         ];
 
         commands
-            .actions(entity)
+            .actions(agent)
             .config(AddConfig {
                 order: AddOrder::Front,
                 start: false,
@@ -158,31 +156,31 @@ impl Action for MyCustomAction {
             .next();
     }
 
-    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 struct FancyAction;
 
 impl Action for FancyAction {
-    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, _world: &mut World, commands: &mut ActionCommands) {
         // This action runs a system that adds another wait action.
         // When modifying actions using world inside the Action trait,
         // it is important that the modifications happens after the on_start method.
 
         commands
-            .actions(entity)
+            .actions(agent)
             // Mutate the world after on_start has been called.
             .custom(|world| world.run_system(my_system))
             .next();
     }
 
-    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
-fn my_system(actor_q: Query<Entity, With<ActionMarker>>, mut commands: Commands) {
-    let actor = actor_q.single();
+fn my_system(agent_q: Query<Entity, With<ActionMarker>>, mut commands: Commands) {
+    let agent = agent_q.single();
     commands
-        .actions(actor)
+        .actions(agent)
         .config(AddConfig {
             order: AddOrder::Front,
             ..Default::default()

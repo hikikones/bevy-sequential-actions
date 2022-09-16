@@ -49,17 +49,17 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let rotate_bundle = self.bundle.take().unwrap_or(RotateBundle {
             target: Target(Quat::from_vec3(self.config.target.value())),
             speed: Speed(self.config.speed.value()),
         });
 
-        world.entity_mut(entity).insert_bundle(rotate_bundle);
+        world.entity_mut(agent).insert_bundle(rotate_bundle);
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        let bundle = world.entity_mut(entity).remove_bundle::<RotateBundle>();
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        let bundle = world.entity_mut(agent).remove_bundle::<RotateBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;

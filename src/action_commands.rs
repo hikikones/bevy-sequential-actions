@@ -1,5 +1,3 @@
-use bevy_ecs::prelude::*;
-
 use crate::*;
 
 /// Commands for modifying actions inside the [`Action`] trait.
@@ -25,9 +23,9 @@ impl ActionCommands {
 impl<'a> ActionsProxy<'a> for ActionCommands {
     type Modifier = EntityActions<'a>;
 
-    fn actions(&'a mut self, entity: Entity) -> EntityActions<'a> {
+    fn actions(&'a mut self, agent: Entity) -> EntityActions<'a> {
         EntityActions {
-            entity,
+            agent,
             config: AddConfig::default(),
             commands: self,
         }
@@ -36,7 +34,7 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
 
 /// Modify actions using [`ActionCommands`].
 pub struct EntityActions<'a> {
-    entity: Entity,
+    agent: Entity,
     config: AddConfig,
     commands: &'a mut ActionCommands,
 }
@@ -61,49 +59,49 @@ impl ModifyActions for EntityActions<'_> {
 
     fn add(self, action: impl IntoBoxedAction) -> Self {
         self.commands.push(move |world| {
-            world.add_action(self.entity, self.config, action);
+            world.add_action(self.agent, self.config, action);
         });
         self
     }
 
     fn add_many(self, mode: ExecutionMode, actions: impl BoxedActionIter) -> Self {
         self.commands.push(move |world| {
-            world.add_actions(self.entity, self.config, mode, actions);
+            world.add_actions(self.agent, self.config, mode, actions);
         });
         self
     }
 
     fn next(self) -> Self {
         self.commands.push(move |world| {
-            world.next_action(self.entity);
+            world.next_action(self.agent);
         });
         self
     }
 
     fn cancel(self) -> Self {
         self.commands.push(move |world| {
-            world.cancel_action(self.entity);
+            world.cancel_action(self.agent);
         });
         self
     }
 
     fn pause(self) -> Self {
         self.commands.push(move |world| {
-            world.pause_action(self.entity);
+            world.pause_action(self.agent);
         });
         self
     }
 
     fn skip(self) -> Self {
         self.commands.push(move |world| {
-            world.skip_action(self.entity);
+            world.skip_action(self.agent);
         });
         self
     }
 
     fn clear(self) -> Self {
         self.commands.push(move |world| {
-            world.clear_actions(self.entity);
+            world.clear_actions(self.agent);
         });
         self
     }

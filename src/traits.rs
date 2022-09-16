@@ -1,96 +1,23 @@
 use crate::*;
 
 /// The trait that all actions must implement.
-///
-/// All actions must declare when they are finished.
-/// This is done by calling [`finish`](ModifyActions::finish)
-/// from either [`ActionCommands`] or [`Commands`].
-///
-/// # Examples
-///
-/// #### Empty Action
-///
-/// An action that does nothing.
-///
-/// ```rust,no_run
-/// # use bevy::prelude::*;
-/// # use bevy_sequential_actions::*;
-/// #
-/// struct EmptyAction;
-///
-/// impl Action for EmptyAction {
-///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Issue next.
-///         commands.actions(entity).next();
-///     }
-///
-///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
-/// }
-/// ```
-///
-/// #### Wait Action
-///
-/// An action that waits a specified time in seconds.
-///
-/// ```rust,no_run
-/// # use bevy::prelude::*;
-/// # use bevy_sequential_actions::*;
-/// #
-/// pub struct WaitAction {
-///     duration: f32,
-///     current: Option<f32>,
-/// }
-///
-/// impl Action for WaitAction {
-///     fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-///         let duration = self.current.unwrap_or(self.duration);
-///         world.entity_mut(entity).insert(Wait(duration));
-///     }
-///
-///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-///         match reason {
-///             StopReason::Finished | StopReason::Canceled => {
-///                 world.entity_mut(entity).remove::<Wait>();
-///                 self.current = None;
-///             }
-///             StopReason::Paused => {
-///                 let wait = world.entity_mut(entity).remove::<Wait>().unwrap();
-///                 self.current = Some(wait.0);
-///             }
-///         }
-///     }
-/// }
-///
-/// #[derive(Component)]
-/// struct Wait(f32);
-///
-/// fn wait(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
-///     for (mut wait, mut finished) in wait_q.iter_mut() {
-///         wait.0 -= time.delta_seconds();
-///         if wait.0 <= 0.0 {
-///             // Action is finished.
-///             finished.confirm();
-///         }
-///     }
-/// }
-/// ```
 pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
-    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason);
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
 }
 
 impl<Start> Action for Start
 where
     Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-        (self)(entity, world, commands);
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+        (self)(agent, world, commands);
     }
 
-    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 impl<Start, Stop> Action for (Start, Stop)
@@ -98,12 +25,12 @@ where
     Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
     Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
-        (self.0)(entity, world, commands);
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+        (self.0)(agent, world, commands);
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        (self.1)(entity, world, reason);
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        (self.1)(agent, world, reason);
     }
 }
 
@@ -151,23 +78,23 @@ impl<T> BoxedActionIter for T where
 /// struct EmptyAction;
 ///
 /// impl Action for EmptyAction {
-///     fn on_start(&mut self, entity: Entity, world: &mut World, commands: &mut ActionCommands) {
+///     fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
 ///         // Bad
-///         world.actions(entity).next();
+///         world.actions(agent).next();
 ///
 ///         // Good
-///         commands.actions(entity).next();
+///         commands.actions(agent).next();
 ///
 ///         // Also good
-///         commands.actions(entity).custom(move |w: &mut World| {
-///             w.actions(entity).next();
+///         commands.actions(agent).custom(move |w: &mut World| {
+///             w.actions(agent).next();
 ///         });
 ///
 ///         // Also good if you want to mark it as finished
-///         world.get_mut::<ActionFinished>(entity).unwrap().confirm();
+///         world.get_mut::<ActionFinished>(agent).unwrap().confirm();
 ///     }
 ///
-///     fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {}
+///     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {}
 /// }
 ///```
 pub trait ActionsProxy<'a> {
@@ -175,7 +102,7 @@ pub trait ActionsProxy<'a> {
     type Modifier: ModifyActions;
 
     /// Returns [`Self::Modifier`] for specified [`Entity`].
-    fn actions(&'a mut self, entity: Entity) -> Self::Modifier;
+    fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 
 /// Methods for modifying actions.

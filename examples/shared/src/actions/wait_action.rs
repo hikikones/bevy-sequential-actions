@@ -37,7 +37,7 @@ impl<F> Action for WaitAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
 
         self.executor = Some(
@@ -45,13 +45,13 @@ where
                 .spawn()
                 .insert_bundle(WaitBundle {
                     wait: Wait(duration),
-                    actor: ActionActor(entity),
+                    agent: Agent(agent),
                 })
                 .id(),
         );
     }
 
-    fn on_stop(&mut self, _entity: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         if let StopReason::Paused = reason {
@@ -65,14 +65,14 @@ where
 #[derive(Bundle)]
 struct WaitBundle {
     wait: Wait,
-    actor: ActionActor,
+    agent: Agent,
 }
 
 #[derive(Component)]
 struct Wait(f32);
 
 #[derive(Component)]
-struct ActionActor(Entity);
+struct Agent(Entity);
 
 fn wait(mut wait_q: Query<&mut Wait>, time: Res<Time>) {
     for mut wait in wait_q.iter_mut() {
@@ -80,10 +80,10 @@ fn wait(mut wait_q: Query<&mut Wait>, time: Res<Time>) {
     }
 }
 
-fn check_wait(wait_q: Query<(&Wait, &ActionActor)>, mut finished_q: Query<&mut ActionFinished>) {
-    for (wait, actor) in wait_q.iter() {
+fn check_wait(wait_q: Query<(&Wait, &Agent)>, mut finished_q: Query<&mut ActionFinished>) {
+    for (wait, agent) in wait_q.iter() {
         if wait.0 <= 0.0 {
-            finished_q.get_mut(actor.0).unwrap().confirm();
+            finished_q.get_mut(agent.0).unwrap().confirm();
         }
     }
 }

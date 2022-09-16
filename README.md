@@ -6,19 +6,19 @@ https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-
 
 ## Getting Started
 
-An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`.
+An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. An entity with actions is referred to as an `agent`.
 
 ```rust
 fn setup(mut commands: Commands) {
     // Create entity with ActionsBundle
-    let entity = commands.spawn_bundle(ActionsBundle::default()).id();
+    let agent = commands.spawn_bundle(ActionsBundle::default()).id();
     
     // Add a single action with default config
-    commands.actions(entity).add(wait_action);
+    commands.actions(agent).add(wait_action);
     
     // Add multiple actions with custom config
     commands
-        .actions(entity)
+        .actions(agent)
         .config(AddConfig {
             // Add each action to the back of the queue
             order: AddOrder::Back,

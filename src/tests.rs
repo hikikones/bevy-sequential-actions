@@ -1,7 +1,5 @@
 use std::marker::PhantomData;
 
-use bevy::prelude::*;
-
 use crate::*;
 
 const UPDATE_STAGE: &str = "update";
@@ -30,23 +28,23 @@ impl Ecs {
         self.schedule.run(&mut self.world);
     }
 
-    fn spawn_action_entity(&mut self) -> Entity {
+    fn spawn_agent(&mut self) -> Entity {
         self.world
             .spawn()
             .insert_bundle(ActionsBundle::default())
             .id()
     }
 
-    fn actions(&mut self, entity: Entity) -> EntityWorldActions {
-        self.world.actions(entity)
+    fn actions(&mut self, agent: Entity) -> EntityWorldActions {
+        self.world.actions(agent)
     }
 
-    fn get_current_action(&self, entity: Entity) -> &CurrentAction {
-        self.world.get::<CurrentAction>(entity).unwrap()
+    fn get_current_action(&self, agent: Entity) -> &CurrentAction {
+        self.world.get::<CurrentAction>(agent).unwrap()
     }
 
-    fn get_action_queue(&self, entity: Entity) -> &ActionQueue {
-        self.world.get::<ActionQueue>(entity).unwrap()
+    fn get_action_queue(&self, agent: Entity) -> &ActionQueue {
+        self.world.get::<ActionQueue>(agent).unwrap()
     }
 }
 
@@ -77,14 +75,14 @@ struct Canceled;
 struct Paused;
 
 impl Action for CountdownAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         world
-            .entity_mut(entity)
+            .entity_mut(agent)
             .insert(Countdown(self.current.unwrap_or(self.count)));
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        let mut e = world.entity_mut(entity);
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        let mut e = world.entity_mut(agent);
         let count = e.remove::<Countdown>();
 
         match reason {
@@ -117,7 +115,7 @@ fn countdown_system(mut countdown_q: Query<(&mut Countdown, &mut ActionFinished)
 #[test]
 fn add() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
@@ -144,7 +142,7 @@ fn add_panic() {
 #[test]
 fn add_many_sequential() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add_many(
         ExecutionMode::Sequential,
@@ -163,7 +161,7 @@ fn add_many_sequential() {
 #[test]
 fn add_many_parallel() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add_many(
         ExecutionMode::Parallel,
@@ -182,7 +180,7 @@ fn add_many_parallel() {
 #[test]
 fn next() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
@@ -206,7 +204,7 @@ fn next_panic() {
 #[test]
 fn finish() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
@@ -222,7 +220,7 @@ fn finish() {
 #[test]
 fn cancel() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
@@ -238,7 +236,7 @@ fn cancel() {
 #[test]
 fn pause() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
@@ -262,7 +260,7 @@ fn pause_panic() {
 #[test]
 fn skip() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .config(AddConfig {
@@ -314,7 +312,7 @@ fn skip() {
 #[test]
 fn clear() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
@@ -338,7 +336,7 @@ fn clear_panic() {
 #[test]
 fn repeat_amount() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .config(AddConfig {
@@ -375,7 +373,7 @@ fn repeat_amount() {
 #[test]
 fn repeat_forever() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .config(AddConfig {
@@ -403,14 +401,14 @@ fn repeat_forever() {
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
-        fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.despawn(entity);
+        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            world.despawn(agent);
         }
-        fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
+        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
     }
 
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
@@ -427,11 +425,11 @@ fn order() {
     #[derive(Default)]
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
-        fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.entity_mut(entity).insert(T::default());
+        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            world.entity_mut(agent).insert(T::default());
         }
-        fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(entity).remove::<T>();
+        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
+            world.entity_mut(agent).remove::<T>();
         }
     }
 
@@ -443,7 +441,7 @@ fn order() {
     struct C;
 
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     // A, B, C
     ecs.actions(e).add_many(
@@ -528,7 +526,7 @@ fn order() {
 #[test]
 fn pause_resume() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     fn countdown_value(w: &mut World) -> u32 {
         w.query::<&Countdown>().single(w).0

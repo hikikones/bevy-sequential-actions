@@ -4,14 +4,14 @@ use bevy_sequential_actions::ActionsBundle;
 use super::assets::*;
 
 #[derive(Component)]
-pub struct Actor;
+pub struct Agent;
 
-pub trait SpawnActorExt {
-    fn spawn_actor(&mut self, translation: Vec3, rotation: Quat) -> Entity;
+pub trait SpawnAgentExt {
+    fn spawn_agent(&mut self, translation: Vec3, rotation: Quat) -> Entity;
 }
 
-impl SpawnActorExt for Commands<'_, '_> {
-    fn spawn_actor(&mut self, translation: Vec3, rotation: Quat) -> Entity {
+impl SpawnAgentExt for Commands<'_, '_> {
+    fn spawn_agent(&mut self, translation: Vec3, rotation: Quat) -> Entity {
         self.spawn()
             .insert_bundle(SpatialBundle::from_transform(Transform {
                 translation,
@@ -19,22 +19,22 @@ impl SpawnActorExt for Commands<'_, '_> {
                 ..Default::default()
             }))
             .insert_bundle(ActionsBundle::default())
-            .insert(Actor)
+            .insert(Agent)
             .id()
     }
 }
 
-pub(super) fn load_actor(
-    actor_added_q: Query<Entity, Added<Actor>>,
+pub(super) fn load_agent(
+    agent_added_q: Query<Entity, Added<Agent>>,
     assets: Res<MyAssets>,
     mut commands: Commands,
 ) {
-    for actor in actor_added_q.iter() {
-        commands.entity(actor).with_children(|child| {
+    for agent in agent_added_q.iter() {
+        commands.entity(agent).with_children(|child| {
             // Capsule
             child.spawn_bundle(PbrBundle {
-                mesh: assets.get_mesh(MeshName::Capsule),
-                material: assets.get_material(MaterialName::White),
+                mesh: assets.mesh(MeshName::Capsule),
+                material: assets.material(MaterialName::White),
                 transform: Transform {
                     translation: Vec3::Y,
                     ..Default::default()
@@ -48,8 +48,8 @@ pub(super) fn load_actor(
             let eye_scale = Vec3::splat(0.15);
 
             child.spawn_bundle(PbrBundle {
-                mesh: assets.get_mesh(MeshName::Icosphere),
-                material: assets.get_material(MaterialName::Black),
+                mesh: assets.mesh(MeshName::Icosphere),
+                material: assets.material(MaterialName::Black),
                 transform: Transform {
                     translation: eye_left,
                     scale: eye_scale,
@@ -58,8 +58,8 @@ pub(super) fn load_actor(
                 ..Default::default()
             });
             child.spawn_bundle(PbrBundle {
-                mesh: assets.get_mesh(MeshName::Icosphere),
-                material: assets.get_material(MaterialName::Black),
+                mesh: assets.mesh(MeshName::Icosphere),
+                material: assets.material(MaterialName::Black),
                 transform: Transform {
                     translation: eye_right,
                     scale: eye_scale,

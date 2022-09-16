@@ -7,11 +7,11 @@ pub(super) struct MyAssets {
 }
 
 impl MyAssets {
-    pub fn get_mesh(&self, name: MeshName) -> Handle<Mesh> {
+    pub fn mesh(&self, name: MeshName) -> Handle<Mesh> {
         self.meshes[&name].clone_weak()
     }
 
-    pub fn get_material(&self, name: MaterialName) -> Handle<StandardMaterial> {
+    pub fn material(&self, name: MaterialName) -> Handle<StandardMaterial> {
         self.materials[&name].clone_weak()
     }
 }

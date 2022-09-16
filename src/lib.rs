@@ -11,6 +11,7 @@
 //!
 //! An action is anything that implements the [`Action`] trait,
 //! and can be added to any [`Entity`] that contains the [`ActionsBundle`].
+//! An entity with actions is referred to as an `agent`.
 //!
 //! ```rust,no_run
 //! # use bevy::prelude::*;
@@ -23,14 +24,14 @@
 //! #   let quit_action = QuitAction;
 //! #
 //!     // Create entity with ActionsBundle
-//!     let entity = commands.spawn_bundle(ActionsBundle::default()).id();
+//!     let agent = commands.spawn_bundle(ActionsBundle::default()).id();
 //!     
 //!     // Add a single action with default config
-//!     commands.actions(entity).add(wait_action);
+//!     commands.actions(agent).add(wait_action);
 //!     
 //!     // Add multiple actions with custom config
 //!     commands
-//!         .actions(entity)
+//!         .actions(agent)
 //!         .config(AddConfig {
 //!             // Add each action to the back of the queue
 //!             order: AddOrder::Back,
