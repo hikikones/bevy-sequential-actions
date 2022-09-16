@@ -21,10 +21,10 @@ impl ActionCommands {
 }
 
 impl<'a> ActionsProxy<'a> for ActionCommands {
-    type Modifier = EntityActions<'a>;
+    type Modifier = AgentActions<'a>;
 
-    fn actions(&'a mut self, agent: Entity) -> EntityActions<'a> {
-        EntityActions {
+    fn actions(&'a mut self, agent: Entity) -> AgentActions<'a> {
+        AgentActions {
             agent,
             config: AddConfig::default(),
             commands: self,
@@ -33,13 +33,13 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
 }
 
 /// Modify actions using [`ActionCommands`].
-pub struct EntityActions<'a> {
+pub struct AgentActions<'a> {
     agent: Entity,
     config: AddConfig,
     commands: &'a mut ActionCommands,
 }
 
-impl EntityActions<'_> {
+impl AgentActions<'_> {
     /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
     /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
     pub fn custom<F>(self, f: F) -> Self
@@ -51,7 +51,7 @@ impl EntityActions<'_> {
     }
 }
 
-impl ModifyActions for EntityActions<'_> {
+impl ModifyActions for AgentActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

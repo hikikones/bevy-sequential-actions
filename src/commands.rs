@@ -1,10 +1,10 @@
 use crate::*;
 
 impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
-    type Modifier = EntityCommandsActions<'c, 'w, 's>;
+    type Modifier = AgentCommandsActions<'c, 'w, 's>;
 
-    fn actions(&'c mut self, agent: Entity) -> EntityCommandsActions<'c, 'w, 's> {
-        EntityCommandsActions {
+    fn actions(&'c mut self, agent: Entity) -> AgentCommandsActions<'c, 'w, 's> {
+        AgentCommandsActions {
             agent,
             config: AddConfig::default(),
             commands: self,
@@ -13,13 +13,13 @@ impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
 }
 
 /// Modify actions using [`Commands`].
-pub struct EntityCommandsActions<'c, 'w, 's> {
+pub struct AgentCommandsActions<'c, 'w, 's> {
     agent: Entity,
     config: AddConfig,
     commands: &'c mut Commands<'w, 's>,
 }
 
-impl ModifyActions for EntityCommandsActions<'_, '_, '_> {
+impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

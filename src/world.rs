@@ -1,10 +1,10 @@
 use crate::*;
 
 impl<'a> ActionsProxy<'a> for World {
-    type Modifier = EntityWorldActions<'a>;
+    type Modifier = AgentWorldActions<'a>;
 
-    fn actions(&'a mut self, agent: Entity) -> EntityWorldActions<'a> {
-        EntityWorldActions {
+    fn actions(&'a mut self, agent: Entity) -> AgentWorldActions<'a> {
+        AgentWorldActions {
             agent,
             config: AddConfig::default(),
             world: self,
@@ -13,13 +13,13 @@ impl<'a> ActionsProxy<'a> for World {
 }
 
 /// Modify actions using [`World`].
-pub struct EntityWorldActions<'w> {
+pub struct AgentWorldActions<'w> {
     agent: Entity,
     config: AddConfig,
     world: &'w mut World,
 }
 
-impl ModifyActions for EntityWorldActions<'_> {
+impl ModifyActions for AgentWorldActions<'_> {
     fn config(mut self, config: AddConfig) -> Self {
         self.config = config;
         self

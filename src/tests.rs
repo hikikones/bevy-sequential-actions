@@ -35,7 +35,7 @@ impl Ecs {
             .id()
     }
 
-    fn actions(&mut self, agent: Entity) -> EntityWorldActions {
+    fn actions(&mut self, agent: Entity) -> AgentWorldActions {
         self.world.actions(agent)
     }
 
