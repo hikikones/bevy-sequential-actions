@@ -16,12 +16,12 @@ impl FromLookExt for Quat {
     }
 }
 
-pub trait FromVec3Ext {
-    fn from_vec3(v: Vec3) -> Self;
+pub trait FromEulerXYZExt {
+    fn from_euler_xyz(v: Vec3) -> Self;
 }
 
-impl FromVec3Ext for Quat {
-    fn from_vec3(v: Vec3) -> Self {
+impl FromEulerXYZExt for Quat {
+    fn from_euler_xyz(v: Vec3) -> Self {
         Self::from_euler(EulerRot::XYZ, v.x, v.y, v.z)
     }
 }

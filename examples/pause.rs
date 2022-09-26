@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::FromVec3Ext};
+use shared::{actions::*, bootstrap::*, extensions::FromEulerXYZExt};
 
 fn main() {
     App::new()
@@ -19,7 +19,7 @@ fn setup(mut commands: Commands) {
     let position = Random::new(Vec3::new(-7.0, 0.0, -4.0), Vec3::new(7.0, 0.0, 4.0));
 
     for _ in 0..10 {
-        let agent = commands.spawn_agent(position.value(), Quat::from_vec3(rotation.value()));
+        let agent = commands.spawn_agent(position.value(), Quat::from_euler_xyz(rotation.value()));
 
         commands
             .actions(agent)
@@ -30,7 +30,7 @@ fn setup(mut commands: Commands) {
             })
             .add(WaitAction::new(seconds))
             .add(RotateAction::new(RotateConfig {
-                target: rotation,
+                target: RotateType::Euler(rotation),
                 speed: Random::new(2.0, 4.0),
             }))
             .add(WaitAction::new(seconds))

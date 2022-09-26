@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{FromVec3Ext, RotateTowardsTransformExt};
+use crate::extensions::{FromEulerXYZExt, FromLookExt, RotateTowardsTransformExt};
 
 use super::IntoValue;
 
@@ -22,15 +22,6 @@ where
     bundle: Option<RotateBundle>,
 }
 
-pub struct RotateConfig<V, F>
-where
-    V: IntoValue<Vec3>,
-    F: IntoValue<f32>,
-{
-    pub target: V,
-    pub speed: F,
-}
-
 impl<V, F> RotateAction<V, F>
 where
     V: IntoValue<Vec3>,
@@ -44,15 +35,38 @@ where
     }
 }
 
+pub struct RotateConfig<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    pub target: RotateType<V>,
+    pub speed: F,
+}
+
+pub enum RotateType<V>
+where
+    V: IntoValue<Vec3>,
+{
+    Look(V),
+    Euler(V),
+}
+
 impl<V, F> Action for RotateAction<V, F>
 where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
     fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let rotate_bundle = self.bundle.take().unwrap_or(RotateBundle {
-            target: Target(Quat::from_vec3(self.config.target.value())),
-            speed: Speed(self.config.speed.value()),
+        let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
+            let target = match &self.config.target {
+                RotateType::Look(dir) => Quat::from_look(dir.value(), Vec3::Y),
+                RotateType::Euler(angles) => Quat::from_euler_xyz(angles.value()),
+            };
+            RotateBundle {
+                target: Target(target),
+                speed: Speed(self.config.speed.value()),
+            }
         });
 
         world.entity_mut(agent).insert_bundle(rotate_bundle);
