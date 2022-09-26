@@ -212,7 +212,7 @@ impl WorldActionsExt for World {
 
     fn start_next_action(&mut self, agent: Entity) {
         if let Some((mut action, state)) = self.pop_next_action(agent) {
-            let mut commands = ActionCommands::default();
+            let mut commands = ActionCommands::new();
 
             match &mut action {
                 ActionType::Single(action) => {
