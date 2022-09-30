@@ -162,9 +162,11 @@ struct ActionQueue(VecDeque<ActionTuple>);
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
 
+type ActionPair = (BoxedAction, Option<Entity>);
+
 enum ActionType {
-    Single(BoxedAction),
-    Multiple(Box<[BoxedAction]>),
+    Single(ActionPair),
+    Multiple(Box<[ActionPair]>),
 }
 
 struct ActionState {
