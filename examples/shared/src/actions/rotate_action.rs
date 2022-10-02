@@ -9,7 +9,8 @@ pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(rotation);
+        app.add_system(rotation)
+            .add_system(check_rotation.after(rotation));
     }
 }
 
@@ -58,6 +59,8 @@ where
     F: IntoValue<f32>,
 {
     fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+        state.world.entity_mut(state.executant).insert(RotateMarker);
+
         let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
             let target = match &self.config.target {
                 RotateType::Look(dir) => Quat::from_look(dir.value(), Vec3::Y),
@@ -99,15 +102,24 @@ struct Target(Quat);
 #[derive(Component)]
 struct Speed(f32);
 
-fn rotation(
-    mut rotate_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
-    time: Res<Time>,
-) {
-    for (mut transform, target, speed, mut finished) in rotate_q.iter_mut() {
-        transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
+#[derive(Component)]
+struct RotateMarker;
 
-        if transform.rotation == target.0 {
-            finished.confirm();
+fn rotation(mut rotate_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+    for (mut transform, target, speed) in rotate_q.iter_mut() {
+        transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
+    }
+}
+
+fn check_rotation(
+    mut check_q: Query<(&ActionAgent, &mut ActionFinished), With<RotateMarker>>,
+    transform_q: Query<(&Transform, &Target)>,
+) {
+    for (agent, mut finished) in check_q.iter_mut() {
+        if let Ok((transform, target)) = transform_q.get(agent.entity()) {
+            if transform.rotation == target.0 {
+                finished.set(true);
+            }
         }
     }
 }

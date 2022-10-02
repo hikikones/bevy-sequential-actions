@@ -16,7 +16,6 @@ where
     F: IntoValue<f32>,
 {
     config: LerpConfig<F>,
-    executor: Option<Entity>,
     bundle: Option<LerpBundle>,
 }
 
@@ -36,7 +35,6 @@ where
     pub fn new(config: LerpConfig<F>) -> Self {
         Self {
             config,
-            executor: None,
             bundle: None,
         }
     }
@@ -81,24 +79,22 @@ where
                 lerp: lerp_type,
                 target: LerpTarget(self.config.target),
                 timer: LerpTimer(Timer::from_seconds(self.config.duration.value(), false)),
-                agent: Agent(state.agent),
             }
         });
 
-        self.executor = Some(state.world.spawn().insert_bundle(lerp_bundle).id());
+        state
+            .world
+            .entity_mut(state.executant)
+            .insert_bundle(lerp_bundle);
     }
 
     fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        let executor = self.executor.unwrap();
-
         if let StopReason::Paused = reason {
             self.bundle = state
                 .world
-                .entity_mut(executor)
+                .entity_mut(state.executant)
                 .remove_bundle::<LerpBundle>();
         }
-
-        state.world.despawn(executor);
     }
 }
 
@@ -107,7 +103,6 @@ struct LerpBundle {
     lerp: Lerp,
     target: LerpTarget,
     timer: LerpTimer,
-    agent: Agent,
 }
 
 #[derive(Component)]
@@ -123,16 +118,12 @@ struct LerpTarget(Entity);
 #[derive(Component)]
 struct LerpTimer(Timer);
 
-#[derive(Component)]
-struct Agent(Entity);
-
 fn lerp(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &Agent)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionFinished)>,
     mut transform_q: Query<&mut Transform>,
-    mut finished_q: Query<&mut ActionFinished>,
     time: Res<Time>,
 ) {
-    for (mut timer, target, lerp, agent) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp, mut finished) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -153,10 +144,10 @@ fn lerp(
             }
 
             if timer.0.finished() {
-                finished_q.get_mut(agent.0).unwrap().confirm();
+                finished.set(true);
             }
         } else {
-            finished_q.get_mut(agent.0).unwrap().confirm();
+            finished.set(true);
         }
     }
 }

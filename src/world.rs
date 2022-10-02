@@ -206,10 +206,10 @@ impl WorldActionsExt for World {
                 }
             }
 
-            let mut finished = self.get_mut::<ActionFinished>(agent).unwrap();
-            if finished.count != 0 {
-                finished.count = 0;
-            }
+            // let mut finished = self.get_mut::<ActionFinished>(agent).unwrap();
+            // if finished.count != 0 {
+            //     finished.count = 0;
+            // }
         }
     }
 
@@ -235,7 +235,7 @@ impl WorldActionsExt for World {
                 ActionType::Single((action, e)) => {
                     let a = *e.insert(
                         self.spawn()
-                            .insert_bundle((IsFinished(false), ActionAgent(agent)))
+                            .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                             .id(),
                     );
                     let mut state = WorldState {
@@ -249,7 +249,7 @@ impl WorldActionsExt for World {
                     for (action, e) in actions.iter_mut() {
                         let a = *e.insert(
                             self.spawn()
-                                .insert_bundle((IsFinished(false), ActionAgent(agent)))
+                                .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                                 .id(),
                         );
                         let mut state = WorldState {

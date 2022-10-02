@@ -7,7 +7,7 @@ pub struct WaitActionPlugin;
 
 impl Plugin for WaitActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(wait).add_system(check_wait.after(wait));
+        app.add_system(wait);
     }
 }
 
@@ -16,7 +16,6 @@ where
     F: IntoValue<f32>,
 {
     duration: F,
-    executor: Option<Entity>,
     current: Option<f32>,
 }
 
@@ -27,7 +26,6 @@ where
     pub fn new(seconds: F) -> Self {
         Self {
             duration: seconds,
-            executor: None,
             current: None,
         }
     }
@@ -39,52 +37,28 @@ where
 {
     fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
-
-        self.executor = Some(
-            state
-                .world
-                .spawn()
-                .insert_bundle(WaitBundle {
-                    wait: Wait(duration),
-                    agent: Agent(state.agent),
-                })
-                .id(),
-        );
+        state
+            .world
+            .entity_mut(state.executant)
+            .insert(Wait(duration));
     }
 
     fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        let executor = self.executor.unwrap();
-
         if let StopReason::Paused = reason {
-            self.current = Some(state.world.get::<Wait>(executor).unwrap().0);
+            self.current = Some(state.world.get::<Wait>(state.executant).unwrap().0);
         }
-
-        state.world.despawn(executor);
     }
-}
-
-#[derive(Bundle)]
-struct WaitBundle {
-    wait: Wait,
-    agent: Agent,
 }
 
 #[derive(Component)]
 struct Wait(f32);
 
-#[derive(Component)]
-struct Agent(Entity);
-
-fn wait(mut wait_q: Query<&mut Wait>, time: Res<Time>) {
-    for mut wait in wait_q.iter_mut() {
+fn wait(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
+    for (mut wait, mut finished) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
-    }
-}
 
-fn check_wait(wait_q: Query<(&Wait, &Agent)>, mut finished_q: Query<&mut ActionFinished>) {
-    for (wait, agent) in wait_q.iter() {
         if wait.0 <= 0.0 {
-            finished_q.get_mut(agent.0).unwrap().confirm();
+            finished.set(true);
         }
     }
 }

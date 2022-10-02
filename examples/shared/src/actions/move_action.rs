@@ -9,7 +9,9 @@ pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(movement).add_system(rotation);
+        app.add_system(movement)
+            .add_system(check_movement.after(movement))
+            .add_system(rotation);
     }
 }
 
@@ -51,6 +53,8 @@ where
     F: IntoValue<f32>,
 {
     fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+        state.world.entity_mut(state.executant).insert(MoveMarker);
+
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),
             speed: Speed(self.config.speed.value()),
@@ -95,26 +99,35 @@ struct Target(Vec3);
 struct Speed(f32);
 
 #[derive(Component)]
+struct MoveMarker;
+
+#[derive(Component)]
 struct RotateMarker;
 
-fn movement(
-    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
-    time: Res<Time>,
-) {
-    for (mut transform, target, speed, mut finished) in move_q.iter_mut() {
+fn movement(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+    for (mut transform, target, speed) in move_q.iter_mut() {
         transform.move_towards(target.0, speed.0 * time.delta_seconds());
+    }
+}
 
-        if transform.translation == target.0 {
-            finished.confirm();
+fn check_movement(
+    mut check_q: Query<(&ActionAgent, &mut ActionFinished), With<MoveMarker>>,
+    transform_q: Query<(&Transform, &Target)>,
+) {
+    for (agent, mut finished) in check_q.iter_mut() {
+        if let Ok((transform, target)) = transform_q.get(agent.entity()) {
+            if transform.translation == target.0 {
+                finished.set(true);
+            }
         }
     }
 }
 
 fn rotation(
-    mut move_q: Query<(&mut Transform, &Target, &Speed), With<RotateMarker>>,
+    mut rotate_q: Query<(&mut Transform, &Target, &Speed), With<RotateMarker>>,
     time: Res<Time>,
 ) {
-    for (mut transform, target, speed) in move_q.iter_mut() {
+    for (mut transform, target, speed) in rotate_q.iter_mut() {
         let dir = target.0 - transform.translation;
 
         if dir == Vec3::ZERO {

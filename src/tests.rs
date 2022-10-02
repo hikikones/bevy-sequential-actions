@@ -124,7 +124,7 @@ fn countdown(mut countdown_q: Query<&mut Countdown>) {
     }
 }
 
-fn check_countdown(mut countdown_q: Query<(&Countdown, &mut IsFinished)>) {
+fn check_countdown(mut countdown_q: Query<(&Countdown, &mut ActionFinished)>) {
     for (countdown, mut finished) in countdown_q.iter_mut() {
         if countdown.0 == 0 {
             finished.0 = true;
