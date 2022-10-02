@@ -74,6 +74,7 @@ pub struct ActionsBundle {
     marker: ActionMarker,
     queue: ActionQueue,
     current: CurrentAction,
+    count: FinishedCount,
 }
 
 /// Component for tracking how many [`actions`](Action) have finished.
@@ -88,6 +89,15 @@ impl ActionFinished {
         self.count += 1;
     }
 }
+
+#[derive(Component)]
+pub struct IsFinished(bool);
+
+#[derive(Component)]
+pub struct ActionAgent(Entity);
+
+#[derive(Default, Component)]
+struct FinishedCount(u32);
 
 /// Marker component for entities with [`ActionsBundle`].
 #[derive(Default, Component)]

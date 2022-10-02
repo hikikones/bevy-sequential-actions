@@ -233,7 +233,11 @@ impl WorldActionsExt for World {
 
             match &mut action {
                 ActionType::Single((action, e)) => {
-                    let a = *e.insert(self.spawn().id());
+                    let a = *e.insert(
+                        self.spawn()
+                            .insert_bundle((IsFinished(false), ActionAgent(agent)))
+                            .id(),
+                    );
                     let mut state = WorldState {
                         agent,
                         executant: a,
@@ -243,7 +247,11 @@ impl WorldActionsExt for World {
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
-                        let a = *e.insert(self.spawn().id());
+                        let a = *e.insert(
+                            self.spawn()
+                                .insert_bundle((IsFinished(false), ActionAgent(agent)))
+                                .id(),
+                        );
                         let mut state = WorldState {
                             agent,
                             executant: a,
@@ -254,8 +262,19 @@ impl WorldActionsExt for World {
                 }
             }
 
-            if let Some(mut current) = self.get_mut::<CurrentAction>(agent) {
-                **current = Some((action, state));
+            if let Some(mut agent) = self.get_entity_mut(agent) {
+                agent.get_mut::<CurrentAction>().unwrap().0 = Some((action, state));
+            } else {
+                match action {
+                    ActionType::Single((_, e)) => {
+                        self.despawn(e.unwrap());
+                    }
+                    ActionType::Multiple(actions) => {
+                        for (_, e) in actions.iter() {
+                            self.despawn(e.unwrap());
+                        }
+                    }
+                }
             }
 
             commands.apply(self);
