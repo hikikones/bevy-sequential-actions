@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::*;
 
-const UPDATE_STAGE: &str = "update";
+const UPDATE_STAGE: &str = "update_test";
 
 struct Ecs {
     world: World,
@@ -14,11 +14,24 @@ impl Ecs {
         let world = World::new();
         let mut schedule = Schedule::default();
 
-        schedule.add_stage(UPDATE_STAGE, SystemStage::single(countdown_system));
+        schedule.add_stage(UPDATE_STAGE, SystemStage::single_threaded());
+        schedule.add_system_set_to_stage(
+            UPDATE_STAGE,
+            SystemSet::new()
+                .with_system(countdown)
+                .with_system(check_countdown.after(countdown)),
+        );
+
         schedule.add_stage_after(
             UPDATE_STAGE,
             CHECK_ACTIONS_STAGE,
-            SystemStage::single(check_actions),
+            SystemStage::single_threaded(),
+        );
+        schedule.add_system_set_to_stage(
+            CHECK_ACTIONS_STAGE,
+            SystemSet::new()
+                .with_system(count_finished_actions)
+                .with_system(check_finished_actions.after(count_finished_actions)),
         );
 
         Self { world, schedule }
@@ -39,11 +52,11 @@ impl Ecs {
         self.world.actions(agent)
     }
 
-    fn get_current_action(&self, agent: Entity) -> &CurrentAction {
+    fn current_action(&self, agent: Entity) -> &CurrentAction {
         self.world.get::<CurrentAction>(agent).unwrap()
     }
 
-    fn get_action_queue(&self, agent: Entity) -> &ActionQueue {
+    fn action_queue(&self, agent: Entity) -> &ActionQueue {
         self.world.get::<ActionQueue>(agent).unwrap()
     }
 }
@@ -66,6 +79,9 @@ impl CountdownAction {
 struct Countdown(u32);
 
 #[derive(Component)]
+struct CountdownMarker;
+
+#[derive(Component)]
 struct Finished;
 
 #[derive(Component)]
@@ -76,39 +92,42 @@ struct Paused;
 
 impl Action for CountdownAction {
     fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+        state.world.entity_mut(state.agent).insert(CountdownMarker);
         state
             .world
-            .entity_mut(state.agent)
-            .insert(Countdown(self.current.unwrap_or(self.count)));
+            .entity_mut(state.executant)
+            .insert(Countdown(self.current.take().unwrap_or(self.count)));
     }
 
     fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        let mut e = state.world.entity_mut(state.agent);
-        let count = e.remove::<Countdown>();
+        let mut agent = state.world.entity_mut(state.agent);
+        agent.remove::<CountdownMarker>();
 
         match reason {
             StopReason::Finished => {
-                self.current = None;
-                e.insert(Finished);
+                agent.insert(Finished);
             }
             StopReason::Canceled => {
-                self.current = None;
-                e.insert(Canceled);
+                agent.insert(Canceled);
             }
             StopReason::Paused => {
-                self.current = Some(count.unwrap().0);
-                e.insert(Paused);
+                agent.insert(Paused);
+                self.current = Some(state.world.get::<Countdown>(state.executant).unwrap().0);
             }
         }
     }
 }
 
-fn countdown_system(mut countdown_q: Query<(&mut Countdown, &mut ActionFinished)>) {
-    for (mut countdown, mut finished) in countdown_q.iter_mut() {
+fn countdown(mut countdown_q: Query<&mut Countdown>) {
+    for mut countdown in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
+    }
+}
 
+fn check_countdown(mut countdown_q: Query<(&Countdown, &mut IsFinished)>) {
+    for (countdown, mut finished) in countdown_q.iter_mut() {
         if countdown.0 == 0 {
-            finished.confirm();
+            finished.0 = true;
         }
     }
 }
@@ -120,16 +139,16 @@ fn add() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 }
 
 #[test]
@@ -155,8 +174,8 @@ fn add_many_sequential() {
         .into_iter(),
     );
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 2);
 }
 
 #[test]
@@ -174,8 +193,8 @@ fn add_many_parallel() {
         .into_iter(),
     );
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 }
 
 #[test]
@@ -185,12 +204,12 @@ fn next() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).next();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -209,12 +228,12 @@ fn finish() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(!ecs.world.entity(e).contains::<Finished>());
 
     ecs.run();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(ecs.world.entity(e).contains::<Finished>());
 }
 
@@ -225,12 +244,12 @@ fn cancel() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).cancel();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -241,12 +260,12 @@ fn pause() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(!ecs.world.entity(e).contains::<Paused>());
 
     ecs.actions(e).pause();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
     assert!(ecs.world.entity(e).contains::<Paused>());
 }
 
@@ -283,31 +302,31 @@ fn skip() {
         })
         .add(CountdownAction::new(0));
 
-    assert!(ecs.get_action_queue(e).len() == 3);
+    assert!(ecs.action_queue(e).len() == 3);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
 }
 
 #[test]
@@ -321,8 +340,8 @@ fn clear() {
         .add(CountdownAction::new(0))
         .clear();
 
-    assert!(ecs.get_current_action(e).is_none());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -353,22 +372,22 @@ fn repeat_amount() {
         })
         .add(CountdownAction::new(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.current_action(e).is_none());
 }
 
 #[test]
@@ -384,18 +403,18 @@ fn repeat_forever() {
         })
         .add(CountdownAction::new(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 }
 
 #[test]
