@@ -37,28 +37,29 @@ impl<F> Action for WaitAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
 
         self.executor = Some(
-            world
+            state
+                .world
                 .spawn()
                 .insert_bundle(WaitBundle {
                     wait: Wait(duration),
-                    agent: Agent(agent),
+                    agent: Agent(state.agent),
                 })
                 .id(),
         );
     }
 
-    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         if let StopReason::Paused = reason {
-            self.current = Some(world.get::<Wait>(executor).unwrap().0);
+            self.current = Some(state.world.get::<Wait>(executor).unwrap().0);
         }
 
-        world.despawn(executor);
+        state.world.despawn(executor);
     }
 }
 

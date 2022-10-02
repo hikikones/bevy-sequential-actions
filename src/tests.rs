@@ -75,14 +75,15 @@ struct Canceled;
 struct Paused;
 
 impl Action for CountdownAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world
-            .entity_mut(agent)
+    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+        state
+            .world
+            .entity_mut(state.agent)
             .insert(Countdown(self.current.unwrap_or(self.count)));
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let mut e = world.entity_mut(agent);
+    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
+        let mut e = state.world.entity_mut(state.agent);
         let count = e.remove::<Countdown>();
 
         match reason {
@@ -401,10 +402,10 @@ fn repeat_forever() {
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
-        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.despawn(agent);
+        fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+            state.world.despawn(state.agent);
         }
-        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+        fn on_stop(&mut self, _state: &mut WorldState, _reason: StopReason) {}
     }
 
     let mut ecs = Ecs::new();
@@ -425,11 +426,11 @@ fn order() {
     #[derive(Default)]
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
-        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.entity_mut(agent).insert(T::default());
+        fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+            state.world.entity_mut(state.agent).insert(T::default());
         }
-        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(agent).remove::<T>();
+        fn on_stop(&mut self, state: &mut WorldState, _reason: StopReason) {
+            state.world.entity_mut(state.agent).remove::<T>();
         }
     }
 

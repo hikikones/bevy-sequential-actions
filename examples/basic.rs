@@ -76,17 +76,17 @@ fn setup(mut commands: Commands) {
     commands
         .actions(agent)
         // Single closure for only the on_start method
-        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
+        .add(|state: &mut WorldState, commands: &mut ActionCommands| {
             // on_start
-            commands.actions(agent).next();
+            commands.actions(state.agent).next();
         })
         // Tuple closure for both the on_start and on_stop methods
         .add((
-            |agent, _world: &mut World, commands: &mut ActionCommands| {
+            |state: &mut WorldState, commands: &mut ActionCommands| {
                 // on_start
-                commands.actions(agent).next();
+                commands.actions(state.agent).next();
             },
-            |_agent, _world: &mut World, _reason| {
+            |_state: &mut WorldState, _reason| {
                 // on_stop
             },
         ));
@@ -101,13 +101,14 @@ fn setup(mut commands: Commands) {
 struct MyCustomAction;
 
 impl Action for MyCustomAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands) {
         // This action adds a bunch of other actions to the front.
         // Since this is all that it does, we call next() at the end.
 
-        let camera = world
+        let camera = state
+            .world
             .query_filtered::<Entity, With<CameraMain>>()
-            .single(world);
+            .single(state.world);
 
         let actions = [
             MoveAction::new(MoveConfig {
@@ -124,7 +125,7 @@ impl Action for MyCustomAction {
             })
             .into_boxed(),
             LerpAction::new(LerpConfig {
-                target: agent,
+                target: state.agent,
                 lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
                 duration: 1.0,
             })
@@ -138,7 +139,7 @@ impl Action for MyCustomAction {
             .into_boxed(),
             WaitAction::new(0.5).into_boxed(),
             LerpAction::new(LerpConfig {
-                target: agent,
+                target: state.agent,
                 lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
                 duration: 1.0,
             })
@@ -146,7 +147,7 @@ impl Action for MyCustomAction {
         ];
 
         commands
-            .actions(agent)
+            .actions(state.agent)
             .config(AddConfig {
                 order: AddOrder::Front,
                 start: false,
@@ -156,25 +157,26 @@ impl Action for MyCustomAction {
             .next();
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _state: &mut WorldState, _reason: StopReason) {}
 }
 
 struct FancyAction;
 
 impl Action for FancyAction {
-    fn on_start(&mut self, agent: Entity, _world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands) {
         // This action runs a system that adds another wait action.
         // When modifying actions using world inside the Action trait,
         // it is important that the modifications happens after the on_start method.
         // Use the custom method for deferred world mutation.
 
+        let agent = state.agent;
         commands.custom(move |world| {
             world.run_system(my_system);
             world.actions(agent).next();
         });
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _state: &mut WorldState, _reason: StopReason) {}
 }
 
 fn my_system(agent_q: Query<Entity, With<ActionMarker>>, mut commands: Commands) {

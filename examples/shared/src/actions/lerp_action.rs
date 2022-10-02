@@ -52,22 +52,27 @@ impl<F> Action for LerpAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
         let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
             let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {
-                    let start = world
+                    let start = state
+                        .world
                         .get::<Transform>(self.config.target)
                         .unwrap()
                         .translation;
                     Lerp::Position(start, target)
                 }
                 LerpType::Rotation(target) => {
-                    let start = world.get::<Transform>(self.config.target).unwrap().rotation;
+                    let start = state
+                        .world
+                        .get::<Transform>(self.config.target)
+                        .unwrap()
+                        .rotation;
                     Lerp::Rotation(start, target)
                 }
                 LerpType::Transform(target) => {
-                    let start = world.get::<Transform>(self.config.target).unwrap();
+                    let start = state.world.get::<Transform>(self.config.target).unwrap();
                     Lerp::Transform(start.clone(), target)
                 }
             };
@@ -76,21 +81,24 @@ where
                 lerp: lerp_type,
                 target: LerpTarget(self.config.target),
                 timer: LerpTimer(Timer::from_seconds(self.config.duration.value(), false)),
-                agent: Agent(agent),
+                agent: Agent(state.agent),
             }
         });
 
-        self.executor = Some(world.spawn().insert_bundle(lerp_bundle).id());
+        self.executor = Some(state.world.spawn().insert_bundle(lerp_bundle).id());
     }
 
-    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         if let StopReason::Paused = reason {
-            self.bundle = world.entity_mut(executor).remove_bundle::<LerpBundle>();
+            self.bundle = state
+                .world
+                .entity_mut(executor)
+                .remove_bundle::<LerpBundle>();
         }
 
-        world.despawn(executor);
+        state.world.despawn(executor);
     }
 }
 

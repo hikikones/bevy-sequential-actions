@@ -151,18 +151,23 @@ pub enum ExecutionMode {
     Parallel,
 }
 
+pub struct WorldState<'w> {
+    pub agent: Entity,
+    pub executant: Entity,
+    pub world: &'w mut World,
+}
+
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
 type ActionTuple = (ActionType, ActionState);
+type ActionPair = (BoxedAction, Option<Entity>);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
 
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
-
-type ActionPair = (BoxedAction, Option<Entity>);
 
 enum ActionType {
     Single(ActionPair),

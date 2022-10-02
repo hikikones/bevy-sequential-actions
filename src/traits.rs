@@ -3,34 +3,34 @@ use crate::*;
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
+    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason);
 }
 
 impl<Start> Action for Start
 where
-    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Start: FnMut(&mut WorldState, &mut ActionCommands) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        (self)(agent, world, commands);
+    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands) {
+        (self)(state, commands);
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _state: &mut WorldState, _reason: StopReason) {}
 }
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
-    Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync + 'static,
+    Start: FnMut(&mut WorldState, &mut ActionCommands) + Send + Sync + 'static,
+    Stop: FnMut(&mut WorldState, StopReason) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        (self.0)(agent, world, commands);
+    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands) {
+        (self.0)(state, commands);
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        (self.1)(agent, world, reason);
+    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
+        (self.1)(state, reason);
     }
 }
 

@@ -50,28 +50,34 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),
             speed: Speed(self.config.speed.value()),
         });
 
-        world.entity_mut(agent).insert_bundle(move_bundle);
+        state
+            .world
+            .entity_mut(state.agent)
+            .insert_bundle(move_bundle);
 
         if self.config.rotate {
-            world.entity_mut(agent).insert(RotateMarker);
+            state.world.entity_mut(state.agent).insert(RotateMarker);
         }
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let bundle = world.entity_mut(agent).remove_bundle::<MoveBundle>();
+    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
+        let bundle = state
+            .world
+            .entity_mut(state.agent)
+            .remove_bundle::<MoveBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;
         }
 
         if self.config.rotate {
-            world.entity_mut(agent).remove::<RotateMarker>();
+            state.world.entity_mut(state.agent).remove::<RotateMarker>();
         }
     }
 }

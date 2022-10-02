@@ -175,13 +175,23 @@ impl WorldActionsExt for World {
             match &mut action {
                 ActionType::Single((action, e)) => {
                     let e = e.take().unwrap();
-                    action.on_stop(agent, self, reason);
+                    let mut state = WorldState {
+                        agent,
+                        executant: e,
+                        world: self,
+                    };
+                    action.on_stop(&mut state, reason);
                     self.despawn(e);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
                         let e = e.take().unwrap();
-                        action.on_stop(agent, self, reason);
+                        let mut state = WorldState {
+                            agent,
+                            executant: e,
+                            world: self,
+                        };
+                        action.on_stop(&mut state, reason);
                         self.despawn(e);
                     }
                 }
@@ -224,12 +234,22 @@ impl WorldActionsExt for World {
             match &mut action {
                 ActionType::Single((action, e)) => {
                     let a = *e.insert(self.spawn().id());
-                    action.on_start(agent, self, &mut commands);
+                    let mut state = WorldState {
+                        agent,
+                        executant: a,
+                        world: self,
+                    };
+                    action.on_start(&mut state, &mut commands);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
                         let a = *e.insert(self.spawn().id());
-                        action.on_start(agent, self, &mut commands);
+                        let mut state = WorldState {
+                            agent,
+                            executant: a,
+                            world: self,
+                        };
+                        action.on_start(&mut state, &mut commands);
                     }
                 }
             }
