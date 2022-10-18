@@ -50,27 +50,22 @@ impl<F> Action for LerpAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
         let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
             let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {
-                    let start = state
-                        .world
+                    let start = world
                         .get::<Transform>(self.config.target)
                         .unwrap()
                         .translation;
                     Lerp::Position(start, target)
                 }
                 LerpType::Rotation(target) => {
-                    let start = state
-                        .world
-                        .get::<Transform>(self.config.target)
-                        .unwrap()
-                        .rotation;
+                    let start = world.get::<Transform>(self.config.target).unwrap().rotation;
                     Lerp::Rotation(start, target)
                 }
                 LerpType::Transform(target) => {
-                    let start = state.world.get::<Transform>(self.config.target).unwrap();
+                    let start = world.get::<Transform>(self.config.target).unwrap();
                     Lerp::Transform(start.clone(), target)
                 }
             };
@@ -82,17 +77,13 @@ where
             }
         });
 
-        state
-            .world
-            .entity_mut(state.executant)
-            .insert_bundle(lerp_bundle);
+        world.entity_mut(id.executant()).insert_bundle(lerp_bundle);
     }
 
-    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
+    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
         if let StopReason::Paused = reason {
-            self.bundle = state
-                .world
-                .entity_mut(state.executant)
+            self.bundle = world
+                .entity_mut(id.executant())
                 .remove_bundle::<LerpBundle>();
         }
     }

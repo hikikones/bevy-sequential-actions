@@ -91,16 +91,15 @@ struct Canceled;
 struct Paused;
 
 impl Action for CountdownAction {
-    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
-        state.world.entity_mut(state.agent).insert(CountdownMarker);
-        state
-            .world
-            .entity_mut(state.executant)
+    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(id.agent()).insert(CountdownMarker);
+        world
+            .entity_mut(id.executant())
             .insert(Countdown(self.current.take().unwrap_or(self.count)));
     }
 
-    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        let mut agent = state.world.entity_mut(state.agent);
+    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+        let mut agent = world.entity_mut(id.agent());
         agent.remove::<CountdownMarker>();
 
         match reason {
@@ -112,7 +111,7 @@ impl Action for CountdownAction {
             }
             StopReason::Paused => {
                 agent.insert(Paused);
-                self.current = Some(state.world.get::<Countdown>(state.executant).unwrap().0);
+                self.current = Some(world.get::<Countdown>(id.executant()).unwrap().0);
             }
         }
     }
@@ -421,10 +420,10 @@ fn repeat_forever() {
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
-        fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
-            state.world.despawn(state.agent);
+        fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+            world.despawn(id.agent());
         }
-        fn on_stop(&mut self, _state: &mut WorldState, _reason: StopReason) {}
+        fn on_stop(&mut self, _id: ActionIds, _world: &mut World, _reason: StopReason) {}
     }
 
     let mut ecs = Ecs::new();
@@ -445,11 +444,11 @@ fn order() {
     #[derive(Default)]
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
-        fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
-            state.world.entity_mut(state.agent).insert(T::default());
+        fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+            world.entity_mut(id.agent()).insert(T::default());
         }
-        fn on_stop(&mut self, state: &mut WorldState, _reason: StopReason) {
-            state.world.entity_mut(state.agent).remove::<T>();
+        fn on_stop(&mut self, id: ActionIds, world: &mut World, _reason: StopReason) {
+            world.entity_mut(id.agent()).remove::<T>();
         }
     }
 

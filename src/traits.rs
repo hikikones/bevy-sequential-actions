@@ -3,34 +3,34 @@ use crate::*;
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
-    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands);
+    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason);
+    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason);
 }
 
 impl<Start> Action for Start
 where
-    Start: FnMut(&mut WorldState, &mut ActionCommands) + Send + Sync + 'static,
+    Start: FnMut(ActionIds, &mut World, &mut ActionCommands) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands) {
-        (self)(state, commands);
+    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands) {
+        (self)(id, world, commands);
     }
 
-    fn on_stop(&mut self, _state: &mut WorldState, _reason: StopReason) {}
+    fn on_stop(&mut self, _id: ActionIds, _world: &mut World, _reason: StopReason) {}
 }
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: FnMut(&mut WorldState, &mut ActionCommands) + Send + Sync + 'static,
-    Stop: FnMut(&mut WorldState, StopReason) + Send + Sync + 'static,
+    Start: FnMut(ActionIds, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Stop: FnMut(ActionIds, &mut World, StopReason) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, state: &mut WorldState, commands: &mut ActionCommands) {
-        (self.0)(state, commands);
+    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands) {
+        (self.0)(id, world, commands);
     }
 
-    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        (self.1)(state, reason);
+    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+        (self.1)(id, world, reason);
     }
 }
 

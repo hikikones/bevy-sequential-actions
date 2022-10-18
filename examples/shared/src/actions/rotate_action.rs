@@ -58,8 +58,8 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
-        state.world.entity_mut(state.executant).insert(RotateMarker);
+    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(id.executant()).insert(RotateMarker);
 
         let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
             let target = match &self.config.target {
@@ -72,17 +72,11 @@ where
             }
         });
 
-        state
-            .world
-            .entity_mut(state.agent)
-            .insert_bundle(rotate_bundle);
+        world.entity_mut(id.agent()).insert_bundle(rotate_bundle);
     }
 
-    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        let bundle = state
-            .world
-            .entity_mut(state.agent)
-            .remove_bundle::<RotateBundle>();
+    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+        let bundle = world.entity_mut(id.agent()).remove_bundle::<RotateBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;

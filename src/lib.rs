@@ -159,6 +159,18 @@ pub enum ExecutionMode {
     Parallel,
 }
 
+pub struct ActionIds(Entity, Entity);
+
+impl ActionIds {
+    pub fn agent(&self) -> Entity {
+        self.0
+    }
+
+    pub fn executant(&self) -> Entity {
+        self.1
+    }
+}
+
 pub struct WorldState<'w> {
     pub agent: Entity,
     pub executant: Entity,

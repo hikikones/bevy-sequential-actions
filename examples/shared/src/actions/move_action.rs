@@ -52,36 +52,30 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, state: &mut WorldState, _commands: &mut ActionCommands) {
-        state.world.entity_mut(state.executant).insert(MoveMarker);
+    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+        world.entity_mut(id.executant()).insert(MoveMarker);
 
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),
             speed: Speed(self.config.speed.value()),
         });
 
-        state
-            .world
-            .entity_mut(state.agent)
-            .insert_bundle(move_bundle);
+        world.entity_mut(id.agent()).insert_bundle(move_bundle);
 
         if self.config.rotate {
-            state.world.entity_mut(state.agent).insert(RotateMarker);
+            world.entity_mut(id.agent()).insert(RotateMarker);
         }
     }
 
-    fn on_stop(&mut self, state: &mut WorldState, reason: StopReason) {
-        let bundle = state
-            .world
-            .entity_mut(state.agent)
-            .remove_bundle::<MoveBundle>();
+    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+        let bundle = world.entity_mut(id.agent()).remove_bundle::<MoveBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;
         }
 
         if self.config.rotate {
-            state.world.entity_mut(state.agent).remove::<RotateMarker>();
+            world.entity_mut(id.agent()).remove::<RotateMarker>();
         }
     }
 }

@@ -175,23 +175,23 @@ impl WorldActionsExt for World {
             match &mut action {
                 ActionType::Single((action, e)) => {
                     let e = e.take().unwrap();
-                    let mut state = WorldState {
-                        agent,
-                        executant: e,
-                        world: self,
-                    };
-                    action.on_stop(&mut state, reason);
+                    // let mut state = WorldState {
+                    //     agent,
+                    //     executant: e,
+                    //     world: self,
+                    // };
+                    action.on_stop(ActionIds(agent, e), self, reason);
                     self.despawn(e);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
                         let e = e.take().unwrap();
-                        let mut state = WorldState {
-                            agent,
-                            executant: e,
-                            world: self,
-                        };
-                        action.on_stop(&mut state, reason);
+                        // let mut state = WorldState {
+                        //     agent,
+                        //     executant: e,
+                        //     world: self,
+                        // };
+                        action.on_stop(ActionIds(agent, e), self, reason);
                         self.despawn(e);
                     }
                 }
@@ -238,12 +238,12 @@ impl WorldActionsExt for World {
                             .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                             .id(),
                     );
-                    let mut state = WorldState {
-                        agent,
-                        executant: a,
-                        world: self,
-                    };
-                    action.on_start(&mut state, &mut commands);
+                    // let mut state = WorldState {
+                    //     agent,
+                    //     executant: a,
+                    //     world: self,
+                    // };
+                    action.on_start(ActionIds(agent, a), self, &mut commands);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
@@ -252,12 +252,12 @@ impl WorldActionsExt for World {
                                 .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                                 .id(),
                         );
-                        let mut state = WorldState {
-                            agent,
-                            executant: a,
-                            world: self,
-                        };
-                        action.on_start(&mut state, &mut commands);
+                        // let mut state = WorldState {
+                        //     agent,
+                        //     executant: a,
+                        //     world: self,
+                        // };
+                        action.on_start(ActionIds(agent, a), self, &mut commands);
                     }
                 }
             }
