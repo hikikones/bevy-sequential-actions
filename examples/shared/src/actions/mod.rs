@@ -5,6 +5,7 @@ pub mod lerp_action;
 pub mod move_action;
 pub mod quit_action;
 pub mod rotate_action;
+pub mod set_state_action;
 pub mod wait_action;
 
 pub use despawn_action::*;
@@ -12,6 +13,7 @@ pub use lerp_action::*;
 pub use move_action::*;
 pub use quit_action::*;
 pub use rotate_action::*;
+pub use set_state_action::*;
 pub use wait_action::*;
 
 use crate::extensions::RandomExt;
