@@ -62,7 +62,7 @@ impl ModifyActions for AgentWorldActions<'_> {
     }
 }
 
-pub(super) trait WorldActionsExt {
+pub(super) trait ModifyActionsWorldExt {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction);
     fn add_actions(
         &mut self,
@@ -77,16 +77,9 @@ pub(super) trait WorldActionsExt {
     fn pause_action(&mut self, agent: Entity);
     fn skip_action(&mut self, agent: Entity);
     fn clear_actions(&mut self, agent: Entity);
-    fn stop_current_action(&mut self, agent: Entity, reason: StopReason);
-    fn handle_repeat_action(&mut self, agent: Entity, action: ActionType, state: ActionState);
-    fn start_next_action(&mut self, agent: Entity);
-    fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple>;
-    fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple>;
-    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
-    fn has_current_action(&self, agent: Entity) -> bool;
 }
 
-impl WorldActionsExt for World {
+impl ModifyActionsWorldExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction) {
         let action_tuple = (
             ActionType::Single((action.into_boxed(), None)),
@@ -127,7 +120,7 @@ impl WorldActionsExt for World {
                 }
             },
             ExecutionMode::Parallel => {
-                let action = ActionType::Multiple(actions.map(|a| (a, None)).collect());
+                let action = ActionType::Multiple(actions.map(|action| (action, None)).collect());
                 match config.order {
                     AddOrder::Back => queue.push_back((action, config.into())),
                     AddOrder::Front => queue.push_front((action, config.into())),
@@ -169,28 +162,30 @@ impl WorldActionsExt for World {
         self.stop_current_action(agent, StopReason::Canceled);
         self.action_queue(agent).clear();
     }
+}
 
+trait WorldActionsExt {
+    fn stop_current_action(&mut self, agent: Entity, reason: StopReason);
+    fn handle_repeat_action(&mut self, agent: Entity, action: ActionType, state: ActionState);
+    fn start_next_action(&mut self, agent: Entity);
+    fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple>;
+    fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple>;
+    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
+    fn has_current_action(&self, agent: Entity) -> bool;
+}
+
+impl WorldActionsExt for World {
     fn stop_current_action(&mut self, agent: Entity, reason: StopReason) {
         if let Some((mut action, state)) = self.take_current_action(agent) {
             match &mut action {
                 ActionType::Single((action, e)) => {
                     let e = e.take().unwrap();
-                    // let mut state = WorldState {
-                    //     agent,
-                    //     executant: e,
-                    //     world: self,
-                    // };
                     action.on_stop(ActionIds(agent, e), self, reason);
                     self.despawn(e);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
                         let e = e.take().unwrap();
-                        // let mut state = WorldState {
-                        //     agent,
-                        //     executant: e,
-                        //     world: self,
-                        // };
                         action.on_stop(ActionIds(agent, e), self, reason);
                         self.despawn(e);
                     }
@@ -205,11 +200,6 @@ impl WorldActionsExt for World {
                     self.action_queue(agent).push_front((action, state));
                 }
             }
-
-            // let mut finished = self.get_mut::<ActionFinished>(agent).unwrap();
-            // if finished.count != 0 {
-            //     finished.count = 0;
-            // }
         }
     }
 
@@ -233,31 +223,21 @@ impl WorldActionsExt for World {
 
             match &mut action {
                 ActionType::Single((action, e)) => {
-                    let a = *e.insert(
+                    let e = *e.insert(
                         self.spawn()
                             .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                             .id(),
                     );
-                    // let mut state = WorldState {
-                    //     agent,
-                    //     executant: a,
-                    //     world: self,
-                    // };
-                    action.on_start(ActionIds(agent, a), self, &mut commands);
+                    action.on_start(ActionIds(agent, e), self, &mut commands);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
-                        let a = *e.insert(
+                        let e = *e.insert(
                             self.spawn()
                                 .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                                 .id(),
                         );
-                        // let mut state = WorldState {
-                        //     agent,
-                        //     executant: a,
-                        //     world: self,
-                        // };
-                        action.on_start(ActionIds(agent, a), self, &mut commands);
+                        action.on_start(ActionIds(agent, e), self, &mut commands);
                     }
                 }
             }

@@ -158,13 +158,13 @@ impl Action for MyCustomAction {
             .next();
     }
 
-    fn on_stop(&mut self, _id: ActionIds, world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _id: ActionIds, _world: &mut World, _reason: StopReason) {}
 }
 
 struct FancyAction;
 
 impl Action for FancyAction {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionIds, _world: &mut World, commands: &mut ActionCommands) {
         // This action runs a system that adds another wait action.
         // When modifying actions using world inside the Action trait,
         // it is important that the modifications happens after the on_start method.
@@ -177,7 +177,7 @@ impl Action for FancyAction {
         });
     }
 
-    fn on_stop(&mut self, _id: ActionIds, world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _id: ActionIds, _world: &mut World, _reason: StopReason) {}
 }
 
 fn my_system(agent_q: Query<Entity, With<ActionMarker>>, mut commands: Commands) {

@@ -171,12 +171,6 @@ impl ActionIds {
     }
 }
 
-pub struct WorldState<'w> {
-    pub agent: Entity,
-    pub executant: Entity,
-    pub world: &'w mut World,
-}
-
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
