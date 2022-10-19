@@ -110,7 +110,7 @@ fn check_rotation(
     transform_q: Query<(&Transform, &Target)>,
 ) {
     for (agent, mut finished) in check_q.iter_mut() {
-        if let Ok((transform, target)) = transform_q.get(agent.entity()) {
+        if let Ok((transform, target)) = transform_q.get(agent.id()) {
             if transform.rotation == target.0 {
                 finished.set(true);
             }

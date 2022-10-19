@@ -93,7 +93,7 @@ impl ActionFinished {
 pub struct ActionAgent(Entity);
 
 impl ActionAgent {
-    pub fn entity(&self) -> Entity {
+    pub fn id(&self) -> Entity {
         self.0
     }
 }
