@@ -40,15 +40,13 @@ impl Plugin for SequentialActionsPlugin {
 pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
 
 pub(super) fn count_finished_actions(
-    mut finished_q: Query<(&mut ActionFinished, &ActionAgent), Changed<ActionFinished>>,
+    finished_q: Query<(&ActionFinished, &ActionAgent), Changed<ActionFinished>>,
     mut count_q: Query<&mut FinishedCount>,
 ) {
-    for (mut finished, agent) in finished_q.iter_mut() {
+    for (finished, agent) in finished_q.iter() {
         if finished.0 {
             count_q.get_mut(agent.0).unwrap().0 += 1;
         }
-
-        finished.0 = false;
     }
 }
 
