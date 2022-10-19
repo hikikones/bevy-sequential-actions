@@ -53,7 +53,7 @@ where
     F: IntoValue<f32>,
 {
     fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(id.executant()).insert(MoveMarker);
+        world.entity_mut(id.status()).insert(MoveMarker);
 
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),

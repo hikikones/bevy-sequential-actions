@@ -59,7 +59,7 @@ where
     F: IntoValue<f32>,
 {
     fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(id.executant()).insert(RotateMarker);
+        world.entity_mut(id.status()).insert(RotateMarker);
 
         let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
             let target = match &self.config.target {

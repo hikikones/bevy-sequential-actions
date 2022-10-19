@@ -166,7 +166,7 @@ impl ActionIds {
         self.0
     }
 
-    pub fn executant(&self) -> Entity {
+    pub fn status(&self) -> Entity {
         self.1
     }
 }

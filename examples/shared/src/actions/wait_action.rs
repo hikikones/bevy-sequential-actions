@@ -37,12 +37,12 @@ where
 {
     fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
-        world.entity_mut(id.executant()).insert(Wait(duration));
+        world.entity_mut(id.status()).insert(Wait(duration));
     }
 
     fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
         if let StopReason::Paused = reason {
-            self.current = Some(world.get::<Wait>(id.executant()).unwrap().0);
+            self.current = Some(world.get::<Wait>(id.status()).unwrap().0);
         }
     }
 }

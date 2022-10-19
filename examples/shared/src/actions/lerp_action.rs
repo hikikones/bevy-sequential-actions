@@ -77,14 +77,12 @@ where
             }
         });
 
-        world.entity_mut(id.executant()).insert_bundle(lerp_bundle);
+        world.entity_mut(id.status()).insert_bundle(lerp_bundle);
     }
 
     fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
         if let StopReason::Paused = reason {
-            self.bundle = world
-                .entity_mut(id.executant())
-                .remove_bundle::<LerpBundle>();
+            self.bundle = world.entity_mut(id.status()).remove_bundle::<LerpBundle>();
         }
     }
 }

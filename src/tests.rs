@@ -94,7 +94,7 @@ impl Action for CountdownAction {
     fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
         world.entity_mut(id.agent()).insert(CountdownMarker);
         world
-            .entity_mut(id.executant())
+            .entity_mut(id.status())
             .insert(Countdown(self.current.take().unwrap_or(self.count)));
     }
 
@@ -111,7 +111,7 @@ impl Action for CountdownAction {
             }
             StopReason::Paused => {
                 agent.insert(Paused);
-                self.current = Some(world.get::<Countdown>(id.executant()).unwrap().0);
+                self.current = Some(world.get::<Countdown>(id.status()).unwrap().0);
             }
         }
     }
