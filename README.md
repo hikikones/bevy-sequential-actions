@@ -74,12 +74,11 @@ The `Action` trait contains two methods:
 * The `on_stop` method which is called when an action is stopped.
 
 Each action is given a unique entity that we will refer to as the `status` entity.
+This entity is spawned before an action starts, and despawned after it stops.
 It contains two components:
 
 * The `ActionFinished` component which must be used in order to declare that an action is finished.
 * The `ActionAgent` component which is optionally used for getting the entity id for the `agent`.
-
-The `status` entity is spawned before an action starts, and despawned after it stops, and so should not be stored.
 
 A simple wait action follows.
 
@@ -121,7 +120,8 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 
 ## Examples
 
-See the [examples](examples/) for more usage. Each example can be run with `cargo run --example <example>`.
+See the [examples](examples/) for more usage, specifically the [shared actions](examples/shared/src/actions/).
+Each example can be run with `cargo run --example <example>`.
 Consider running with `--release` as debug builds can be quite slow.
 
 | Example  | Description                                                                            |
