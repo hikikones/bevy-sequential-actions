@@ -59,8 +59,6 @@ where
     F: IntoValue<f32>,
 {
     fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(id.status()).insert(RotateMarker);
-
         let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
             let target = match &self.config.target {
                 RotateType::Look(dir) => Quat::from_look(dir.value(), Vec3::Y),
@@ -73,6 +71,7 @@ where
         });
 
         world.entity_mut(id.agent()).insert_bundle(rotate_bundle);
+        world.entity_mut(id.status()).insert(RotateMarker);
     }
 
     fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
@@ -110,10 +109,7 @@ fn check_rotation(
     transform_q: Query<(&Transform, &Target)>,
 ) {
     for (agent, mut finished) in check_q.iter_mut() {
-        if let Ok((transform, target)) = transform_q.get(agent.id()) {
-            if transform.rotation == target.0 {
-                finished.set(true);
-            }
-        }
+        let (transform, target) = transform_q.get(agent.id()).unwrap();
+        finished.set(transform.rotation == target.0);
     }
 }

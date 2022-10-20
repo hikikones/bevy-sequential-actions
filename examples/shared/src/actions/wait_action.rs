@@ -53,9 +53,6 @@ struct Wait(f32);
 fn wait(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
     for (mut wait, mut finished) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
-
-        if wait.0 <= 0.0 {
-            finished.set(true);
-        }
+        finished.set(wait.0 <= 0.0);
     }
 }

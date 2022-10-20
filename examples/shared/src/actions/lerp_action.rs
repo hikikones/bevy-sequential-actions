@@ -119,12 +119,12 @@ fn lerp(
             let t = timer.0.percent();
             let smoothstep = 3.0 * t * t - 2.0 * t * t * t;
 
-            match *lerp {
+            match lerp {
                 Lerp::Position(start, end) => {
-                    transform.translation = start.lerp(end, smoothstep);
+                    transform.translation = start.lerp(*end, smoothstep);
                 }
                 Lerp::Rotation(start, end) => {
-                    transform.rotation = start.slerp(end, smoothstep);
+                    transform.rotation = start.slerp(*end, smoothstep);
                 }
                 Lerp::Transform(start, end) => {
                     transform.translation = start.translation.lerp(end.translation, smoothstep);
@@ -132,9 +132,7 @@ fn lerp(
                 }
             }
 
-            if timer.0.finished() {
-                finished.set(true);
-            }
+            finished.set(timer.0.finished());
         } else {
             finished.set(true);
         }
