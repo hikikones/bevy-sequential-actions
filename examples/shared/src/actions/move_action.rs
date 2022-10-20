@@ -10,7 +10,8 @@ pub struct MoveActionPlugin;
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(movement)
-            .add_system(check_movement.after(movement));
+            .add_system(check_movement.after(movement))
+            .add_system(rotation);
     }
 }
 
@@ -55,15 +56,28 @@ where
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),
             speed: Speed(self.config.speed.value()),
-            rotate: Rotate(self.config.rotate),
         });
 
-        world.entity_mut(id.agent()).insert_bundle(move_bundle);
+        let mut agent = world.entity_mut(id.agent());
+
+        if self.config.rotate {
+            let start = agent.get::<Transform>().unwrap().translation;
+            let dir = (move_bundle.target.0 - start).normalize_or_zero();
+            if dir != Vec3::ZERO {
+                agent.insert(Rotate(Quat::from_look(dir, Vec3::Y)));
+            }
+        }
+
+        agent.insert_bundle(move_bundle);
         world.entity_mut(id.status()).insert(MoveMarker);
     }
 
     fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
         let bundle = world.entity_mut(id.agent()).remove_bundle::<MoveBundle>();
+
+        if self.config.rotate {
+            world.entity_mut(id.agent()).remove::<Rotate>();
+        }
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;
@@ -75,7 +89,6 @@ where
 struct MoveBundle {
     target: Target,
     speed: Speed,
-    rotate: Rotate,
 }
 
 #[derive(Component)]
@@ -85,28 +98,14 @@ struct Target(Vec3);
 struct Speed(f32);
 
 #[derive(Component)]
-struct Rotate(bool);
+struct Rotate(Quat);
 
 #[derive(Component)]
 struct MoveMarker;
 
-fn movement(mut move_q: Query<(&mut Transform, &Target, &Speed, &Rotate)>, time: Res<Time>) {
-    for (mut transform, target, speed, rotate) in move_q.iter_mut() {
+fn movement(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
+    for (mut transform, target, speed) in move_q.iter_mut() {
         transform.move_towards(target.0, speed.0 * time.delta_seconds());
-
-        if rotate.0 {
-            let dir = (target.0 - transform.translation).normalize_or_zero();
-
-            if dir == Vec3::ZERO {
-                continue;
-            }
-
-            transform.rotation = Quat::slerp(
-                transform.rotation,
-                Quat::from_look(dir, Vec3::Y),
-                speed.0 * 2.0 * time.delta_seconds(),
-            );
-        }
     }
 }
 
@@ -117,5 +116,15 @@ fn check_movement(
     for (agent, mut finished) in check_q.iter_mut() {
         let (transform, target) = transform_q.get(agent.id()).unwrap();
         finished.set(transform.translation == target.0);
+    }
+}
+
+fn rotation(mut rot_q: Query<(&mut Transform, &Speed, &Rotate)>, time: Res<Time>) {
+    for (mut transform, speed, rotate) in rot_q.iter_mut() {
+        transform.rotation = Quat::slerp(
+            transform.rotation,
+            rotate.0,
+            speed.0 * 2.0 * time.delta_seconds(),
+        );
     }
 }
