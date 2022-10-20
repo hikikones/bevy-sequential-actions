@@ -180,13 +180,13 @@ impl WorldActionsExt for World {
             match &mut action {
                 ActionType::Single((action, e)) => {
                     let e = e.take().unwrap();
-                    action.on_stop(ActionIds(agent, e), self, reason);
+                    action.on_stop(ActionEntities(agent, e), self, reason);
                     self.despawn(e);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
                         let e = e.take().unwrap();
-                        action.on_stop(ActionIds(agent, e), self, reason);
+                        action.on_stop(ActionEntities(agent, e), self, reason);
                         self.despawn(e);
                     }
                 }
@@ -228,7 +228,7 @@ impl WorldActionsExt for World {
                             .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                             .id(),
                     );
-                    action.on_start(ActionIds(agent, e), self, &mut commands);
+                    action.on_start(ActionEntities(agent, e), self, &mut commands);
                 }
                 ActionType::Multiple(actions) => {
                     for (action, e) in actions.iter_mut() {
@@ -237,7 +237,7 @@ impl WorldActionsExt for World {
                                 .insert_bundle((ActionFinished(false), ActionAgent(agent)))
                                 .id(),
                         );
-                        action.on_start(ActionIds(agent, e), self, &mut commands);
+                        action.on_start(ActionEntities(agent, e), self, &mut commands);
                     }
                 }
             }

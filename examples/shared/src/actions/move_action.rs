@@ -52,7 +52,7 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),
             speed: Speed(self.config.speed.value()),
@@ -72,7 +72,7 @@ where
         world.entity_mut(id.status()).insert(MoveMarker);
     }
 
-    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
         let bundle = world.entity_mut(id.agent()).remove_bundle::<MoveBundle>();
 
         if self.config.rotate {

@@ -1,5 +1,15 @@
 #![warn(missing_docs)]
 
+/*!
+
+# Bevy Sequential Actions
+
+A [Bevy](https://bevyengine.org) library
+
+todo
+
+*/
+
 //! # Bevy Sequential Actions
 //!
 //! A [Bevy](https://bevyengine.org) library
@@ -80,26 +90,49 @@ pub struct ActionsBundle {
 #[derive(Default, Component)]
 pub struct ActionMarker;
 
+/// Component for tracking the finished state of an active [`Action`].
 #[derive(Component)]
 pub struct ActionFinished(bool);
 
 impl ActionFinished {
+    /// Sets the finished state for the current active [`Action`].
     pub fn set(&mut self, v: bool) {
         self.0 = v;
     }
 }
 
+/// Component for the `agent` entity ID of an active [`Action`].
 #[derive(Component)]
 pub struct ActionAgent(Entity);
 
 impl ActionAgent {
+    /// Returns the `agent` entity ID for the current active [`Action`].
     pub fn id(&self) -> Entity {
         self.0
     }
 }
 
-#[derive(Default, Component)]
-struct FinishedCount(u32);
+/// Struct containing important entity IDs associated with an [`Action`].
+pub struct ActionEntities(Entity, Entity);
+
+impl ActionEntities {
+    /// Returns the `agent` entity ID for the current [`Action`].
+    pub fn agent(&self) -> Entity {
+        self.0
+    }
+
+    /// Returns the unique entity ID that every active [`Action`] is given.
+    /// It contains two components:
+    ///
+    /// * The [`ActionFinished`] component which must be used in order to declare that an action is finished.
+    /// * The [`ActionAgent`] component which is optionally used for getting the entity ID for the `agent`.
+    ///
+    /// This entity is spawned before an action [`starts`](Action::on_start), and despawned after it [`stops`](Action::on_stop),
+    /// and so should not be stored for later usage.
+    pub fn status(&self) -> Entity {
+        self.1
+    }
+}
 
 /// Configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
@@ -159,23 +192,14 @@ pub enum ExecutionMode {
     Parallel,
 }
 
-pub struct ActionIds(Entity, Entity);
-
-impl ActionIds {
-    pub fn agent(&self) -> Entity {
-        self.0
-    }
-
-    pub fn status(&self) -> Entity {
-        self.1
-    }
-}
-
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
 type ActionTuple = (ActionType, ActionState);
 type ActionPair = (BoxedAction, Option<Entity>);
+
+#[derive(Default, Component)]
+struct FinishedCount(u32);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);

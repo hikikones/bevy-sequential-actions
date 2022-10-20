@@ -58,7 +58,7 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
         let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
             let target = match &self.config.target {
                 RotateType::Look(dir) => Quat::from_look(dir.value(), Vec3::Y),
@@ -74,7 +74,7 @@ where
         world.entity_mut(id.status()).insert(RotateMarker);
     }
 
-    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
         let bundle = world.entity_mut(id.agent()).remove_bundle::<RotateBundle>();
 
         if let StopReason::Paused = reason {

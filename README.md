@@ -78,7 +78,7 @@ This entity is spawned before an action starts, and despawned after it stops.
 It contains two components:
 
 * The `ActionFinished` component which must be used in order to declare that an action is finished.
-* The `ActionAgent` component which is optionally used for getting the entity id for the `agent`.
+* The `ActionAgent` component which is optionally used for getting the entity ID for the `agent`.
 
 A simple wait action follows.
 
@@ -89,7 +89,7 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
         // Take current duration (if paused), or use full duration
         let duration = self.current.take().unwrap_or(self.duration);
 
@@ -97,7 +97,7 @@ impl Action for WaitAction {
         world.entity_mut(id.status()).insert(Wait(duration));
     }
 
-    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
         // Store current duration when paused
         if let StopReason::Paused = reason {
             self.current = Some(world.get::<Wait>(id.status()).unwrap().0);

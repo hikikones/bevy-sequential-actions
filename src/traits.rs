@@ -3,33 +3,33 @@ use crate::*;
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
-    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands);
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason);
+    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason);
 }
 
 impl<Start> Action for Start
 where
-    Start: FnMut(ActionIds, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Start: FnMut(ActionEntities, &mut World, &mut ActionCommands) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands) {
         (self)(id, world, commands);
     }
 
-    fn on_stop(&mut self, _id: ActionIds, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _id: ActionEntities, _world: &mut World, _reason: StopReason) {}
 }
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: FnMut(ActionIds, &mut World, &mut ActionCommands) + Send + Sync + 'static,
-    Stop: FnMut(ActionIds, &mut World, StopReason) + Send + Sync + 'static,
+    Start: FnMut(ActionEntities, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Stop: FnMut(ActionEntities, &mut World, StopReason) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands) {
         (self.0)(id, world, commands);
     }
 
-    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
         (self.1)(id, world, reason);
     }
 }
@@ -64,44 +64,11 @@ impl<T> BoxedActionIter for T where
 }
 
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
-///
-/// # Warning
-///
-/// Do not modify actions using [`World`] inside the implementation of an [`Action`].
-/// Actions need to be properly queued, which is what [`ActionCommands`] does.
-/// If you need to use [`World`] for modifying actions, use [`EntityActions::custom`].
-///
-/// ```rust,no_run
-/// # use bevy::prelude::*;
-/// # use bevy_sequential_actions::*;
-/// #
-/// struct EmptyAction;
-///
-/// impl Action for EmptyAction {
-///     fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-///         // Bad
-///         world.actions(agent).next();
-///
-///         // Good
-///         commands.actions(agent).next();
-///
-///         // Also good
-///         commands.custom(move |w: &mut World| {
-///             w.actions(agent).next();
-///         });
-///
-///         // Also good if you want to mark it as finished
-///         world.get_mut::<ActionFinished>(agent).unwrap().confirm();
-///     }
-///
-///     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {}
-/// }
-///```
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
     type Modifier: ModifyActions;
 
-    /// Returns [`Self::Modifier`] for specified [`agent`](Entity).
+    /// Returns a type for modifying actions for specified [`agent`](Entity).
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 

@@ -7,9 +7,9 @@ use bevy_sequential_actions::*;
 pub struct QuitAction;
 
 impl Action for QuitAction {
-    fn on_start(&mut self, _id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, _id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
         world.resource_mut::<Events<AppExit>>().send(AppExit);
     }
 
-    fn on_stop(&mut self, _id: ActionIds, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _id: ActionEntities, _world: &mut World, _reason: StopReason) {}
 }

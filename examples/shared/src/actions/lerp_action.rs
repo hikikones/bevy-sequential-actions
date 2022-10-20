@@ -50,7 +50,7 @@ impl<F> Action for LerpAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, id: ActionIds, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
         let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
             let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {
@@ -80,7 +80,7 @@ where
         world.entity_mut(id.status()).insert_bundle(lerp_bundle);
     }
 
-    fn on_stop(&mut self, id: ActionIds, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
         if let StopReason::Paused = reason {
             self.bundle = world.entity_mut(id.status()).remove_bundle::<LerpBundle>();
         }
