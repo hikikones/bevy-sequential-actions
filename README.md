@@ -118,6 +118,42 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 }
 ```
 
+### Warning
+
+One thing to keep in mind is that you should not modify actions using `World` inside the `Action` trait.
+In order to pass a mutable `World`, the current action is temporarily removed from the `agent`
+before either of the trait methods are called, and put back again after.
+This is why `ActionCommands` was created, so you can safely modify actions inside the `Action` trait
+in a deferred way.
+
+```rust
+pub struct SetStateAction<T: StateData>(T);
+
+impl<T: StateData> Action for SetStateAction<T> {
+    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands) {
+        world
+            .resource_mut::<State<T>>()
+            .set(self.0.clone())
+            .unwrap();
+
+        // Bad
+        world.actions(id.agent()).next();
+        
+        // Good
+        commands.actions(id.agent()).next();
+    }
+
+    fn on_stop(&mut self, _id: ActionEntities, _world: &mut World, _reason: StopReason) {}
+}
+```
+
+Another thing to keep in mind is that there are two ways to advance the actions queue:
+
+* Using the `ActionFinished` component. A system at the end of the frame will advance the queue if all active actions for an `agent` are finished. This is the recommended approach as it composes well with other actions running in parallel.
+* Calling the `next` method. This simply advances the queue at the end of the current stage it was called in. Useful for small one-at-a-time actions where you want to advance the queue more quickly (instead of waiting a whole frame).
+
+Note that the first approach works with actions in parallel, while the second approach does not.
+
 ## Examples
 
 See the [examples](examples/) for more usage, specifically the [shared actions](examples/shared/src/actions/).
