@@ -75,28 +75,28 @@ pub trait ActionsProxy<'a> {
 /// Methods for modifying actions.
 pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
-    fn config(self, config: AddConfig) -> Self;
+    fn config(&mut self, config: AddConfig) -> &mut Self;
 
     /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
-    fn add(self, action: impl IntoBoxedAction) -> Self;
+    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self;
 
     /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
-    fn add_many(self, mode: ExecutionMode, actions: impl BoxedActionIter) -> Self;
+    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
-    fn next(self) -> Self;
+    fn next(&mut self) -> &mut Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`canceled`](StopReason::Canceled).
-    fn cancel(self) -> Self;
+    fn cancel(&mut self) -> &mut Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
-    fn pause(self) -> Self;
+    fn pause(&mut self) -> &mut Self;
 
     /// Skips the next [`action`](Action) in the queue.
-    fn skip(self) -> Self;
+    fn skip(&mut self) -> &mut Self;
 
     /// Clears the actions queue.
     /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
-    fn clear(self) -> Self;
+    fn clear(&mut self) -> &mut Self;
 }

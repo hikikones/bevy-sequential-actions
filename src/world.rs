@@ -20,43 +20,43 @@ pub struct AgentWorldActions<'w> {
 }
 
 impl ModifyActions for AgentWorldActions<'_> {
-    fn config(mut self, config: AddConfig) -> Self {
+    fn config(&mut self, config: AddConfig) -> &mut Self {
         self.config = config;
         self
     }
 
-    fn add(self, action: impl IntoBoxedAction) -> Self {
+    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         self.world.add_action(self.agent, self.config, action);
         self
     }
 
-    fn add_many(self, mode: ExecutionMode, actions: impl BoxedActionIter) -> Self {
+    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
         self.world
             .add_actions(self.agent, self.config, mode, actions);
         self
     }
 
-    fn next(self) -> Self {
+    fn next(&mut self) -> &mut Self {
         self.world.next_action(self.agent);
         self
     }
 
-    fn cancel(self) -> Self {
+    fn cancel(&mut self) -> &mut Self {
         self.world.cancel_action(self.agent);
         self
     }
 
-    fn pause(self) -> Self {
+    fn pause(&mut self) -> &mut Self {
         self.world.pause_action(self.agent);
         self
     }
 
-    fn skip(self) -> Self {
+    fn skip(&mut self) -> &mut Self {
         self.world.skip_action(self.agent);
         self
     }
 
-    fn clear(self) -> Self {
+    fn clear(&mut self) -> &mut Self {
         self.world.clear_actions(self.agent);
         self
     }

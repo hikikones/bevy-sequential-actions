@@ -47,7 +47,7 @@ fn setup(mut commands: Commands) {
         }))
         .add(WaitAction::new(1.0));
 
-    // Add a list of actions
+    // Add a collection of actions
     commands
         .actions(agent)
         .config(AddConfig {
