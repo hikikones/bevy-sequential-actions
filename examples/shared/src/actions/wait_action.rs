@@ -35,12 +35,12 @@ impl<F> Action for WaitAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
         world.entity_mut(id.status()).insert(Wait(duration));
     }
 
-    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         if let StopReason::Paused = reason {
             self.current = Some(world.get::<Wait>(id.status()).unwrap().0);
         }

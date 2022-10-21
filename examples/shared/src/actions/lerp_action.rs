@@ -16,6 +16,7 @@ where
     F: IntoValue<f32>,
 {
     config: LerpConfig<F>,
+    executor: Option<Entity>,
     bundle: Option<LerpBundle>,
 }
 
@@ -35,6 +36,7 @@ where
     pub fn new(config: LerpConfig<F>) -> Self {
         Self {
             config,
+            executor: None,
             bundle: None,
         }
     }
@@ -50,7 +52,7 @@ impl<F> Action for LerpAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
             let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {
@@ -73,17 +75,22 @@ where
             LerpBundle {
                 lerp: lerp_type,
                 target: LerpTarget(self.config.target),
+                agent: LerpAgent(agent),
                 timer: LerpTimer(Timer::from_seconds(self.config.duration.value(), false)),
             }
         });
 
-        world.entity_mut(id.status()).insert_bundle(lerp_bundle);
+        self.executor = Some(world.spawn().insert_bundle(lerp_bundle).id());
     }
 
-    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        let executor = self.executor.unwrap();
+
         if let StopReason::Paused = reason {
-            self.bundle = world.entity_mut(id.status()).remove_bundle::<LerpBundle>();
+            self.bundle = world.entity_mut(executor).remove_bundle::<LerpBundle>();
         }
+
+        world.despawn(executor);
     }
 }
 
@@ -91,6 +98,7 @@ where
 struct LerpBundle {
     lerp: Lerp,
     target: LerpTarget,
+    agent: LerpAgent,
     timer: LerpTimer,
 }
 
@@ -105,14 +113,18 @@ enum Lerp {
 struct LerpTarget(Entity);
 
 #[derive(Component)]
+struct LerpAgent(Entity);
+
+#[derive(Component)]
 struct LerpTimer(Timer);
 
 fn lerp(
-    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &mut ActionFinished)>,
+    mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &LerpAgent)>,
     mut transform_q: Query<&mut Transform>,
+    mut finished_q: Query<&mut AgentState>,
     time: Res<Time>,
 ) {
-    for (mut timer, target, lerp, mut finished) in lerp_q.iter_mut() {
+    for (mut timer, target, lerp, agent) in lerp_q.iter_mut() {
         if let Ok(mut transform) = transform_q.get_mut(target.0) {
             timer.0.tick(time.delta());
 
@@ -132,9 +144,11 @@ fn lerp(
                 }
             }
 
-            finished.set(timer.0.finished());
+            if timer.0.finished() {
+                finished_q.get_mut(agent.0).unwrap().confirm_and_reset();
+            }
         } else {
-            finished.set(true);
+            finished_q.get_mut(agent.0).unwrap().confirm_and_reset();
         }
     }
 }

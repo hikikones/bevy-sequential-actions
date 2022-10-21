@@ -89,7 +89,7 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         // Take current duration (if paused), or use full duration
         let duration = self.current.take().unwrap_or(self.duration);
 
@@ -97,7 +97,7 @@ impl Action for WaitAction {
         world.entity_mut(id.status()).insert(Wait(duration));
     }
 
-    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         // Store current duration when paused
         if let StopReason::Paused = reason {
             self.current = Some(world.get::<Wait>(id.status()).unwrap().0);
@@ -130,7 +130,7 @@ in a deferred way.
 pub struct SetStateAction<T: StateData>(T);
 
 impl<T: StateData> Action for SetStateAction<T> {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
         world
             .resource_mut::<State<T>>()
             .set(self.0.clone())
@@ -143,7 +143,7 @@ impl<T: StateData> Action for SetStateAction<T> {
         commands.actions(id.agent()).next();
     }
 
-    fn on_stop(&mut self, _id: ActionEntities, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 ```
 

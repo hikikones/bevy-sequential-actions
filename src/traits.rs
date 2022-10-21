@@ -3,34 +3,34 @@ use crate::*;
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands);
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason);
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
 }
 
 impl<Start> Action for Start
 where
-    Start: FnMut(ActionEntities, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands) {
-        (self)(id, world, commands);
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+        (self)(agent, world, commands);
     }
 
-    fn on_stop(&mut self, _id: ActionEntities, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: FnMut(ActionEntities, &mut World, &mut ActionCommands) + Send + Sync + 'static,
-    Stop: FnMut(ActionEntities, &mut World, StopReason) + Send + Sync + 'static,
+    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, commands: &mut ActionCommands) {
-        (self.0)(id, world, commands);
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+        (self.0)(agent, world, commands);
     }
 
-    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
-        (self.1)(id, world, reason);
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        (self.1)(agent, world, reason);
     }
 }
 

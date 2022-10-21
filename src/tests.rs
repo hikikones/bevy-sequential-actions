@@ -31,7 +31,7 @@ impl Ecs {
             CHECK_ACTIONS_STAGE,
             SystemSet::new()
                 .with_system(count_finished_actions)
-                .with_system(check_finished_actions.after(count_finished_actions)),
+                .with_system(check_actions.after(count_finished_actions)),
         );
 
         Self { world, schedule }
@@ -91,14 +91,14 @@ struct Canceled;
 struct Paused;
 
 impl Action for CountdownAction {
-    fn on_start(&mut self, id: ActionEntities, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         world.entity_mut(id.agent()).insert(CountdownMarker);
         world
             .entity_mut(id.status())
             .insert(Countdown(self.current.take().unwrap_or(self.count)));
     }
 
-    fn on_stop(&mut self, id: ActionEntities, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         let mut agent = world.entity_mut(id.agent());
         agent.remove::<CountdownMarker>();
 
@@ -420,15 +420,10 @@ fn repeat_forever() {
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
-        fn on_start(
-            &mut self,
-            id: ActionEntities,
-            world: &mut World,
-            _commands: &mut ActionCommands,
-        ) {
+        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.despawn(id.agent());
         }
-        fn on_stop(&mut self, _id: ActionEntities, _world: &mut World, _reason: StopReason) {}
+        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
     }
 
     let mut ecs = Ecs::new();
@@ -449,15 +444,10 @@ fn order() {
     #[derive(Default)]
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
-        fn on_start(
-            &mut self,
-            id: ActionEntities,
-            world: &mut World,
-            _commands: &mut ActionCommands,
-        ) {
+        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
             world.entity_mut(id.agent()).insert(T::default());
         }
-        fn on_stop(&mut self, id: ActionEntities, world: &mut World, _reason: StopReason) {
+        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
             world.entity_mut(id.agent()).remove::<T>();
         }
     }

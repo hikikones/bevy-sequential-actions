@@ -26,35 +26,18 @@ impl Plugin for SequentialActionsPlugin {
         app.add_stage_after(
             CoreStage::PostUpdate,
             CHECK_ACTIONS_STAGE,
-            SystemStage::single_threaded(),
-        )
-        .add_system_set_to_stage(
-            CHECK_ACTIONS_STAGE,
-            SystemSet::new()
-                .with_system(count_finished_actions)
-                .with_system(check_finished_actions.after(count_finished_actions)),
+            SystemStage::single(check_actions),
         );
     }
 }
 
 pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
 
-pub(super) fn count_finished_actions(
-    finished_q: Query<(&ActionFinished, &ActionAgent), Changed<ActionFinished>>,
-    mut count_q: Query<&mut FinishedCount>,
-) {
-    for (finished, agent) in finished_q.iter() {
-        if finished.0 {
-            count_q.get_mut(agent.0).unwrap().0 += 1;
-        }
-    }
-}
-
 #[allow(clippy::type_complexity)]
-pub(super) fn check_finished_actions(
+pub(super) fn check_actions(
     mut q: Query<
-        (Entity, &CurrentAction, &mut FinishedCount),
-        (Changed<FinishedCount>, With<ActionMarker>),
+        (Entity, &CurrentAction, &mut AgentState),
+        (Changed<AgentState>, With<ActionMarker>),
     >,
     mut commands: Commands,
 ) {
@@ -65,13 +48,13 @@ pub(super) fn check_finished_actions(
                 ActionType::Multiple(actions) => actions.len() as u32,
             };
 
-            if finished_count.0 == action_count {
+            if finished_count.total() == action_count {
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);
                 });
             }
 
-            finished_count.0 = 0;
+            finished_count.finished_reset = 0;
         }
     }
 }
