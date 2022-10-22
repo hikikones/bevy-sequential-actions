@@ -58,6 +58,7 @@ todo
 use std::{
     collections::VecDeque,
     ops::{Deref, DerefMut},
+    slice::IterMut,
 };
 
 use bevy_ecs::prelude::*;
@@ -208,6 +209,21 @@ pub enum Repeat {
     Forever,
 }
 
+impl Repeat {
+    fn process(&mut self) -> bool {
+        match self {
+            Repeat::Amount(n) => {
+                if *n == 0 {
+                    return false;
+                }
+                *n -= 1;
+                true
+            }
+            Repeat::Forever => true,
+        }
+    }
+}
+
 /// The reason why an [`Action`] was stopped.
 #[derive(Clone, Copy)]
 pub enum StopReason {
@@ -243,8 +259,24 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 enum ActionType {
-    Single(BoxedAction),
+    Single([BoxedAction; 1]),
     Multiple(Box<[BoxedAction]>),
+}
+
+impl ActionType {
+    fn iter_mut(&mut self) -> IterMut<BoxedAction> {
+        match self {
+            ActionType::Single(a) => a.iter_mut(),
+            ActionType::Multiple(a) => a.iter_mut(),
+        }
+    }
+
+    fn len(&self) -> u32 {
+        match self {
+            ActionType::Single(_) => 1,
+            ActionType::Multiple(a) => a.len() as u32,
+        }
+    }
 }
 
 // struct ActionState {

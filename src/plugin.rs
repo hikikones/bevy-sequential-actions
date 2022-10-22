@@ -43,12 +43,7 @@ pub(super) fn check_actions(
 ) {
     for (agent, current_action, mut finished) in q.iter_mut() {
         if let Some((action_type, _)) = &current_action.0 {
-            let action_count = match action_type {
-                ActionType::Single(_) => 1,
-                ActionType::Multiple(actions) => actions.len() as u32,
-            };
-
-            if finished.total() == action_count {
+            if finished.total() == action_type.len() {
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);
                 });
