@@ -100,7 +100,7 @@ impl Action for CountdownAction {
     }
 }
 
-fn countdown(mut countdown_q: Query<(&mut Countdown, &mut AgentState)>) {
+fn countdown(mut countdown_q: Query<(&mut Countdown, &mut ActionFinished)>) {
     for (mut countdown, mut finished) in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
 

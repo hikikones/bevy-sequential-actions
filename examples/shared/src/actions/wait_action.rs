@@ -52,7 +52,7 @@ where
 #[derive(Component)]
 struct Wait(f32);
 
-fn wait(mut wait_q: Query<(&mut Wait, &mut AgentState)>, time: Res<Time>) {
+fn wait(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
     for (mut wait, mut finished) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
 

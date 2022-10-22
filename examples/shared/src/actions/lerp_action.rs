@@ -121,7 +121,7 @@ struct LerpTimer(Timer);
 fn lerp(
     mut lerp_q: Query<(&mut LerpTimer, &LerpTarget, &Lerp, &LerpAgent)>,
     mut transform_q: Query<&mut Transform>,
-    mut finished_q: Query<&mut AgentState>,
+    mut finished_q: Query<&mut ActionFinished>,
     time: Res<Time>,
 ) {
     for (mut timer, target, lerp, agent) in lerp_q.iter_mut() {

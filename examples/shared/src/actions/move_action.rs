@@ -98,7 +98,7 @@ struct Speed(f32);
 struct Rotate(Quat);
 
 fn movement(
-    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut AgentState)>,
+    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
     time: Res<Time>,
 ) {
     for (mut transform, target, speed, mut finished) in move_q.iter_mut() {

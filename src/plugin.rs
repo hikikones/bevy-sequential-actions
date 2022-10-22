@@ -36,14 +36,14 @@ pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
 #[allow(clippy::type_complexity)]
 pub(super) fn check_actions(
     mut q: Query<
-        (Entity, &CurrentAction, &mut AgentState),
-        (Changed<AgentState>, With<ActionMarker>),
+        (Entity, &CurrentAction, &mut ActionFinished),
+        (Changed<ActionFinished>, With<ActionMarker>),
     >,
     mut commands: Commands,
 ) {
     for (agent, current_action, mut finished) in q.iter_mut() {
-        if let Some((action_type, _)) = &current_action.0 {
-            if finished.total() == action_type.len() {
+        if let Some((current_action, _)) = &current_action.0 {
+            if finished.total() == current_action.len() {
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);
                 });

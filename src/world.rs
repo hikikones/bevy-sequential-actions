@@ -190,9 +190,10 @@ impl WorldActionsExt for World {
                 }
             }
 
-            let mut state = self.get_mut::<AgentState>(agent).unwrap();
-            if !state.is_reset() {
-                state.reset();
+            let mut state = self.get_mut::<ActionFinished>(agent).unwrap();
+            if state.finished_reset > 0 || state.finished_persist > 0 {
+                state.finished_reset = 0;
+                state.finished_persist = 0;
             }
         }
     }

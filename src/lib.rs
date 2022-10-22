@@ -82,7 +82,7 @@ pub use world::*;
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
     marker: ActionMarker,
-    state: AgentState,
+    state: ActionFinished,
     queue: ActionQueue,
     current: CurrentAction,
     // count: FinishedCount,
@@ -93,17 +93,24 @@ pub struct ActionsBundle {
 pub struct ActionMarker;
 
 #[derive(Default, Component)]
-pub struct AgentState {
+pub struct ActionFinished {
     finished_reset: u16,
     finished_persist: u16,
 }
 
-enum FinishedState {
+pub enum FinishedState {
     Reset,
     Persist,
 }
 
-impl AgentState {
+impl ActionFinished {
+    // pub fn finish(&mut self, state: FinishedState) {
+    //     match state {
+    //         FinishedState::Reset => self.finished_reset += 1,
+    //         FinishedState::Persist => self.finished_persist += 1,
+    //     }
+    // }
+
     pub fn confirm_and_reset(&mut self) {
         self.finished_reset += 1;
     }
@@ -112,17 +119,8 @@ impl AgentState {
         self.finished_persist += 1;
     }
 
-    fn is_reset(&self) -> bool {
-        self.finished_reset == 0 && self.finished_persist == 0
-    }
-
     fn total(&self) -> u32 {
         self.finished_reset as u32 + self.finished_persist as u32
-    }
-
-    fn reset(&mut self) {
-        self.finished_reset = 0;
-        self.finished_persist = 0;
     }
 }
 
