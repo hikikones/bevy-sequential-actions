@@ -43,6 +43,7 @@ pub(super) fn check_actions(
 ) {
     for (agent, current_action, mut finished) in q.iter_mut() {
         if let Some((current_action, _)) = &current_action.0 {
+            // TODO: Add debug warning when total > len.
             if finished.total() == current_action.len() {
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);

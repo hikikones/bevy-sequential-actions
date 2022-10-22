@@ -73,12 +73,11 @@ The `Action` trait contains two methods:
 * The `on_start` method which is called when an action is started.
 * The `on_stop` method which is called when an action is stopped.
 
-Each action is given a unique entity that we will refer to as the `status` entity.
-This entity is spawned before an action starts, and despawned after it stops.
-It contains two components:
+Every action is responsible for advancing the actions queue.
+There are two ways of doing this:
 
-* The `ActionFinished` component which must be used in order to declare that an action is finished.
-* The `ActionAgent` component which is optionally used for getting the entity ID for the `agent`.
+* Using the `ActionFinished` component on an `agent`. A system at the end of the frame will advance the queue if all active actions are finished. This is the typical approach as it composes well with other actions running in parallel.
+* Calling the `next` method on an `agent`. This simply advances the queue at the end of the current stage it was called in. Useful for short one-at-a-time actions.
 
 A simple wait action follows.
 
@@ -93,14 +92,17 @@ impl Action for WaitAction {
         // Take current duration (if paused), or use full duration
         let duration = self.current.take().unwrap_or(self.duration);
 
-        // Run the wait system on the given status entity
-        world.entity_mut(id.status()).insert(Wait(duration));
+        // Run the wait system on the agent
+        world.entity_mut(agent).insert(Wait(duration));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        // Remove the wait component from the agent
+        let wait = world.entity_mut(agent).remove::<Wait>();
+
         // Store current duration when paused
         if let StopReason::Paused = reason {
-            self.current = Some(world.get::<Wait>(id.status()).unwrap().0);
+            self.current = Some(wait.unwrap().0);
         }
     }
 }
@@ -112,8 +114,10 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
     for (mut wait, mut finished) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
 
-        // Set the finished status for the action
-        finished.set(wait.0 <= 0.0);
+        // Confirm finished state every frame
+        if wait.0 <= 0.0 {
+            finished.confirm_and_reset();
+        }
     }
 }
 ```
@@ -121,10 +125,8 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 ### Warning
 
 One thing to keep in mind is that you should not modify actions using `World` inside the `Action` trait.
-In order to pass a mutable `World`, the current action is temporarily removed from the `agent`
-before either of the trait methods are called, and put back again after.
-This is why `ActionCommands` was created, so you can safely modify actions inside the `Action` trait
-in a deferred way.
+In order to pass a mutable `World`, the current action is temporarily removed from an `agent` and put back again.
+This is why `ActionCommands` was created, so you can modify actions inside the `Action` trait in a deferred way.
 
 ```rust
 pub struct SetStateAction<T: StateData>(T);
@@ -136,23 +138,19 @@ impl<T: StateData> Action for SetStateAction<T> {
             .set(self.0.clone())
             .unwrap();
 
-        // Bad
+        // Bad. The actions queue will advance immediately.
         world.actions(agent).next();
         
-        // Good
+        // Good. The actions queue will advance after this function call.
         commands.actions(agent).next();
+
+        // Also good. The actions queue will advance at the end of the frame.
+        world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 ```
-
-Another thing to keep in mind is that there are two ways to advance the actions queue:
-
-* Using the `ActionFinished` component. A system at the end of the frame will advance the queue if all active actions for an `agent` are finished. This is the recommended approach as it composes well with other actions running in parallel.
-* Calling the `next` method. This simply advances the queue at the end of the current stage it was called in. Useful for small one-at-a-time actions where you want to advance the queue more quickly (instead of waiting a whole frame).
-
-Note that the first approach works with actions in parallel, while the second approach does not.
 
 ## Examples
 
