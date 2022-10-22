@@ -125,7 +125,10 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 ### Warning
 
 One thing to keep in mind is that you should not modify actions using `World` inside the `Action` trait.
-In order to pass a mutable `World`, the current action is temporarily removed from an `agent` and put back again.
+We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
+And so, the action is detached from an `agent` when the trait methods are called.
+Since an `agent` cannot hold an action while inside the `Action` trait,
+the logic for advancing the actions queue will not work properly.
 This is why `ActionCommands` was created, so you can modify actions inside the `Action` trait in a deferred way.
 
 ```rust
@@ -141,7 +144,7 @@ impl<T: StateData> Action for SetStateAction<T> {
         // Bad. The actions queue will advance immediately.
         world.actions(agent).next();
         
-        // Good. The actions queue will advance after this function call.
+        // Good. The actions queue will advance after this method call.
         commands.actions(agent).next();
 
         // Also good. The actions queue will advance at the end of the frame.
