@@ -16,7 +16,7 @@ impl<T: StateData> Action for SetStateAction<T> {
             .set(self.0.clone())
             .unwrap();
 
-        commands.actions(id.agent()).next();
+        commands.actions(agent).next();
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

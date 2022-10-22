@@ -1,6 +1,6 @@
 use bevy::{
     app::AppExit,
-    ecs::{event::Events, world::World},
+    ecs::{entity::Entity, event::Events, world::World},
 };
 use bevy_sequential_actions::*;
 

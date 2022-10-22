@@ -79,14 +79,14 @@ fn setup(mut commands: Commands) {
         .add(
             |agent: Entity, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
-                commands.actions(id.agent()).next();
+                commands.actions(agent).next();
             },
         )
         // Tuple closure for both the on_start and on_stop methods
         .add((
             |agent: Entity, _world: &mut World, commands: &mut ActionCommands| {
                 // on_start
-                commands.actions(id.agent()).next();
+                commands.actions(agent).next();
             },
             |_agent: Entity, _world: &mut World, _reason| {
                 // on_stop
@@ -126,7 +126,7 @@ impl Action for MyCustomAction {
             })
             .into_boxed(),
             LerpAction::new(LerpConfig {
-                target: id.agent(),
+                target: agent,
                 lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
                 duration: 1.0,
             })
@@ -140,7 +140,7 @@ impl Action for MyCustomAction {
             .into_boxed(),
             WaitAction::new(0.5).into_boxed(),
             LerpAction::new(LerpConfig {
-                target: id.agent(),
+                target: agent,
                 lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
                 duration: 1.0,
             })
@@ -148,7 +148,7 @@ impl Action for MyCustomAction {
         ];
 
         commands
-            .actions(id.agent())
+            .actions(agent)
             .config(AddConfig {
                 order: AddOrder::Front,
                 start: false,
@@ -172,7 +172,7 @@ impl Action for FancyAction {
 
         commands.custom(move |world| {
             world.run_system(my_system);
-            world.actions(id.agent()).next();
+            world.actions(agent).next();
         });
     }
 

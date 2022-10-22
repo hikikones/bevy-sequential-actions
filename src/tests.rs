@@ -14,24 +14,11 @@ impl Ecs {
         let world = World::new();
         let mut schedule = Schedule::default();
 
-        schedule.add_stage(UPDATE_STAGE, SystemStage::single_threaded());
-        schedule.add_system_set_to_stage(
-            UPDATE_STAGE,
-            SystemSet::new()
-                .with_system(countdown)
-                .with_system(check_countdown.after(countdown)),
-        );
-
+        schedule.add_stage(UPDATE_STAGE, SystemStage::single(countdown));
         schedule.add_stage_after(
             UPDATE_STAGE,
             CHECK_ACTIONS_STAGE,
-            SystemStage::single_threaded(),
-        );
-        schedule.add_system_set_to_stage(
-            CHECK_ACTIONS_STAGE,
-            SystemSet::new()
-                .with_system(count_finished_actions)
-                .with_system(check_actions.after(count_finished_actions)),
+            SystemStage::single(check_actions),
         );
 
         Self { world, schedule }
@@ -79,9 +66,6 @@ impl CountdownAction {
 struct Countdown(u32);
 
 #[derive(Component)]
-struct CountdownMarker;
-
-#[derive(Component)]
 struct Finished;
 
 #[derive(Component)]
@@ -92,15 +76,14 @@ struct Paused;
 
 impl Action for CountdownAction {
     fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(id.agent()).insert(CountdownMarker);
         world
-            .entity_mut(id.status())
+            .entity_mut(agent)
             .insert(Countdown(self.current.take().unwrap_or(self.count)));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let mut agent = world.entity_mut(id.agent());
-        agent.remove::<CountdownMarker>();
+        let mut agent = world.entity_mut(agent);
+        let cd = agent.remove::<Countdown>();
 
         match reason {
             StopReason::Finished => {
@@ -111,22 +94,18 @@ impl Action for CountdownAction {
             }
             StopReason::Paused => {
                 agent.insert(Paused);
-                self.current = Some(world.get::<Countdown>(id.status()).unwrap().0);
+                self.current = Some(cd.unwrap().0);
             }
         }
     }
 }
 
-fn countdown(mut countdown_q: Query<&mut Countdown>) {
-    for mut countdown in countdown_q.iter_mut() {
+fn countdown(mut countdown_q: Query<(&mut Countdown, &mut AgentState)>) {
+    for (mut countdown, mut finished) in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
-    }
-}
 
-fn check_countdown(mut countdown_q: Query<(&Countdown, &mut ActionFinished)>) {
-    for (countdown, mut finished) in countdown_q.iter_mut() {
         if countdown.0 == 0 {
-            finished.0 = true;
+            finished.confirm_and_reset();
         }
     }
 }
@@ -203,12 +182,12 @@ fn next() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(ecs.world.entity(e).contains::<Countdown>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).next();
 
-    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -227,12 +206,12 @@ fn finish() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(ecs.world.entity(e).contains::<Countdown>());
     assert!(!ecs.world.entity(e).contains::<Finished>());
 
     ecs.run();
 
-    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
     assert!(ecs.world.entity(e).contains::<Finished>());
 }
 
@@ -243,12 +222,12 @@ fn cancel() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(ecs.world.entity(e).contains::<Countdown>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).cancel();
 
-    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -259,12 +238,12 @@ fn pause() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(ecs.world.entity(e).contains::<Countdown>());
     assert!(!ecs.world.entity(e).contains::<Paused>());
 
     ecs.actions(e).pause();
 
-    assert!(!ecs.world.entity(e).contains::<CountdownMarker>());
+    assert!(!ecs.world.entity(e).contains::<Countdown>());
     assert!(ecs.world.entity(e).contains::<Paused>());
 }
 
@@ -421,7 +400,7 @@ fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
         fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.despawn(id.agent());
+            world.despawn(agent);
         }
         fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
     }
@@ -445,10 +424,10 @@ fn order() {
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
         fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.entity_mut(id.agent()).insert(T::default());
+            world.entity_mut(agent).insert(T::default());
         }
         fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(id.agent()).remove::<T>();
+            world.entity_mut(agent).remove::<T>();
         }
     }
 

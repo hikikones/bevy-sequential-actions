@@ -9,8 +9,7 @@ pub struct RotateActionPlugin;
 
 impl Plugin for RotateActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(rotation)
-            .add_system(check_rotation.after(rotation));
+        app.add_system(rotation);
     }
 }
 
@@ -70,12 +69,11 @@ where
             }
         });
 
-        world.entity_mut(id.agent()).insert_bundle(rotate_bundle);
-        world.entity_mut(id.status()).insert(RotateMarker);
+        world.entity_mut(agent).insert_bundle(rotate_bundle);
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let bundle = world.entity_mut(id.agent()).remove_bundle::<RotateBundle>();
+        let bundle = world.entity_mut(agent).remove_bundle::<RotateBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;
@@ -95,21 +93,15 @@ struct Target(Quat);
 #[derive(Component)]
 struct Speed(f32);
 
-#[derive(Component)]
-struct RotateMarker;
-
-fn rotation(mut rotate_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
-    for (mut transform, target, speed) in rotate_q.iter_mut() {
-        transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
-    }
-}
-
-fn check_rotation(
-    mut check_q: Query<(&ActionAgent, &mut ActionFinished), With<RotateMarker>>,
-    transform_q: Query<(&Transform, &Target)>,
+fn rotation(
+    mut rotate_q: Query<(&mut Transform, &Target, &Speed, &mut AgentState)>,
+    time: Res<Time>,
 ) {
-    for (agent, mut finished) in check_q.iter_mut() {
-        let (transform, target) = transform_q.get(agent.id()).unwrap();
-        finished.set(transform.rotation == target.0);
+    for (mut transform, target, speed, mut finished) in rotate_q.iter_mut() {
+        transform.rotate_towards(target.0, speed.0 * time.delta_seconds());
+
+        if transform.rotation == target.0 {
+            finished.confirm_and_reset();
+        }
     }
 }

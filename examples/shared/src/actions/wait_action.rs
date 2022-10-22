@@ -37,12 +37,14 @@ where
 {
     fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         let duration = self.current.take().unwrap_or(self.duration.value());
-        world.entity_mut(id.status()).insert(Wait(duration));
+        world.entity_mut(agent).insert(Wait(duration));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        let wait = world.entity_mut(agent).remove::<Wait>();
+
         if let StopReason::Paused = reason {
-            self.current = Some(world.get::<Wait>(id.status()).unwrap().0);
+            self.current = Some(wait.unwrap().0);
         }
     }
 }
@@ -50,9 +52,12 @@ where
 #[derive(Component)]
 struct Wait(f32);
 
-fn wait(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
+fn wait(mut wait_q: Query<(&mut Wait, &mut AgentState)>, time: Res<Time>) {
     for (mut wait, mut finished) in wait_q.iter_mut() {
         wait.0 -= time.delta_seconds();
-        finished.set(wait.0 <= 0.0);
+
+        if wait.0 <= 0.0 {
+            finished.confirm_and_reset();
+        }
     }
 }

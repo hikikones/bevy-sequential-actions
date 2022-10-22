@@ -83,7 +83,7 @@ where
         self.executor = Some(world.spawn().insert_bundle(lerp_bundle).id());
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
         let executor = self.executor.unwrap();
 
         if let StopReason::Paused = reason {
