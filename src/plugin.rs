@@ -49,7 +49,7 @@ pub(super) fn check_actions(
                 });
             }
 
-            finished.finished_reset = 0;
+            finished.reset_count = 0;
         }
     }
 }

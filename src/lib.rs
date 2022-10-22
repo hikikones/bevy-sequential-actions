@@ -82,10 +82,9 @@ pub use world::*;
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
     marker: ActionMarker,
-    state: ActionFinished,
+    finished: ActionFinished,
     queue: ActionQueue,
     current: CurrentAction,
-    // count: FinishedCount,
 }
 
 /// Marker component for entities with [`ActionsBundle`].
@@ -94,79 +93,23 @@ pub struct ActionMarker;
 
 #[derive(Default, Component)]
 pub struct ActionFinished {
-    finished_reset: u16,
-    finished_persist: u16,
-}
-
-pub enum FinishedState {
-    Reset,
-    Persist,
+    reset_count: u16,
+    persist_count: u16,
 }
 
 impl ActionFinished {
-    // pub fn finish(&mut self, state: FinishedState) {
-    //     match state {
-    //         FinishedState::Reset => self.finished_reset += 1,
-    //         FinishedState::Persist => self.finished_persist += 1,
-    //     }
-    // }
-
     pub fn confirm_and_reset(&mut self) {
-        self.finished_reset += 1;
+        self.reset_count += 1;
     }
 
     pub fn confirm_and_persist(&mut self) {
-        self.finished_persist += 1;
+        self.persist_count += 1;
     }
 
     fn total(&self) -> u32 {
-        self.finished_reset as u32 + self.finished_persist as u32
+        self.reset_count as u32 + self.persist_count as u32
     }
 }
-
-// /// Component for tracking the finished state of an active [`Action`].
-// #[derive(Component)]
-// pub struct ActionFinished(bool);
-
-// impl ActionFinished {
-//     /// Sets the finished state for the current active [`Action`].
-//     pub fn set(&mut self, v: bool) {
-//         self.0 = v;
-//     }
-// }
-
-// /// Component for the `agent` entity ID of an active [`Action`].
-// #[derive(Component)]
-// pub struct ActionAgent(Entity);
-
-// impl ActionAgent {
-//     /// Returns the `agent` entity ID for the current active [`Action`].
-//     pub fn id(&self) -> Entity {
-//         self.0
-//     }
-// }
-
-// /// Struct containing important entity IDs associated with an [`Action`].
-// pub struct ActionEntities(Entity, Entity);
-
-// impl ActionEntities {
-//     /// Returns the `agent` entity ID for the current [`Action`].
-//     pub fn agent(&self) -> Entity {
-//         self.0
-//     }
-
-//     /// Returns the unique entity ID that every active [`Action`] is given.
-//     /// It contains two components:
-//     ///
-//     /// * The [`ActionFinished`] component which must be used in order to declare that an action is finished.
-//     /// * The [`ActionAgent`] component which is optionally used for getting the entity ID for the `agent`.
-//     ///
-//     /// This entity is spawned before an action [`starts`](Action::on_start), and despawned after it [`stops`](Action::on_stop),
-//     /// and so should not be stored for later usage.
-//     pub fn status(&self) -> Entity {
-//         self.1
-//     }
-// }
 
 /// Configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
@@ -245,10 +188,6 @@ pub enum ExecutionMode {
 pub type BoxedAction = Box<dyn Action>;
 
 type ActionTuple = (ActionType, Repeat);
-// type ActionPair = (BoxedAction, Option<Entity>);
-
-// #[derive(Default, Component)]
-// struct FinishedCount(u32);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
@@ -257,35 +196,25 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 enum ActionType {
-    Single([BoxedAction; 1]),
-    Multiple(Box<[BoxedAction]>),
+    One([BoxedAction; 1]),
+    Many(Box<[BoxedAction]>),
 }
 
 impl ActionType {
     fn iter_mut(&mut self) -> IterMut<BoxedAction> {
         match self {
-            ActionType::Single(a) => a.iter_mut(),
-            ActionType::Multiple(a) => a.iter_mut(),
+            ActionType::One(a) => a.iter_mut(),
+            ActionType::Many(a) => a.iter_mut(),
         }
     }
 
     fn len(&self) -> u32 {
         match self {
-            ActionType::Single(_) => 1,
-            ActionType::Multiple(a) => a.len() as u32,
+            ActionType::One(_) => 1,
+            ActionType::Many(a) => a.len() as u32,
         }
     }
 }
-
-// struct ActionState {
-//     repeat: Repeat,
-// }
-
-// impl From<AddConfig> for ActionState {
-//     fn from(cfg: AddConfig) -> Self {
-//         Self { repeat: cfg.repeat }
-//     }
-// }
 
 impl Deref for ActionQueue {
     type Target = VecDeque<ActionTuple>;
