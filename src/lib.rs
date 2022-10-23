@@ -87,10 +87,11 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
-/// Marker component for entities with [`ActionsBundle`].
+/// Marker component for entities with actions.
 #[derive(Default, Component)]
 pub struct ActionMarker;
 
+/// Component for counting how many active actions have finished.
 #[derive(Default, Component)]
 pub struct ActionFinished {
     reset_count: u16,
@@ -98,10 +99,16 @@ pub struct ActionFinished {
 }
 
 impl ActionFinished {
+    /// Confirms that an [`Action`] is finished by incrementing a counter.
+    /// This should be called __every frame__,
+    /// as the counter is reset at the end of the frame.
     pub fn confirm_and_reset(&mut self) {
         self.reset_count += 1;
     }
 
+    /// Confirms that an [`Action`] is finished by incrementing a counter.
+    /// This should be called __only once__,
+    /// as the counter will only reset when an active [`Action`] is [`stopped`](Action::on_stop).
     pub fn confirm_and_persist(&mut self) {
         self.persist_count += 1;
     }
