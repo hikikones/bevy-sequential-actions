@@ -41,8 +41,8 @@ fn setup(mut commands: Commands) {
         }))
         .add(WaitAction::new(1.0))
         .add(MoveAction::new(MoveConfig {
-            target: Vec3::X * 3.0,
-            speed: 6.0,
+            target: Vec3::ZERO,
+            speed: 4.0,
             rotate: true,
         }))
         .add(WaitAction::new(1.0));
@@ -112,13 +112,6 @@ impl Action for MyCustomAction {
             .single(world);
 
         let actions = [
-            MoveAction::new(MoveConfig {
-                target: Vec3::ZERO,
-                speed: 5.0,
-                rotate: true,
-            })
-            .into_boxed(),
-            WaitAction::new(1.0).into_boxed(),
             LerpAction::new(LerpConfig {
                 target: camera,
                 lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
