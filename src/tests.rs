@@ -397,25 +397,47 @@ fn repeat_forever() {
 
 #[test]
 fn despawn() {
-    struct DespawnAction;
-    impl Action for DespawnAction {
-        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.despawn(agent);
-        }
-        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-    }
+    use bevy::prelude::DespawnRecursiveExt;
 
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
-        .add(DespawnAction)
+        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
+            commands.custom(move |w: &mut World| {
+                w.entity_mut(agent).despawn_recursive();
+            });
+        })
         .add(CountdownAction::new(0));
 
     ecs.run();
+    ecs.run();
 
     assert!(ecs.world.get_entity(e).is_none());
+}
+
+#[test]
+fn remove_bundle() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add(CountdownAction::new(0))
+        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
+            commands.custom(move |w: &mut World| {
+                w.entity_mut(agent).remove_bundle::<ActionsBundle>();
+            });
+        })
+        .add(CountdownAction::new(0));
+
+    ecs.run();
+    ecs.run();
+
+    assert!(!ecs.world.entity(e).contains::<ActionMarker>());
+    assert!(!ecs.world.entity(e).contains::<ActionFinished>());
+    assert!(!ecs.world.entity(e).contains::<ActionQueue>());
+    assert!(!ecs.world.entity(e).contains::<CurrentAction>());
 }
 
 #[test]

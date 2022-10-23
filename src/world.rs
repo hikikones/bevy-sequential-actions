@@ -207,9 +207,7 @@ impl WorldActionsExt for World {
                 action.on_start(agent, self, &mut commands);
             }
 
-            if let Some(mut agent) = self.get_entity_mut(agent) {
-                agent.get_mut::<CurrentAction>().unwrap().0 = Some((next_action, repeat));
-            }
+            self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));
 
             commands.apply(self);
         }
