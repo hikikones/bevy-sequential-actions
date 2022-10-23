@@ -134,6 +134,7 @@ We cannot borrow a mutable action from an `agent` while also passing a mutable w
 And so, the action is detached from an `agent` when the trait methods are called.
 Since an `agent` cannot hold an action while inside the `Action` trait,
 the logic for advancing the actions queue will not work properly.
+
 This is why `ActionCommands` was created, so you can modify actions inside the `Action` trait in a deferred way.
 
 ```rust
