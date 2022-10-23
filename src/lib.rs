@@ -170,6 +170,11 @@ impl<T: StateData> Action for SetStateAction<T> {
         // Good. The actions queue will advance after this method call.
         commands.actions(agent).next();
 
+        // Also good. Does the same as above.
+        commands.custom(move |w: &mut World| {
+            w.actions(agent).next();
+        });
+
         // Also good. The actions queue will advance at the end of the frame.
         world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
