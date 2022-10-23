@@ -8,7 +8,7 @@ https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-
 
 ## Getting Started
 
-### Plugin
+#### Plugin
 
 In order for everything to work, the `SequentialActionsPlugin` must be added to your `App`.
 
@@ -24,9 +24,10 @@ fn main() {
 }
 ```
 
-### Modifying Actions
+#### Modifying Actions
 
-An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`. An entity with actions is referred to as an `agent`.
+An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`.
+An entity with actions is referred to as an `agent`.
 
 ```rust
 fn setup(mut commands: Commands) {
@@ -66,7 +67,7 @@ fn setup(mut commands: Commands) {
 }
 ```
 
-### Implementing an Action
+#### Implementing an Action
 
 The `Action` trait contains two methods:
 
@@ -76,8 +77,12 @@ The `Action` trait contains two methods:
 Every action is responsible for advancing the actions queue.
 There are two ways of doing this:
 
-* Using the `ActionFinished` component on an `agent`. A system at the end of the frame will advance the queue if all active actions are finished. This is the typical approach as it composes well with other actions running in parallel.
-* Calling the `next` method on an `agent`. This simply advances the queue at the end of the current stage it was called in. Useful for short one-at-a-time actions.
+* Using the `ActionFinished` component on an `agent`.
+  A system at the end of the frame will advance the queue if all active actions are finished.
+  This is the typical approach as it composes well with other actions running in parallel.
+* Calling the `next` method on an `agent`.
+  This simply advances the queue at the end of the current stage it was called in.
+  Useful for short one-at-a-time actions.
 
 A simple wait action follows.
 
@@ -122,7 +127,7 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 }
 ```
 
-### Warning
+#### Warning
 
 One thing to keep in mind is that you should not modify actions using `World` inside the `Action` trait.
 We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.

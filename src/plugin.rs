@@ -2,10 +2,7 @@ use bevy_app::{App, CoreStage, Plugin};
 
 use crate::*;
 
-/// The [`Plugin`] for `bevy-sequential-actions`.
-/// This must be added to [`App`] in order for everything to work.
-///
-/// # Example
+/// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
 /// ```rust,no_run
 /// use bevy::prelude::*;

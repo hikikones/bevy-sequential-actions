@@ -1,59 +1,183 @@
 #![warn(missing_docs)]
 
 /*!
-
 # Bevy Sequential Actions
 
-A [Bevy](https://bevyengine.org) library
+A [Bevy](https://bevyengine.org) library that aims to execute a list of various actions in a sequential manner.
+This generally means that one action runs at a time, and when it is done,
+the next action will start and so on until the list is empty.
 
-todo
+## Getting Started
 
+#### Plugin
+
+In order for everything to work, the [`SequentialActionsPlugin`] must be added to your [`App`](bevy_app::App).
+
+```rust,no_run
+use bevy::prelude::*;
+use bevy_sequential_actions::*;
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(SequentialActionsPlugin)
+        .run();
+}
+```
+
+#### Modifying Actions
+
+An action is anything that implements the [`Action`] trait, and can be added to any [`Entity`] that contains the [`ActionsBundle`].
+An entity with actions is referred to as an `agent`.
+
+```rust,no_run
+# use bevy::prelude::*;
+# use bevy_sequential_actions::*;
+# use shared::actions::QuitAction;
+#
+fn setup(mut commands: Commands) {
+#   let action_a = QuitAction;
+#   let action_b = QuitAction;
+#   let action_c = QuitAction;
+#   let action_d = QuitAction;
+#   let action_e = QuitAction;
+#   let action_f = QuitAction;
+#
+    // Create entity with ActionsBundle
+    let agent = commands.spawn_bundle(ActionsBundle::default()).id();
+
+    // Add a single action with default config
+    commands.actions(agent).add(action_a);
+
+    // Add multiple actions with custom config
+    commands
+        .actions(agent)
+        .config(AddConfig {
+            // Add each action to the back of the queue
+            order: AddOrder::Back,
+            // Start the next action if nothing is currently running
+            start: true,
+            // Repeat the action
+            repeat: Repeat::Amount(0),
+        })
+        .add(action_b)
+        .add(action_c);
+
+    // Add a collection of actions that run in parallel.
+    // This means that all actions will start and stop at the same time,
+    // as the whole collection is treated as "one action".
+    commands
+        .actions(agent)
+        .add_many(
+            ExecutionMode::Parallel,
+            [
+                action_d.into_boxed(),
+                action_e.into_boxed(),
+                action_f.into_boxed(),
+            ].into_iter()
+        );
+}
+```
+
+#### Implementing an Action
+
+The [`Action`] trait contains two methods:
+
+* The [`on_start`](Action::on_start) method which is called when an action is started.
+* The [`on_stop`](Action::on_stop) method which is called when an action is stopped.
+
+Every action is responsible for advancing the actions queue.
+There are two ways of doing this:
+
+* Using the [`ActionFinished`] component on an `agent`.
+  A system at the end of the frame will advance the queue if all active actions are finished.
+  This is the typical approach as it composes well with other actions running in parallel.
+* Calling the [`next`](ModifyActions::next) method on an `agent`.
+  This simply advances the queue at the end of the current stage it was called in.
+  Useful for short one-at-a-time actions.
+
+A simple wait action follows.
+
+```rust,no_run
+# use bevy::prelude::*;
+# use bevy_sequential_actions::*;
+#
+pub struct WaitAction {
+    duration: f32, // Seconds
+    current: Option<f32>, // None
+}
+
+impl Action for WaitAction {
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        // Take current duration (if paused), or use full duration
+        let duration = self.current.take().unwrap_or(self.duration);
+
+        // Run the wait system on the agent
+        world.entity_mut(agent).insert(Wait(duration));
+    }
+
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        // Remove the wait component from the agent
+        let wait = world.entity_mut(agent).remove::<Wait>();
+
+        // Store current duration when paused
+        if let StopReason::Paused = reason {
+            self.current = Some(wait.unwrap().0);
+        }
+    }
+}
+
+#[derive(Component)]
+struct Wait(f32);
+
+fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
+    for (mut wait, mut finished) in wait_q.iter_mut() {
+        wait.0 -= time.delta_seconds();
+
+        // Confirm finished state every frame
+        if wait.0 <= 0.0 {
+            finished.confirm_and_reset();
+        }
+    }
+}
+```
+
+#### Warning
+
+One thing to keep in mind is that you should not modify actions using [`World`] inside the [`Action`] trait.
+We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
+And so, the action is detached from an `agent` when the trait methods are called.
+Since an `agent` cannot hold an action while inside the [`Action`] trait,
+the logic for advancing the actions queue will not work properly.
+This is why [`ActionCommands`] was created, so you can modify actions inside the [`Action`] trait in a deferred way.
+
+```rust,no_run
+# use bevy::{ecs::schedule::StateData, prelude::*};
+# use bevy_sequential_actions::*;
+#
+pub struct SetStateAction<T: StateData>(T);
+
+impl<T: StateData> Action for SetStateAction<T> {
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+        world
+            .resource_mut::<State<T>>()
+            .set(self.0.clone())
+            .unwrap();
+
+        // Bad. The actions queue will advance immediately.
+        world.actions(agent).next();
+
+        // Good. The actions queue will advance after this method call.
+        commands.actions(agent).next();
+
+        // Also good. The actions queue will advance at the end of the frame.
+        world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+}
+```
 */
-
-//! # Bevy Sequential Actions
-//!
-//! A [Bevy](https://bevyengine.org) library
-//! that aims to execute a list of various actions in a sequential manner.
-//! This generally means that one action runs at a time, and when it is done,
-//! the next action will start and so on until the list is empty.
-//!
-//! ## Getting Started
-//!
-//! An action is anything that implements the [`Action`] trait,
-//! and can be added to any [`Entity`] that contains the [`ActionsBundle`].
-//! An entity with actions is referred to as an `agent`.
-//!
-//! ```rust,no_run
-//! # use bevy::prelude::*;
-//! # use bevy_sequential_actions::*;
-//! # use shared::actions::QuitAction;
-//! #
-//! fn setup(mut commands: Commands) {
-//! #   let wait_action = QuitAction;
-//! #   let move_action = QuitAction;
-//! #   let quit_action = QuitAction;
-//! #
-//!     // Create entity with ActionsBundle
-//!     let agent = commands.spawn_bundle(ActionsBundle::default()).id();
-//!     
-//!     // Add a single action with default config
-//!     commands.actions(agent).add(wait_action);
-//!     
-//!     // Add multiple actions with custom config
-//!     commands
-//!         .actions(agent)
-//!         .config(AddConfig {
-//!             // Add each action to the back of the queue
-//!             order: AddOrder::Back,
-//!             // Start the next action if nothing is currently running
-//!             start: true,
-//!             // Repeat the action
-//!             repeat: Repeat::Amount(0),
-//!         })
-//!         .add(move_action)
-//!         .add(quit_action);
-//! }
-//! ```
 
 use std::{
     collections::VecDeque,
