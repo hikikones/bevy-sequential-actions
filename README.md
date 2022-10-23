@@ -58,9 +58,9 @@ fn setup(mut commands: Commands) {
         .add_many(
             ExecutionMode::Parallel,
             [
-                action_a.into_boxed(),
-                action_b.into_boxed(),
-                action_c.into_boxed(),
+                action_d.into_boxed(),
+                action_e.into_boxed(),
+                action_f.into_boxed(),
             ].into_iter()
         );
 }
