@@ -51,8 +51,8 @@ fn setup(mut commands: Commands) {
         .add(action_c);
 
     // Add a collection of actions that run in parallel.
-    // This means that all actions will start at the same time,
-    // and stop when all are finished within the same frame.
+    // This means that all actions will start and stop at the same time,
+    // as the whole collection is treated as "one action".
     commands
         .actions(agent)
         .add_many(
