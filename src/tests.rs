@@ -99,7 +99,7 @@ impl Action for CountdownAction {
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         world.entity_mut(agent).remove::<Active>();
 
-        let entity = self.entity.unwrap();
+        let entity = self.entity.take().unwrap();
 
         match reason {
             StopReason::Finished => {
