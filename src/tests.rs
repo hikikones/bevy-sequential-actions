@@ -50,6 +50,7 @@ impl Ecs {
 
 struct CountdownAction {
     count: u32,
+    entity: Option<Entity>,
     current: Option<u32>,
 }
 
@@ -57,6 +58,7 @@ impl CountdownAction {
     fn new(count: u32) -> Self {
         Self {
             count,
+            entity: None,
             current: None,
         }
     }
@@ -64,6 +66,12 @@ impl CountdownAction {
 
 #[derive(Component)]
 struct Countdown(u32);
+
+#[derive(Component)]
+struct Agent(Entity);
+
+#[derive(Component)]
+struct Active;
 
 #[derive(Component)]
 struct Finished;
@@ -76,36 +84,49 @@ struct Paused;
 
 impl Action for CountdownAction {
     fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world
-            .entity_mut(agent)
-            .insert(Countdown(self.current.take().unwrap_or(self.count)));
+        self.entity = Some(
+            world
+                .spawn()
+                .insert_bundle((
+                    Countdown(self.current.take().unwrap_or(self.count)),
+                    Agent(agent),
+                ))
+                .id(),
+        );
+        world.entity_mut(agent).insert(Active);
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let mut agent = world.entity_mut(agent);
-        let cd = agent.remove::<Countdown>();
+        world.entity_mut(agent).remove::<Active>();
+
+        let entity = self.entity.unwrap();
 
         match reason {
             StopReason::Finished => {
-                agent.insert(Finished);
+                world.entity_mut(agent).insert(Finished);
             }
             StopReason::Canceled => {
-                agent.insert(Canceled);
+                world.entity_mut(agent).insert(Canceled);
             }
             StopReason::Paused => {
-                agent.insert(Paused);
-                self.current = Some(cd.unwrap().0);
+                world.entity_mut(agent).insert(Paused);
+                self.current = Some(world.get::<Countdown>(entity).unwrap().0);
             }
         }
+
+        world.despawn(entity);
     }
 }
 
-fn countdown(mut countdown_q: Query<(&mut Countdown, &mut ActionFinished)>) {
-    for (mut countdown, mut finished) in countdown_q.iter_mut() {
+fn countdown(
+    mut countdown_q: Query<(&mut Countdown, &Agent)>,
+    mut finished_q: Query<&mut ActionFinished>,
+) {
+    for (mut countdown, agent) in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
 
         if countdown.0 == 0 {
-            finished.confirm_and_reset();
+            finished_q.get_mut(agent.0).unwrap().confirm_and_reset();
         }
     }
 }
@@ -173,6 +194,7 @@ fn add_many_parallel() {
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 3);
 }
 
 #[test]
@@ -182,12 +204,12 @@ fn next() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).next();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -206,12 +228,12 @@ fn finish() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Finished>());
 
     ecs.run();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Finished>());
 }
 
@@ -222,12 +244,12 @@ fn cancel() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).cancel();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -238,12 +260,12 @@ fn pause() {
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Paused>());
 
     ecs.actions(e).pause();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Paused>());
 }
 
