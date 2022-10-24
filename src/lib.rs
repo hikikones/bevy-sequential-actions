@@ -166,10 +166,10 @@ impl<T: StateData> Action for SetStateAction<T> {
             .set(self.0.clone())
             .unwrap();
 
-        // Bad. The actions queue will advance immediately.
+        // Bad. The actions queue will advance immediately while inside the on_start method.
         world.actions(agent).next();
 
-        // Good. The actions queue will advance after this method call.
+        // Good. The actions queue will advance after the on_start method.
         commands.actions(agent).next();
 
         // Also good. Does the same as above.
