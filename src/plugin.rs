@@ -15,7 +15,6 @@ use crate::*;
 ///         .run();
 /// }
 /// ```
-#[allow(clippy::needless_doctest_main)]
 pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {
