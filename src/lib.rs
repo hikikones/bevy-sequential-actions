@@ -4,9 +4,9 @@
 /*!
 # Bevy Sequential Actions
 
-A [Bevy](https://bevyengine.org) library that aims to execute a list of various actions in a sequential manner.
+A [Bevy](https://bevyengine.org) library that aims to execute a queue of various actions in a sequential manner.
 This generally means that one action runs at a time, and when it is done,
-the next action will start and so on until the list is empty.
+the next action will start and so on until the queue is empty.
 
 ## Getting Started
 
@@ -87,7 +87,7 @@ The [`Action`] trait contains two methods:
 * The [`on_start`](Action::on_start) method which is called when an action is started.
 * The [`on_stop`](Action::on_stop) method which is called when an action is stopped.
 
-Every action is responsible for advancing the actions queue.
+Every action is responsible for advancing the queue.
 There are two ways of doing this:
 
 * Using the [`ActionFinished`] component on an `agent`.
@@ -149,7 +149,7 @@ One thing to keep in mind is that you should not modify actions using [`World`] 
 We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
 And so, the action is detached from an `agent` when the trait methods are called.
 Since an `agent` cannot hold an action while inside the [`Action`] trait,
-the logic for advancing the actions queue will not work properly.
+the logic for advancing the action queue will not work properly.
 
 This is why [`ActionCommands`] was created, so you can modify actions inside the [`Action`] trait in a deferred way.
 
@@ -166,10 +166,10 @@ impl<T: StateData> Action for SetStateAction<T> {
             .set(self.0.clone())
             .unwrap();
 
-        // Bad. The actions queue will advance immediately.
+        // Bad. The action queue will advance immediately.
         world.actions(agent).next();
 
-        // Good. The actions queue will advance a bit later.
+        // Good. The action queue will advance a bit later.
         commands.actions(agent).next();
 
         // Also good. Does the same as above.
@@ -177,7 +177,7 @@ impl<T: StateData> Action for SetStateAction<T> {
             w.actions(agent).next();
         });
 
-        // Also good. The actions queue will advance at the end of the frame.
+        // Also good. The action queue will advance at the end of the frame.
         world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
 

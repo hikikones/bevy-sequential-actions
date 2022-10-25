@@ -96,7 +96,7 @@ pub trait ModifyActions {
     /// Skips the next [`action`](Action) in the queue.
     fn skip(&mut self) -> &mut Self;
 
-    /// Clears the actions queue.
+    /// Clears the action queue.
     /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(&mut self) -> &mut Self;
 }
