@@ -68,7 +68,7 @@ pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
     type Modifier: ModifyActions;
 
-    /// Returns a type for modifying actions for specified [`agent`](Entity).
+    /// Returns a type for modifying actions for specified `agent`.
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 

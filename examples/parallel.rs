@@ -20,7 +20,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
         .actions(agent)
         .config(AddConfig {
             order: AddOrder::Back,
-            start: false,
+            start: true,
             repeat: Repeat::Forever,
         })
         .add(WaitAction::new(1.0))
@@ -70,6 +70,5 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
                 .into_boxed(),
             ]
             .into_iter(),
-        )
-        .next();
+        );
 }
