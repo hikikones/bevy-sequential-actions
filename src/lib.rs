@@ -282,7 +282,7 @@ pub enum AddOrder {
 /// The repeat configuration for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum Repeat {
-    /// Repeat the [`action`](Action) `n` times.
+    /// Repeat the [`action`](Action) by a specified amount.
     Amount(u32),
     /// Repeat the [`action`](Action) forever.
     Forever,
