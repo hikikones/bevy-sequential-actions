@@ -316,9 +316,9 @@ pub enum StopReason {
 
 /// The execution mode for a collection of [`actions`](Action) to be added.
 pub enum ExecutionMode {
-    /// Execute the [`actions`](Action) in sequence.
+    /// Execute the [`actions`](Action) in sequence, i.e. one by one.
     Sequential,
-    /// Execute the [`actions`](Action) in parallel.
+    /// Execute the [`actions`](Action) in parallel, i.e. all at once.
     Parallel,
 }
 
