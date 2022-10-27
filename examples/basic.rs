@@ -57,12 +57,11 @@ fn setup(mut commands: Commands) {
         })
         .add_many(
             ExecutionMode::Sequential,
-            [
-                WaitAction::new(10.0).into_boxed(),
-                WaitAction::new(100.0).into_boxed(),
-                WaitAction::new(1000.0).into_boxed(),
-            ]
-            .into_iter(),
+            actions![
+                WaitAction::new(10.0),
+                WaitAction::new(100.0),
+                WaitAction::new(1000.0),
+            ],
         )
         // Ain't nobody got time to wait that long, so skip'em
         .skip()
@@ -111,35 +110,6 @@ impl Action for MyCustomAction {
             .query_filtered::<Entity, With<CameraMain>>()
             .single(world);
 
-        let actions = [
-            LerpAction::new(LerpConfig {
-                target: camera,
-                lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
-                duration: 1.0,
-            })
-            .into_boxed(),
-            LerpAction::new(LerpConfig {
-                target: agent,
-                lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
-                duration: 1.0,
-            })
-            .into_boxed(),
-            WaitAction::new(1.0).into_boxed(),
-            LerpAction::new(LerpConfig {
-                target: camera,
-                lerp_type: LerpType::Position(CAMERA_OFFSET),
-                duration: 1.0,
-            })
-            .into_boxed(),
-            WaitAction::new(0.5).into_boxed(),
-            LerpAction::new(LerpConfig {
-                target: agent,
-                lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
-                duration: 1.0,
-            })
-            .into_boxed(),
-        ];
-
         commands
             .actions(agent)
             .config(AddConfig {
@@ -147,7 +117,33 @@ impl Action for MyCustomAction {
                 start: false,
                 repeat: Repeat::Amount(0),
             })
-            .add_many(ExecutionMode::Sequential, actions.into_iter())
+            .add_many(
+                ExecutionMode::Sequential,
+                actions![
+                    LerpAction::new(LerpConfig {
+                        target: camera,
+                        lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
+                        duration: 1.0,
+                    }),
+                    LerpAction::new(LerpConfig {
+                        target: agent,
+                        lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
+                        duration: 1.0,
+                    }),
+                    WaitAction::new(1.0).into_boxed(),
+                    LerpAction::new(LerpConfig {
+                        target: camera,
+                        lerp_type: LerpType::Position(CAMERA_OFFSET),
+                        duration: 1.0,
+                    }),
+                    WaitAction::new(0.5).into_boxed(),
+                    LerpAction::new(LerpConfig {
+                        target: agent,
+                        lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
+                        duration: 1.0,
+                    }),
+                ],
+            )
             .next();
     }
 
