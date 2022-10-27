@@ -31,8 +31,8 @@ fn setup(mut commands: Commands) {
             order: AddOrder::Back,
             // Start the next action if nothing is currently running
             start: true,
-            // Repeat the action zero times, i.e. run only once
-            repeat: Repeat::Amount(0),
+            // Repeat the action
+            repeat: Repeat::None,
         })
         .add(MoveAction::new(MoveConfig {
             target: -Vec3::X * 2.0,
@@ -87,7 +87,7 @@ fn setup(mut commands: Commands) {
                 // on_start
                 commands.actions(agent).next();
             },
-            |_agent: Entity, _world: &mut World, _reason| {
+            |_agent: Entity, _world: &mut World, _reason: StopReason| {
                 // on_stop
             },
         ));
@@ -115,7 +115,7 @@ impl Action for MyCustomAction {
             .config(AddConfig {
                 order: AddOrder::Front,
                 start: false,
-                repeat: Repeat::Amount(0),
+                repeat: Repeat::None,
             })
             .add_many(
                 ExecutionMode::Sequential,
