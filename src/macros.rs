@@ -1,27 +1,20 @@
 /// Helper macro for creating a collection of boxed actions.
 ///
-/// ```rust,no_run
+/// ```rust
 /// # use bevy::prelude::*;
 /// # use bevy_sequential_actions::*;
 /// # use shared::actions::*;
 /// #
-/// fn setup(mut commands: Commands) {
-/// #   let agent = commands.spawn_bundle(ActionsBundle::default()).id();
-/// #
-///     commands
-///         .actions(agent)
-///         .add_many(
-///             ExecutionMode::Parallel,
-///             actions![
-///                 QuitAction,
-///                 DespawnAction,
-///                 WaitAction::new(1.0),
-///                 |agent: Entity, world: &mut World, commands: &mut ActionCommands | {
-///                     // on_start
-///                 },
-///             ]
-///         );
-/// }
+/// let actions = actions![
+///         QuitAction,
+///         DespawnAction,
+///         WaitAction::new(1.0),
+///         |agent: Entity, world: &mut World, commands: &mut ActionCommands| {
+///             // on_start
+///         },
+///     ];
+///
+/// assert_eq!(actions.count(), 4);
 /// ```
 #[macro_export]
 macro_rules! actions {
