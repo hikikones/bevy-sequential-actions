@@ -168,7 +168,7 @@ impl Action for FancyAction {
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
-fn my_system(agent_q: Query<Entity, With<ActionMarker>>, mut commands: Commands) {
+fn my_system(agent_q: Query<Entity, With<Agent>>, mut commands: Commands) {
     let agent = agent_q.single();
     commands
         .actions(agent)

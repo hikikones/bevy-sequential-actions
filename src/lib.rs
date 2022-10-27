@@ -214,15 +214,10 @@ pub use world::*;
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
-    marker: ActionMarker,
     finished: ActionFinished,
     queue: ActionQueue,
     current: CurrentAction,
 }
-
-/// Marker component for entities with actions.
-#[derive(Default, Component)]
-pub struct ActionMarker;
 
 /// Component for counting how many active actions have finished.
 #[derive(Default, Component)]

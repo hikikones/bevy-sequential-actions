@@ -467,7 +467,6 @@ fn remove_bundle() {
     ecs.run();
     ecs.run();
 
-    assert!(!ecs.world.entity(e).contains::<ActionMarker>());
     assert!(!ecs.world.entity(e).contains::<ActionFinished>());
     assert!(!ecs.world.entity(e).contains::<ActionQueue>());
     assert!(!ecs.world.entity(e).contains::<CurrentAction>());
