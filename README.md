@@ -46,7 +46,7 @@ fn setup(mut commands: Commands) {
             // Start the next action if nothing is currently running
             start: true,
             // Repeat the action
-            repeat: Repeat::Amount(0),
+            repeat: Repeat::None,
         })
         .add(action_b)
         .add(action_c);
