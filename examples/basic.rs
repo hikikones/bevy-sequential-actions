@@ -157,8 +157,8 @@ impl Action for FancyAction {
         // This action runs a system that adds another wait action.
         // When modifying actions using world inside the Action trait,
         // it is important that the modifications happens after the on_start method.
-        // Use the custom method for deferred world mutation.
 
+        // Add a custom command for deferred world mutation.
         commands.add(move |world| {
             world.run_system(my_system);
             world.actions(agent).next();
