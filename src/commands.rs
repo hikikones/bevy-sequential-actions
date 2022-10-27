@@ -1,13 +1,11 @@
-use bevy_ecs::prelude::*;
-
 use crate::*;
 
 impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
-    type Modifier = EntityCommandsActions<'c, 'w, 's>;
+    type Modifier = AgentCommandsActions<'c, 'w, 's>;
 
-    fn actions(&'c mut self, entity: Entity) -> EntityCommandsActions<'c, 'w, 's> {
-        EntityCommandsActions {
-            entity,
+    fn actions(&'c mut self, agent: Entity) -> AgentCommandsActions<'c, 'w, 's> {
+        AgentCommandsActions {
+            agent,
             config: AddConfig::default(),
             commands: self,
         }
@@ -15,79 +13,72 @@ impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
 }
 
 /// Modify actions using [`Commands`].
-pub struct EntityCommandsActions<'c, 'w, 's> {
-    entity: Entity,
+pub struct AgentCommandsActions<'c, 'w, 's> {
+    agent: Entity,
     config: AddConfig,
     commands: &'c mut Commands<'w, 's>,
 }
 
-impl ModifyActions for EntityCommandsActions<'_, '_, '_> {
-    fn config(mut self, config: AddConfig) -> Self {
+impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
+    fn config(&mut self, config: AddConfig) -> &mut Self {
         self.config = config;
         self
     }
 
-    fn add<T>(self, action: T) -> Self
-    where
-        T: IntoBoxedAction,
-    {
+    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).config(self.config).add(action);
+            world.add_action(agent, config, action);
         });
         self
     }
 
-    fn add_many<T>(self, actions: T) -> Self
-    where
-        T: BoxedActionIter,
-    {
+    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
         self.commands.add(move |world: &mut World| {
-            world
-                .actions(self.entity)
-                .config(self.config)
-                .add_many(actions);
+            world.add_actions(agent, config, mode, actions);
         });
         self
     }
 
-    fn next(self) -> Self {
+    fn next(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).next();
+            world.next_action(agent);
         });
         self
     }
 
-    fn finish(self) -> Self {
+    fn cancel(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).finish();
+            world.cancel_action(agent);
         });
         self
     }
 
-    fn pause(self) -> Self {
+    fn pause(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).pause();
+            world.pause_action(agent);
         });
         self
     }
 
-    fn stop(self, reason: StopReason) -> Self {
+    fn skip(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).stop(reason);
+            world.skip_action(agent);
         });
         self
     }
 
-    fn skip(self) -> Self {
+    fn clear(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).skip();
-        });
-        self
-    }
-
-    fn clear(self) -> Self {
-        self.commands.add(move |world: &mut World| {
-            world.actions(self.entity).clear();
+            world.clear_actions(agent);
         });
         self
     }

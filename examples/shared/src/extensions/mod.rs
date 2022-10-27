@@ -1,11 +1,9 @@
-pub mod look_rotation;
-pub mod move_towards;
+pub mod movement;
 pub mod random;
-pub mod rotate_towards;
+pub mod rotation;
 pub mod run_system;
 
-pub use look_rotation::*;
-pub use move_towards::*;
+pub use movement::*;
 pub use random::*;
-pub use rotate_towards::*;
+pub use rotation::*;
 pub use run_system::*;

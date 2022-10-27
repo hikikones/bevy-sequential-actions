@@ -5,8 +5,8 @@ use super::assets::*;
 pub(super) fn spawn_level(assets: Res<MyAssets>, mut commands: Commands) {
     // Ground
     commands.spawn_bundle(PbrBundle {
-        mesh: assets.get_mesh(MeshName::Cube),
-        material: assets.get_material(MaterialName::DarkGray),
+        mesh: assets.mesh(MeshName::Cube),
+        material: assets.material(MaterialName::DarkGray),
         transform: Transform {
             translation: -Vec3::Y * 0.5,
             scale: Vec3::new(16.0, 1.0, 10.0),

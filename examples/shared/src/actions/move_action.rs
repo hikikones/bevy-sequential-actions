@@ -1,38 +1,85 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use crate::extensions::{LookRotationExt, MoveTowardsTransformExt, RandomExt};
+use crate::extensions::{FromLookExt, MoveTowardsTransformExt};
 
-use super::CHECK_ACTIONS_STAGE;
+use super::IntoValue;
 
 pub struct MoveActionPlugin;
 
 impl Plugin for MoveActionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(move_system)
-            .add_system(rotate_system)
-            .add_system_to_stage(CHECK_ACTIONS_STAGE, check_move_status);
+        app.add_system(movement).add_system(rotation);
     }
 }
 
-pub struct MoveAction(Vec3);
+pub struct MoveAction<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    config: MoveConfig<V, F>,
+    bundle: Option<MoveBundle>,
+}
 
-impl MoveAction {
-    pub fn new(target: Vec3) -> Self {
-        Self(target)
+pub struct MoveConfig<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    pub target: V,
+    pub speed: F,
+    pub rotate: bool,
+}
+
+impl<V, F> MoveAction<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    pub fn new(config: MoveConfig<V, F>) -> Self {
+        Self {
+            config,
+            bundle: None,
+        }
     }
 }
 
-impl Action for MoveAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(self.0),
-            speed: Speed(4.0),
+impl<V, F> Action for MoveAction<V, F>
+where
+    V: IntoValue<Vec3>,
+    F: IntoValue<f32>,
+{
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
+            target: Target(self.config.target.value()),
+            speed: Speed(self.config.speed.value()),
         });
+
+        let mut agent = world.entity_mut(agent);
+
+        if self.config.rotate {
+            let start = agent.get::<Transform>().unwrap().translation;
+            let dir = (move_bundle.target.0 - start).normalize_or_zero();
+            if dir != Vec3::ZERO {
+                agent.insert(Rotate(Quat::from_look(dir, Vec3::Y)));
+            }
+        }
+
+        agent.insert_bundle(move_bundle);
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
-        world.entity_mut(entity).remove_bundle::<MoveBundle>();
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        let mut agent = world.entity_mut(agent);
+        let bundle = agent.remove_bundle::<MoveBundle>();
+
+        if self.config.rotate {
+            agent.remove::<Rotate>();
+        }
+
+        if let StopReason::Paused = reason {
+            self.bundle = bundle;
+        }
     }
 }
 
@@ -48,73 +95,28 @@ struct Target(Vec3);
 #[derive(Component)]
 struct Speed(f32);
 
-fn move_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
-    for (mut transform, target, speed) in move_q.iter_mut() {
+#[derive(Component)]
+struct Rotate(Quat);
+
+fn movement(
+    mut move_q: Query<(&mut Transform, &Target, &Speed, &mut ActionFinished)>,
+    time: Res<Time>,
+) {
+    for (mut transform, target, speed, mut finished) in move_q.iter_mut() {
         transform.move_towards(target.0, speed.0 * time.delta_seconds());
+
+        if transform.translation == target.0 {
+            finished.confirm_and_reset();
+        }
     }
 }
 
-fn rotate_system(mut move_q: Query<(&mut Transform, &Target, &Speed)>, time: Res<Time>) {
-    for (mut transform, target, speed) in move_q.iter_mut() {
-        let dir = target.0 - transform.translation;
-
-        if dir == Vec3::ZERO {
-            continue;
-        }
-
+fn rotation(mut rot_q: Query<(&mut Transform, &Speed, &Rotate)>, time: Res<Time>) {
+    for (mut transform, speed, rotate) in rot_q.iter_mut() {
         transform.rotation = Quat::slerp(
             transform.rotation,
-            Quat::look_rotation(dir, Vec3::Y),
+            rotate.0,
             speed.0 * 2.0 * time.delta_seconds(),
         );
-    }
-}
-
-fn check_move_status(check_q: Query<(Entity, &Transform, &Target)>, mut commands: Commands) {
-    for (entity, transform, target) in check_q.iter() {
-        if transform.translation == target.0 {
-            commands.actions(entity).finish();
-        }
-    }
-}
-
-pub struct MoveRandomAction {
-    min: Vec3,
-    max: Vec3,
-    target: Option<Vec3>,
-}
-
-impl MoveRandomAction {
-    pub fn new(min: Vec3, max: Vec3) -> Self {
-        Self {
-            min,
-            max,
-            target: None,
-        }
-    }
-}
-
-impl Action for MoveRandomAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        let target = if let Some(target) = self.target {
-            target
-        } else {
-            let random = Vec3::random(self.min, self.max);
-            self.target = Some(random);
-            random
-        };
-
-        world.entity_mut(entity).insert_bundle(MoveBundle {
-            target: Target(target),
-            speed: Speed(4.0),
-        });
-    }
-
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        world.entity_mut(entity).remove_bundle::<MoveBundle>();
-
-        if let StopReason::Finished | StopReason::Canceled = reason {
-            self.target = None;
-        }
     }
 }

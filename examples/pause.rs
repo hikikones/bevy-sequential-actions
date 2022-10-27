@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
-use shared::{actions::*, bootstrap::*, extensions::RandomExt};
+use shared::{actions::*, bootstrap::*, extensions::FromEulerXYZExt};
 
 fn main() {
     App::new()
@@ -14,47 +14,46 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let min_wait = 0.5;
-    let max_wait = 2.0;
-
-    let min_move = Vec3::new(-7.0, 0.0, -4.0);
-    let max_move = min_move * -1.0;
-
-    let min_rot = Vec3::ZERO;
-    let max_rot = Vec3::Y * std::f32::consts::PI * 2.0;
+    let seconds = Random::new(0.5, 2.0);
+    let rotation = Random::new(Vec3::ZERO, Vec3::Y * std::f32::consts::TAU);
+    let position = Random::new(Vec3::new(-7.0, 0.0, -4.0), Vec3::new(7.0, 0.0, 4.0));
 
     for _ in 0..10 {
-        let actor = commands.spawn_actor(
-            Vec3::random(min_move, max_move),
-            Quat::random(min_rot, max_rot),
-        );
+        let agent = commands.spawn_agent(position.value(), Quat::from_euler_xyz(rotation.value()));
 
         commands
-            .actions(actor)
+            .actions(agent)
             .config(AddConfig {
                 order: AddOrder::Back,
                 start: true,
                 repeat: Repeat::Forever,
             })
-            .add(WaitRandomAction::new(min_wait, max_wait))
-            .add(RotateRandomAction::new(min_rot, max_rot))
-            .add(WaitRandomAction::new(min_wait, max_wait))
-            .add(MoveRandomAction::new(min_move, max_move));
+            .add(WaitAction::new(seconds))
+            .add(RotateAction::new(RotateConfig {
+                target: RotateType::Euler(rotation),
+                speed: Random::new(2.0, 4.0),
+            }))
+            .add(WaitAction::new(seconds))
+            .add(MoveAction::new(MoveConfig {
+                target: position,
+                speed: Random::new(2.0, 5.0),
+                rotate: true,
+            }));
     }
 }
 
 fn input(
     keyboard: Res<Input<KeyCode>>,
-    actors_q: Query<Entity, With<ActionMarker>>,
+    agents_q: Query<Entity, With<ActionMarker>>,
     mut commands: Commands,
     mut is_paused: Local<bool>,
 ) {
     if keyboard.just_pressed(KeyCode::Space) {
-        for actor in actors_q.iter() {
+        for agent in agents_q.iter() {
             if *is_paused {
-                commands.actions(actor).next();
+                commands.actions(agent).next();
             } else {
-                commands.actions(actor).pause();
+                commands.actions(agent).pause();
             }
         }
 

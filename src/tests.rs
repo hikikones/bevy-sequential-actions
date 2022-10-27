@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
-use bevy::prelude::*;
-
 use crate::*;
+
+const UPDATE_STAGE: &str = "update_test";
 
 struct Ecs {
     world: World,
@@ -13,43 +13,44 @@ impl Ecs {
     fn new() -> Self {
         let world = World::new();
         let mut schedule = Schedule::default();
-        schedule.add_stage("update", SystemStage::parallel());
 
-        let mut ecs = Self { world, schedule };
-        ecs.add_system(countdown_system);
-        ecs
-    }
+        schedule.add_stage(UPDATE_STAGE, SystemStage::single(countdown));
+        schedule.add_stage_after(
+            UPDATE_STAGE,
+            CHECK_ACTIONS_STAGE,
+            SystemStage::single(check_actions),
+        );
 
-    fn add_system<Param, S: IntoSystem<(), (), Param>>(&mut self, system: S) {
-        self.schedule.add_system_to_stage("update", system);
+        Self { world, schedule }
     }
 
     fn run(&mut self) {
         self.schedule.run(&mut self.world);
     }
 
-    fn spawn_action_entity(&mut self) -> Entity {
+    fn spawn_agent(&mut self) -> Entity {
         self.world
             .spawn()
             .insert_bundle(ActionsBundle::default())
             .id()
     }
 
-    fn actions(&mut self, entity: Entity) -> EntityWorldActions {
-        self.world.actions(entity)
+    fn actions(&mut self, agent: Entity) -> AgentWorldActions {
+        self.world.actions(agent)
     }
 
-    fn get_current_action(&self, entity: Entity) -> &CurrentAction {
-        self.world.get::<CurrentAction>(entity).unwrap()
+    fn current_action(&self, agent: Entity) -> &CurrentAction {
+        self.world.get::<CurrentAction>(agent).unwrap()
     }
 
-    fn get_action_queue(&self, entity: Entity) -> &ActionQueue {
-        self.world.get::<ActionQueue>(entity).unwrap()
+    fn action_queue(&self, agent: Entity) -> &ActionQueue {
+        self.world.get::<ActionQueue>(agent).unwrap()
     }
 }
 
 struct CountdownAction {
     count: u32,
+    entity: Option<Entity>,
     current: Option<u32>,
 }
 
@@ -57,6 +58,7 @@ impl CountdownAction {
     fn new(count: u32) -> Self {
         Self {
             count,
+            entity: None,
             current: None,
         }
     }
@@ -64,6 +66,12 @@ impl CountdownAction {
 
 #[derive(Component)]
 struct Countdown(u32);
+
+#[derive(Component)]
+struct Agent(Entity);
+
+#[derive(Component)]
+struct Active;
 
 #[derive(Component)]
 struct Finished;
@@ -75,69 +83,71 @@ struct Canceled;
 struct Paused;
 
 impl Action for CountdownAction {
-    fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        world
-            .entity_mut(entity)
-            .insert(Countdown(self.current.unwrap_or(self.count)));
+    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        self.entity = Some(
+            world
+                .spawn()
+                .insert_bundle((
+                    Countdown(self.current.take().unwrap_or(self.count)),
+                    Agent(agent),
+                ))
+                .id(),
+        );
+        world.entity_mut(agent).insert(Active);
     }
 
-    fn on_stop(&mut self, entity: Entity, world: &mut World, reason: StopReason) {
-        let mut e = world.entity_mut(entity);
-        let count = e.remove::<Countdown>();
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        world.entity_mut(agent).remove::<Active>();
+
+        let entity = self.entity.take().unwrap();
 
         match reason {
             StopReason::Finished => {
-                self.current = None;
-                e.insert(Finished);
+                world.entity_mut(agent).insert(Finished);
             }
             StopReason::Canceled => {
-                self.current = None;
-                e.insert(Canceled);
+                world.entity_mut(agent).insert(Canceled);
             }
             StopReason::Paused => {
-                self.current = Some(count.unwrap().0);
-                e.insert(Paused);
+                world.entity_mut(agent).insert(Paused);
+                self.current = Some(world.get::<Countdown>(entity).unwrap().0);
             }
         }
+
+        world.despawn(entity);
     }
 }
 
-fn countdown_system(mut countdown_q: Query<(Entity, &mut Countdown)>, mut commands: Commands) {
-    for (entity, mut countdown) in countdown_q.iter_mut() {
+fn countdown(
+    mut countdown_q: Query<(&mut Countdown, &Agent)>,
+    mut finished_q: Query<&mut ActionFinished>,
+) {
+    for (mut countdown, agent) in countdown_q.iter_mut() {
         countdown.0 = countdown.0.saturating_sub(1);
+
         if countdown.0 == 0 {
-            commands.actions(entity).finish();
+            finished_q.get_mut(agent.0).unwrap().confirm_and_reset();
         }
     }
-}
-
-struct EmptyAction;
-
-impl Action for EmptyAction {
-    fn on_start(&mut self, entity: Entity, _world: &mut World, commands: &mut ActionCommands) {
-        commands.actions(entity).finish();
-    }
-
-    fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 #[test]
 fn add() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 }
 
 #[test]
@@ -145,22 +155,72 @@ fn add() {
 fn add_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
-    ecs.actions(e).add(EmptyAction);
+    ecs.actions(e).add(CountdownAction::new(0));
+}
+
+#[test]
+fn add_many_sequential() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_many(
+        ExecutionMode::Sequential,
+        [
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+        ]
+        .into_iter(),
+    );
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 2);
+}
+
+#[test]
+fn add_many_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_many(
+        ExecutionMode::Parallel,
+        [
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+            CountdownAction::new(0).into_boxed(),
+        ]
+        .into_iter(),
+    );
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 3);
+}
+
+#[test]
+fn add_many_parallel_empty() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add_many(ExecutionMode::Parallel, [].into_iter());
+
+    assert!(ecs.current_action(e).is_none());
 }
 
 #[test]
 fn next() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Canceled>());
 
     ecs.actions(e).next();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -175,40 +235,48 @@ fn next_panic() {
 #[test]
 fn finish() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Finished>());
 
-    ecs.actions(e).finish();
+    ecs.run();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Finished>());
 }
 
 #[test]
-#[should_panic]
-fn finish_panic() {
+fn cancel() {
     let mut ecs = Ecs::new();
-    let e = ecs.world.spawn().id();
-    ecs.actions(e).finish();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add(CountdownAction::new(0));
+
+    assert!(ecs.world.entity(e).contains::<Active>());
+    assert!(!ecs.world.entity(e).contains::<Canceled>());
+
+    ecs.actions(e).cancel();
+
+    assert!(!ecs.world.entity(e).contains::<Active>());
+    assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
 #[test]
 fn pause() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e).add(CountdownAction::new(0));
 
-    assert!(ecs.world.entity(e).contains::<Countdown>());
+    assert!(ecs.world.entity(e).contains::<Active>());
     assert!(!ecs.world.entity(e).contains::<Paused>());
 
     ecs.actions(e).pause();
 
-    assert!(!ecs.world.entity(e).contains::<Countdown>());
+    assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Paused>());
 }
 
@@ -217,13 +285,13 @@ fn pause() {
 fn pause_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.world.spawn().id();
-    ecs.actions(e).stop(StopReason::Paused);
+    ecs.actions(e).pause();
 }
 
 #[test]
 fn skip() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .config(AddConfig {
@@ -231,51 +299,51 @@ fn skip() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add(EmptyAction)
+        .add(CountdownAction::new(0))
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Amount(1),
         })
-        .add(EmptyAction)
+        .add(CountdownAction::new(0))
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Forever,
         })
-        .add(EmptyAction);
+        .add(CountdownAction::new(0));
 
-    assert!(ecs.get_action_queue(e).len() == 3);
-
-    ecs.actions(e).skip();
-
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 3);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 2);
+    assert!(ecs.action_queue(e).len() == 2);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 2);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.actions(e).skip();
 
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.action_queue(e).len() == 1);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
 }
 
 #[test]
 fn clear() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
@@ -283,8 +351,8 @@ fn clear() {
         .add(CountdownAction::new(0))
         .clear();
 
-    assert!(ecs.get_current_action(e).is_none());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
     assert!(ecs.world.entity(e).contains::<Canceled>());
 }
 
@@ -297,39 +365,9 @@ fn clear_panic() {
 }
 
 #[test]
-fn push() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
-
-    ecs.actions(e).add_many(
-        [
-            EmptyAction.into_boxed(),
-            EmptyAction.into_boxed(),
-            EmptyAction.into_boxed(),
-        ]
-        .into_iter(),
-    );
-
-    assert!(ecs.get_current_action(e).is_none());
-    assert!(ecs.get_action_queue(e).len() == 0);
-
-    ecs.actions(e).add_many(
-        [
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-        ]
-        .into_iter(),
-    );
-
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 2);
-}
-
-#[test]
 fn repeat_amount() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .config(AddConfig {
@@ -345,28 +383,28 @@ fn repeat_amount() {
         })
         .add(CountdownAction::new(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 1);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 1);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_none());
+    assert!(ecs.current_action(e).is_none());
 }
 
 #[test]
 fn repeat_forever() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .config(AddConfig {
@@ -376,44 +414,63 @@ fn repeat_forever() {
         })
         .add(CountdownAction::new(0));
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 
     ecs.run();
 
-    assert!(ecs.get_current_action(e).is_some());
-    assert!(ecs.get_action_queue(e).len() == 0);
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
 }
 
 #[test]
-#[should_panic]
 fn despawn() {
-    struct DespawnAction;
-    impl Action for DespawnAction {
-        fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.despawn(entity);
-        }
-        fn on_stop(&mut self, _entity: Entity, _world: &mut World, _reason: StopReason) {}
-    }
+    use bevy::prelude::DespawnRecursiveExt;
 
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
-        .add(DespawnAction)
-        .add(EmptyAction);
+        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
+            commands.custom(move |w: &mut World| {
+                w.entity_mut(agent).despawn_recursive();
+            });
+        })
+        .add(CountdownAction::new(0));
 
+    ecs.run();
     ecs.run();
 
     assert!(ecs.world.get_entity(e).is_none());
+}
 
-    ecs.actions(e).add(EmptyAction);
+#[test]
+fn remove_bundle() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add(CountdownAction::new(0))
+        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
+            commands.custom(move |w: &mut World| {
+                w.entity_mut(agent).remove_bundle::<ActionsBundle>();
+            });
+        })
+        .add(CountdownAction::new(0));
+
+    ecs.run();
+    ecs.run();
+
+    assert!(!ecs.world.entity(e).contains::<ActionMarker>());
+    assert!(!ecs.world.entity(e).contains::<ActionFinished>());
+    assert!(!ecs.world.entity(e).contains::<ActionQueue>());
+    assert!(!ecs.world.entity(e).contains::<CurrentAction>());
 }
 
 #[test]
@@ -421,11 +478,11 @@ fn order() {
     #[derive(Default)]
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
-        fn on_start(&mut self, entity: Entity, world: &mut World, _commands: &mut ActionCommands) {
-            world.entity_mut(entity).insert(T::default());
+        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+            world.entity_mut(agent).insert(T::default());
         }
-        fn on_stop(&mut self, entity: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(entity).remove::<T>();
+        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
+            world.entity_mut(agent).remove::<T>();
         }
     }
 
@@ -437,10 +494,11 @@ fn order() {
     struct C;
 
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
     // A, B, C
     ecs.actions(e).add_many(
+        ExecutionMode::Sequential,
         [
             Order::<A>::default().into_boxed(),
             Order::<B>::default().into_boxed(),
@@ -451,11 +509,11 @@ fn order() {
 
     assert!(ecs.world.entity(e).contains::<A>());
 
-    ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<B>());
 
-    ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<C>());
 
@@ -468,6 +526,7 @@ fn order() {
             repeat: Repeat::Amount(0),
         })
         .add_many(
+            ExecutionMode::Sequential,
             [
                 Order::<A>::default().into_boxed(),
                 Order::<B>::default().into_boxed(),
@@ -479,11 +538,11 @@ fn order() {
 
     assert!(ecs.world.entity(e).contains::<A>());
 
-    ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<B>());
 
-    ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<C>());
 
@@ -496,6 +555,7 @@ fn order() {
             repeat: Repeat::Amount(0),
         })
         .add_many(
+            ExecutionMode::Sequential,
             [
                 Order::<C>::default().into_boxed(),
                 Order::<B>::default().into_boxed(),
@@ -507,11 +567,11 @@ fn order() {
 
     assert!(ecs.world.entity(e).contains::<C>());
 
-    ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<B>());
 
-    ecs.actions(e).finish();
+    ecs.actions(e).next();
 
     assert!(ecs.world.entity(e).contains::<A>());
 }
@@ -519,17 +579,17 @@ fn order() {
 #[test]
 fn pause_resume() {
     let mut ecs = Ecs::new();
-    let e = ecs.spawn_action_entity();
+    let e = ecs.spawn_agent();
 
-    fn get_first_countdown_value(world: &mut World) -> u32 {
-        world.query::<&Countdown>().iter(world).next().unwrap().0
+    fn countdown_value(w: &mut World) -> u32 {
+        w.query::<&Countdown>().single(w).0
     }
 
     ecs.actions(e).add(CountdownAction::new(100));
 
     ecs.run();
 
-    assert!(get_first_countdown_value(&mut ecs.world) == 99);
+    assert!(countdown_value(&mut ecs.world) == 99);
 
     ecs.actions(e)
         .pause()
@@ -544,5 +604,5 @@ fn pause_resume() {
     ecs.run();
     ecs.run();
 
-    assert!(get_first_countdown_value(&mut ecs.world) == 98);
+    assert!(countdown_value(&mut ecs.world) == 98);
 }

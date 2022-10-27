@@ -1,9 +1,6 @@
-use bevy_ecs::prelude::*;
-
 use crate::*;
 
 /// Commands for modifying actions inside the [`Action`] trait.
-#[derive(Default)]
 #[allow(clippy::type_complexity)]
 pub struct ActionCommands(Vec<Box<dyn FnOnce(&mut World)>>);
 
@@ -15,19 +12,33 @@ impl ActionCommands {
         self.0.push(Box::new(f));
     }
 
+    pub(super) fn new() -> Self {
+        Self(Vec::new())
+    }
+
     pub(super) fn apply(self, world: &mut World) {
         for cmd in self.0 {
             cmd(world);
         }
     }
+
+    /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
+    /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
+    pub fn custom<F>(&mut self, f: F) -> &mut Self
+    where
+        F: FnOnce(&mut World) + 'static,
+    {
+        self.push(f);
+        self
+    }
 }
 
 impl<'a> ActionsProxy<'a> for ActionCommands {
-    type Modifier = EntityActions<'a>;
+    type Modifier = AgentActions<'a>;
 
-    fn actions(&'a mut self, entity: Entity) -> EntityActions<'a> {
-        EntityActions {
-            entity,
+    fn actions(&'a mut self, agent: Entity) -> AgentActions<'a> {
+        AgentActions {
+            agent,
             config: AddConfig::default(),
             commands: self,
         }
@@ -35,91 +46,72 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
 }
 
 /// Modify actions using [`ActionCommands`].
-pub struct EntityActions<'a> {
-    entity: Entity,
+pub struct AgentActions<'a> {
+    agent: Entity,
     config: AddConfig,
     commands: &'a mut ActionCommands,
 }
 
-impl EntityActions<'_> {
-    /// Mutate [`World`] with `f` after [`Action::on_start`] has been called.
-    /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
-    pub fn custom<F>(self, f: F) -> Self
-    where
-        F: FnOnce(&mut World) + 'static,
-    {
-        self.commands.push(f);
-        self
-    }
-}
-
-impl ModifyActions for EntityActions<'_> {
-    fn config(mut self, config: AddConfig) -> Self {
+impl ModifyActions for AgentActions<'_> {
+    fn config(&mut self, config: AddConfig) -> &mut Self {
         self.config = config;
         self
     }
 
-    fn add<T>(self, action: T) -> Self
-    where
-        T: IntoBoxedAction,
-    {
+    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
         self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).add(action);
+            world.add_action(agent, config, action);
         });
         self
     }
 
-    fn add_many<T>(self, actions: T) -> Self
-    where
-        T: BoxedActionIter,
-    {
+    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
         self.commands.push(move |world| {
-            world
-                .actions(self.entity)
-                .config(self.config)
-                .add_many(actions);
+            world.add_actions(agent, config, mode, actions);
         });
         self
     }
 
-    fn next(self) -> Self {
+    fn next(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).next();
+            world.next_action(agent);
         });
         self
     }
 
-    fn finish(self) -> Self {
+    fn cancel(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).finish();
+            world.cancel_action(agent);
         });
         self
     }
 
-    fn pause(self) -> Self {
+    fn pause(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).pause();
+            world.pause_action(agent);
         });
         self
     }
 
-    fn stop(self, reason: StopReason) -> Self {
+    fn skip(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).stop(reason);
+            world.skip_action(agent);
         });
         self
     }
 
-    fn skip(self) -> Self {
+    fn clear(&mut self) -> &mut Self {
+        let agent = self.agent;
         self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).skip();
-        });
-        self
-    }
-
-    fn clear(self) -> Self {
-        self.commands.push(move |world| {
-            world.actions(self.entity).config(self.config).clear();
+            world.clear_actions(agent);
         });
         self
     }
