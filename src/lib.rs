@@ -173,7 +173,7 @@ impl<T: StateData> Action for SetStateAction<T> {
         commands.actions(agent).next();
 
         // Also good. Does the same as above.
-        commands.custom(move |w: &mut World| {
+        commands.add(move |w: &mut World| {
             w.actions(agent).next();
         });
 
