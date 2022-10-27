@@ -196,6 +196,7 @@ use bevy_ecs::prelude::*;
 
 mod action_commands;
 mod commands;
+mod macros;
 mod plugin;
 mod traits;
 mod world;
@@ -205,6 +206,7 @@ mod tests;
 
 pub use action_commands::*;
 pub use commands::*;
+pub use macros::*;
 pub use plugin::*;
 pub use traits::*;
 pub use world::*;
