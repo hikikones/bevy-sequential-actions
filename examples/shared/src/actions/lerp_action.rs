@@ -16,7 +16,7 @@ where
     F: IntoValue<f32>,
 {
     config: LerpConfig<F>,
-    executor: Option<Entity>,
+    entity: Option<Entity>,
     bundle: Option<LerpBundle>,
 }
 
@@ -36,7 +36,7 @@ where
     pub fn new(config: LerpConfig<F>) -> Self {
         Self {
             config,
-            executor: None,
+            entity: None,
             bundle: None,
         }
     }
@@ -80,17 +80,17 @@ where
             }
         });
 
-        self.executor = Some(world.spawn().insert_bundle(lerp_bundle).id());
+        self.entity = Some(world.spawn().insert_bundle(lerp_bundle).id());
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
-        let executor = self.executor.unwrap();
+        let entity = self.entity.unwrap();
 
         if let StopReason::Paused = reason {
-            self.bundle = world.entity_mut(executor).remove_bundle::<LerpBundle>();
+            self.bundle = world.entity_mut(entity).remove_bundle::<LerpBundle>();
         }
 
-        world.despawn(executor);
+        world.despawn(entity);
     }
 }
 
