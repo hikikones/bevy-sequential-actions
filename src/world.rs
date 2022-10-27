@@ -117,6 +117,7 @@ impl ModifyActionsWorldExt for World {
                 }
             },
             ExecutionMode::Parallel => {
+                // TODO: What if empty collection?
                 let action = ActionType::Many(actions.collect());
                 match config.order {
                     AddOrder::Back => queue.push_back((action, config.repeat)),
