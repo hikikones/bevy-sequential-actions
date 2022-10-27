@@ -44,7 +44,7 @@ fn setup(mut commands: Commands) {
 
 fn input(
     keyboard: Res<Input<KeyCode>>,
-    agents_q: Query<Entity, With<ActionMarker>>,
+    agents_q: Query<Entity, With<Agent>>,
     mut commands: Commands,
     mut is_paused: Local<bool>,
 ) {
