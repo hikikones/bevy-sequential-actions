@@ -438,7 +438,7 @@ fn despawn() {
     ecs.actions(e)
         .add(CountdownAction::new(0))
         .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
-            commands.custom(move |w: &mut World| {
+            commands.add(move |w: &mut World| {
                 w.entity_mut(agent).despawn_recursive();
             });
         })
@@ -458,7 +458,7 @@ fn remove_bundle() {
     ecs.actions(e)
         .add(CountdownAction::new(0))
         .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
-            commands.custom(move |w: &mut World| {
+            commands.add(move |w: &mut World| {
                 w.entity_mut(agent).remove_bundle::<ActionsBundle>();
             });
         })
