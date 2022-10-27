@@ -198,6 +198,17 @@ fn add_many_parallel() {
 }
 
 #[test]
+fn add_many_parallel_empty() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add_many(ExecutionMode::Parallel, [].into_iter());
+
+    assert!(ecs.current_action(e).is_none());
+}
+
+#[test]
 fn next() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();

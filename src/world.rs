@@ -117,11 +117,16 @@ impl ModifyActionsWorldExt for World {
                 }
             },
             ExecutionMode::Parallel => {
-                // TODO: What if empty collection?
-                let action = ActionType::Many(actions.collect());
-                match config.order {
-                    AddOrder::Back => queue.push_back((action, config.repeat)),
-                    AddOrder::Front => queue.push_front((action, config.repeat)),
+                let action = actions.collect::<Box<[_]>>();
+                if !action.is_empty() {
+                    match config.order {
+                        AddOrder::Back => {
+                            queue.push_back((ActionType::Many(action), config.repeat))
+                        }
+                        AddOrder::Front => {
+                            queue.push_front((ActionType::Many(action), config.repeat))
+                        }
+                    }
                 }
             }
         }
