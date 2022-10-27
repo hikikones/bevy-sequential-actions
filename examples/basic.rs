@@ -87,7 +87,7 @@ fn setup(mut commands: Commands) {
                 // on_start
                 commands.actions(agent).next();
             },
-            |_agent: Entity, _world: &mut World, _reason| {
+            |_agent: Entity, _world: &mut World, _reason: StopReason| {
                 // on_stop
             },
         ));

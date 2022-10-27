@@ -277,8 +277,11 @@ pub enum AddOrder {
 }
 
 /// The repeat configuration for an [`Action`] to be added.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum Repeat {
+    /// Don't repeat the [`action`](Action).
+    #[default]
+    None,
     /// Repeat the [`action`](Action) by a specified amount.
     Amount(u32),
     /// Repeat the [`action`](Action) forever.
@@ -288,6 +291,7 @@ pub enum Repeat {
 impl Repeat {
     fn process(&mut self) -> bool {
         match self {
+            Repeat::None => false,
             Repeat::Amount(n) => {
                 if *n == 0 {
                     return false;
