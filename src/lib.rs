@@ -71,11 +71,11 @@ fn setup(mut commands: Commands) {
         .actions(agent)
         .add_many(
             ExecutionMode::Parallel,
-            [
-                action_d.into_boxed(),
-                action_e.into_boxed(),
-                action_f.into_boxed(),
-            ].into_iter()
+            actions![
+                action_d,
+                action_e,
+                action_f,
+            ]
         );
 }
 ```
@@ -196,6 +196,7 @@ use bevy_ecs::prelude::*;
 
 mod action_commands;
 mod commands;
+mod macros;
 mod plugin;
 mod traits;
 mod world;
@@ -205,6 +206,7 @@ mod tests;
 
 pub use action_commands::*;
 pub use commands::*;
+pub use macros::*;
 pub use plugin::*;
 pub use traits::*;
 pub use world::*;
