@@ -1,4 +1,5 @@
 use bevy_app::{App, CoreStage, Plugin};
+use bevy_ecs::schedule::StageLabelId;
 
 use crate::*;
 
@@ -15,10 +16,26 @@ use crate::*;
 ///         .run();
 /// }
 /// ```
-pub struct SequentialActionsPlugin;
+#[derive(Default)]
+pub struct SequentialActionsPlugin {
+    stage_label_id: Option<StageLabelId>,
+}
+
+impl SequentialActionsPlugin {
+    pub fn new(stage_label: impl StageLabel) -> Self {
+        Self {
+            stage_label_id: Some(stage_label.as_label()),
+        }
+    }
+}
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
+        if let Some(stage) = &self.stage_label_id {
+            app.add_system_to_stage(stage.clone(), check_actions);
+            return;
+        }
+
         app.add_stage_after(
             CoreStage::PostUpdate,
             CHECK_ACTIONS_STAGE,
