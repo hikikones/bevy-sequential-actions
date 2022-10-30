@@ -22,6 +22,12 @@ pub struct SequentialActionsPlugin {
 }
 
 impl SequentialActionsPlugin {
+    /// Creates a new plugin with specified [`StageLabel`].
+    /// A single [`System`] will be added to this stage
+    /// that checks for finished actions.
+    ///
+    /// By default, a custom single threaded stage
+    /// will be used that is scheduled after [`CoreStage::PostUpdate`].
     pub fn new(stage_label: impl StageLabel) -> Self {
         Self {
             stage_label_id: Some(stage_label.as_label()),
