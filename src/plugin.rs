@@ -12,7 +12,7 @@ use crate::*;
 /// fn main() {
 ///     App::new()
 ///         .add_plugins(DefaultPlugins)
-///         .add_plugin(SequentialActionsPlugin)
+///         .add_plugin(SequentialActionsPlugin::default())
 ///         .run();
 /// }
 /// ```
@@ -25,9 +25,7 @@ impl SequentialActionsPlugin {
     /// Creates a new plugin with specified [`StageLabel`].
     /// A single [`System`] will be added to this stage
     /// that checks for finished actions.
-    ///
-    /// By default, a custom single threaded stage
-    /// will be used that is scheduled after [`CoreStage::PostUpdate`].
+    /// By default, the [`CoreStage::Last`] will be used.
     pub fn new(stage_label: impl StageLabel) -> Self {
         Self {
             stage_label_id: Some(stage_label.as_label()),
@@ -37,19 +35,8 @@ impl SequentialActionsPlugin {
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        // if let Some(stage) = &self.stage_label_id {
-        //     app.add_system_to_stage(stage.clone(), check_actions);
-        //     return;
-        // }
-
         let stage = self.stage_label_id.unwrap_or(CoreStage::Last.as_label());
         app.add_system_to_stage(stage, check_actions);
-
-        // app.add_stage_after(
-        //     CoreStage::PostUpdate,
-        //     "CHECK_ACTIONS_STAGE",
-        //     SystemStage::single(check_actions),
-        // );
     }
 }
 
