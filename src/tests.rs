@@ -17,7 +17,7 @@ impl Ecs {
         schedule.add_stage(UPDATE_STAGE, SystemStage::single(countdown));
         schedule.add_stage_after(
             UPDATE_STAGE,
-            CHECK_ACTIONS_STAGE,
+            "CHECK_ACTIONS_STAGE",
             SystemStage::single(check_actions),
         );
 

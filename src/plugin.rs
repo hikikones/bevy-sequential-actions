@@ -38,13 +38,11 @@ impl Plugin for SequentialActionsPlugin {
 
         app.add_stage_after(
             CoreStage::PostUpdate,
-            CHECK_ACTIONS_STAGE,
+            "CHECK_ACTIONS_STAGE",
             SystemStage::single(check_actions),
         );
     }
 }
-
-pub(super) const CHECK_ACTIONS_STAGE: &str = "check_actions";
 
 #[allow(clippy::type_complexity)]
 pub(super) fn check_actions(
