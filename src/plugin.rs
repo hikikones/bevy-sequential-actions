@@ -22,8 +22,7 @@ pub struct SequentialActionsPlugin {
 
 impl SequentialActionsPlugin {
     /// Creates a new plugin with specified [`StageLabel`].
-    /// A single [`System`] will be added to this stage
-    /// that checks for finished actions.
+    /// A single [`System`] will be added to this [`Stage`] that checks for finished actions.
     /// By default, the [`CoreStage::Last`] is used.
     pub fn new(stage_label: impl StageLabel) -> Self {
         Self {

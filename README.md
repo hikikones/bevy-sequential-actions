@@ -78,7 +78,7 @@ Every action is responsible for advancing the queue.
 There are two ways of doing this:
 
 * Using the `ActionFinished` component on an `agent`.
-  A system at the end of the frame will advance the queue if all active actions are finished.
+  By default, a system in `CoreStage::Last` will advance the queue if all active actions are finished.
   This is the typical approach as it composes well with other actions running in parallel.
 * Calling the `next` method on an `agent`.
   This simply advances the queue at the end of the current stage it was called in.
@@ -158,7 +158,7 @@ impl<T: StateData> Action for SetStateAction<T> {
             w.actions(agent).next();
         });
 
-        // Also good. The action queue will advance at the end of the frame.
+        // Also good. By default, the action queue will advance at the end of the frame.
         world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
 
