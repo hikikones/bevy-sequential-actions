@@ -16,27 +16,31 @@ use crate::*;
 ///         .run();
 /// }
 /// ```
-#[derive(Default)]
 pub struct SequentialActionsPlugin {
-    stage_label_id: Option<StageLabelId>,
+    stage_label_id: StageLabelId,
 }
 
 impl SequentialActionsPlugin {
     /// Creates a new plugin with specified [`StageLabel`].
     /// A single [`System`] will be added to this stage
     /// that checks for finished actions.
-    /// By default, the [`CoreStage::Last`] will be used.
+    /// By default, the [`CoreStage::Last`] is used.
     pub fn new(stage_label: impl StageLabel) -> Self {
         Self {
-            stage_label_id: Some(stage_label.as_label()),
+            stage_label_id: stage_label.as_label(),
         }
+    }
+}
+
+impl Default for SequentialActionsPlugin {
+    fn default() -> Self {
+        Self::new(CoreStage::Last)
     }
 }
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        let stage = self.stage_label_id.unwrap_or(CoreStage::Last.as_label());
-        app.add_system_to_stage(stage, check_actions);
+        app.add_system_to_stage(self.stage_label_id, check_actions);
     }
 }
 
