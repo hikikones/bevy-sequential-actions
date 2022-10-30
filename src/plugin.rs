@@ -37,16 +37,19 @@ impl SequentialActionsPlugin {
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        if let Some(stage) = &self.stage_label_id {
-            app.add_system_to_stage(stage.clone(), check_actions);
-            return;
-        }
+        // if let Some(stage) = &self.stage_label_id {
+        //     app.add_system_to_stage(stage.clone(), check_actions);
+        //     return;
+        // }
 
-        app.add_stage_after(
-            CoreStage::PostUpdate,
-            "CHECK_ACTIONS_STAGE",
-            SystemStage::single(check_actions),
-        );
+        let stage = self.stage_label_id.unwrap_or(CoreStage::Last.as_label());
+        app.add_system_to_stage(stage, check_actions);
+
+        // app.add_stage_after(
+        //     CoreStage::PostUpdate,
+        //     "CHECK_ACTIONS_STAGE",
+        //     SystemStage::single(check_actions),
+        // );
     }
 }
 
