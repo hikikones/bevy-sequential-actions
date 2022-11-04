@@ -2,8 +2,6 @@ use std::marker::PhantomData;
 
 use crate::*;
 
-const UPDATE_STAGE: &str = "update_test";
-
 struct Ecs {
     world: World,
     schedule: Schedule,
@@ -14,10 +12,10 @@ impl Ecs {
         let world = World::new();
         let mut schedule = Schedule::default();
 
-        schedule.add_stage(UPDATE_STAGE, SystemStage::single(countdown));
+        schedule.add_stage("update", SystemStage::single(countdown));
         schedule.add_stage_after(
-            UPDATE_STAGE,
-            "CHECK_ACTIONS_STAGE",
+            "update",
+            "check_actions",
             SystemStage::single(check_actions),
         );
 
