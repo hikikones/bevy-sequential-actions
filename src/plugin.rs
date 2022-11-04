@@ -5,6 +5,9 @@ use crate::*;
 
 /// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
+/// This plugin adds a single [`System`] that contains the logic for advancing the action queue for each `agent`.
+/// The system will be added to the specified [`Stage`], or use [`CoreStage::Last`] as default.
+///
 /// ```rust,no_run
 /// use bevy::prelude::*;
 /// use bevy_sequential_actions::*;
@@ -22,8 +25,6 @@ pub struct SequentialActionsPlugin {
 
 impl SequentialActionsPlugin {
     /// Creates a new plugin with specified [`StageLabel`].
-    /// A single [`System`] will be added to this [`Stage`] that checks for finished actions.
-    /// By default, the [`CoreStage::Last`] is used.
     pub fn new(stage_label: impl StageLabel) -> Self {
         Self {
             stage_label_id: stage_label.as_label(),

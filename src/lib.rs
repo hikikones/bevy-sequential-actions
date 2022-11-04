@@ -91,7 +91,7 @@ Every action is responsible for advancing the queue.
 There are two ways of doing this:
 
 * Using the [`ActionFinished`] component on an `agent`.
-  By default, a system in [`CoreStage::Last`](bevy_app::CoreStage::Last) will advance the queue if all active actions are finished.
+  By default, a system at the end of the frame will advance the queue if all active actions are finished.
   This is the typical approach as it composes well with other actions running in parallel.
 * Calling the [`next`](ModifyActions::next) method on an `agent`.
   This simply advances the queue at the end of the current stage it was called in.
@@ -228,15 +228,14 @@ pub struct ActionFinished {
 impl ActionFinished {
     /// Confirms that an [`Action`] is finished by incrementing a counter.
     /// This should be called __every frame__,
-    /// as the counter is reset in the [`Stage`] specified by [`SequentialActionsPlugin`].
-    /// By default, the [`CoreStage::Last`](bevy_app::CoreStage::Last) is used.
+    /// as the counter is reset every frame in the [`Stage`] specified by [`SequentialActionsPlugin`].
     pub fn confirm_and_reset(&mut self) {
         self.reset_count += 1;
     }
 
     /// Confirms that an [`Action`] is finished by incrementing a counter.
     /// This should be called __only once__,
-    /// as the counter will only reset when an active [`Action`] is [`stopped`](Action::on_stop).
+    /// as the counter will only reset when an active action is [`stopped`](Action::on_stop).
     pub fn confirm_and_persist(&mut self) {
         self.persist_count += 1;
     }
