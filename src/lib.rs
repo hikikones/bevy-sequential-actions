@@ -218,6 +218,14 @@ pub struct ActionsBundle {
     current: CurrentAction,
 }
 
+impl ActionsBundle {
+    /// Creates a new [`Bundle`] that contains the necessary components
+    /// that all entities with actions must have.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 /// Component for counting how many active actions have finished.
 #[derive(Default, Component)]
 pub struct ActionFinished {
