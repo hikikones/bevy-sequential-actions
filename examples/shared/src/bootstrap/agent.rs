@@ -18,7 +18,7 @@ impl SpawnAgentExt for Commands<'_, '_> {
                 rotation,
                 ..Default::default()
             }))
-            .insert_bundle(ActionsBundle::default())
+            .insert_bundle(ActionsBundle::new())
             .insert(Agent)
             .id()
     }
