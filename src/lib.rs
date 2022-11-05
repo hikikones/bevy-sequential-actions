@@ -176,7 +176,7 @@ impl<T: StateData> Action for SetStateAction<T> {
             w.actions(agent).next();
         });
 
-        // Also good. By default, The action queue will advance at the end of the frame.
+        // Also good. By default, the action queue will advance at the end of the frame.
         world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
 
