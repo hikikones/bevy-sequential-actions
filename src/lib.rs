@@ -21,7 +21,7 @@ use bevy_sequential_actions::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(SequentialActionsPlugin)
+        .add_plugin(SequentialActionsPlugin::default())
         .run();
 }
 ```
@@ -91,7 +91,7 @@ Every action is responsible for advancing the queue.
 There are two ways of doing this:
 
 * Using the [`ActionFinished`] component on an `agent`.
-  A system at the end of the frame will advance the queue if all active actions are finished.
+  By default, a system at the end of the frame will advance the queue if all active actions are finished.
   This is the typical approach as it composes well with other actions running in parallel.
 * Calling the [`next`](ModifyActions::next) method on an `agent`.
   This simply advances the queue at the end of the current stage it was called in.
@@ -147,8 +147,7 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 
 One thing to keep in mind is that you should not modify actions using [`World`] inside the [`Action`] trait.
 We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
-And so, the action is detached from an `agent` when the trait methods are called.
-Since an `agent` cannot hold an action while inside the [`Action`] trait,
+Since an action is detached from an `agent` when the trait methods are called,
 the logic for advancing the action queue will not work properly.
 
 This is why [`ActionCommands`] was created, so you can modify actions inside the [`Action`] trait in a deferred way.
@@ -177,7 +176,7 @@ impl<T: StateData> Action for SetStateAction<T> {
             w.actions(agent).next();
         });
 
-        // Also good. The action queue will advance at the end of the frame.
+        // Also good. By default, the action queue will advance at the end of the frame.
         world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
 
@@ -229,14 +228,14 @@ pub struct ActionFinished {
 impl ActionFinished {
     /// Confirms that an [`Action`] is finished by incrementing a counter.
     /// This should be called __every frame__,
-    /// as the counter is reset at the end of the frame.
+    /// as the counter is reset every frame in the [`Stage`] specified by [`SequentialActionsPlugin`].
     pub fn confirm_and_reset(&mut self) {
         self.reset_count += 1;
     }
 
     /// Confirms that an [`Action`] is finished by incrementing a counter.
     /// This should be called __only once__,
-    /// as the counter will only reset when an active [`Action`] is [`stopped`](Action::on_stop).
+    /// as the counter will only reset when an active action is [`stopped`](Action::on_stop).
     pub fn confirm_and_persist(&mut self) {
         self.persist_count += 1;
     }
