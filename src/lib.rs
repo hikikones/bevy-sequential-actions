@@ -45,7 +45,7 @@ fn setup(mut commands: Commands) {
 #   let action_f = QuitAction;
 #
     // Create entity with ActionsBundle
-    let agent = commands.spawn_bundle(ActionsBundle::default()).id();
+    let agent = commands.spawn_bundle(ActionsBundle::new()).id();
 
     // Add a single action with default config
     commands.actions(agent).add(action_a);
@@ -216,6 +216,14 @@ pub struct ActionsBundle {
     finished: ActionFinished,
     queue: ActionQueue,
     current: CurrentAction,
+}
+
+impl ActionsBundle {
+    /// Creates a new [`Bundle`] that contains the necessary components
+    /// that all entities with actions must have.
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 
 /// Component for counting how many active actions have finished.

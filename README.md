@@ -32,7 +32,7 @@ An entity with actions is referred to as an `agent`.
 ```rust
 fn setup(mut commands: Commands) {
     // Create entity with ActionsBundle
-    let agent = commands.spawn_bundle(ActionsBundle::default()).id();
+    let agent = commands.spawn_bundle(ActionsBundle::new()).id();
     
     // Add a single action with default config
     commands.actions(agent).add(action_a);

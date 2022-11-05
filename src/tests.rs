@@ -27,10 +27,7 @@ impl Ecs {
     }
 
     fn spawn_agent(&mut self) -> Entity {
-        self.world
-            .spawn()
-            .insert_bundle(ActionsBundle::default())
-            .id()
+        self.world.spawn().insert_bundle(ActionsBundle::new()).id()
     }
 
     fn actions(&mut self, agent: Entity) -> AgentWorldActions {
