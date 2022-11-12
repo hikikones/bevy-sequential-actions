@@ -31,6 +31,21 @@ impl SequentialActionsPlugin {
         }
     }
 
+    /// Returns the systems used by this plugin.
+    /// Useful if you want to schedule the systems yourself.
+    /// By default, the systems are added to [`CoreStage::Last`].
+    ///
+    /// ```rust,no_run
+    /// use bevy::prelude::*;
+    /// use bevy_sequential_actions::*;
+    ///
+    /// fn main() {
+    ///     App::new()
+    ///         .add_plugins(DefaultPlugins)
+    ///         .add_system_set_to_stage(CoreStage::Last, SequentialActionsPlugin::get_systems())
+    ///         .run();
+    /// }
+    /// ```
     pub fn get_systems() -> SystemSet {
         SystemSet::new().with_system(check_actions)
     }
@@ -44,7 +59,6 @@ impl Default for SequentialActionsPlugin {
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(self.stage_label_id, check_actions);
         app.add_system_set_to_stage(CoreStage::Last, Self::get_systems());
     }
 }
