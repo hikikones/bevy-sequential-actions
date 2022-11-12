@@ -16,7 +16,7 @@ impl Ecs {
         schedule.add_stage_after(
             "update",
             "check_actions",
-            SystemStage::single(check_actions),
+            SystemStage::single_threaded().with_system_set(SequentialActionsPlugin::get_systems()),
         );
 
         Self { world, schedule }
@@ -118,11 +118,12 @@ fn countdown(
     mut finished_q: Query<&mut ActionFinished>,
 ) {
     for (mut countdown, agent) in countdown_q.iter_mut() {
-        countdown.0 = countdown.0.saturating_sub(1);
-
         if countdown.0 == 0 {
             finished_q.get_mut(agent.0).unwrap().confirm_and_reset();
+            continue;
         }
+
+        countdown.0 -= 1;
     }
 }
 
@@ -590,13 +591,21 @@ fn pause_resume() {
         .config(AddConfig {
             order: AddOrder::Front,
             start: true,
-            repeat: Repeat::Amount(0),
+            repeat: Repeat::None,
         })
         .add(CountdownAction::new(2));
 
-    ecs.run();
-    ecs.run();
+    assert!(countdown_value(&mut ecs.world) == 2);
+
     ecs.run();
 
-    assert!(countdown_value(&mut ecs.world) == 98);
+    assert!(countdown_value(&mut ecs.world) == 1);
+
+    ecs.run();
+
+    assert!(countdown_value(&mut ecs.world) == 0);
+
+    ecs.run();
+
+    assert!(countdown_value(&mut ecs.world) == 99);
 }

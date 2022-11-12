@@ -1,12 +1,12 @@
 use bevy_app::{App, CoreStage, Plugin};
-use bevy_ecs::schedule::StageLabelId;
 
 use crate::*;
 
 /// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
-/// This plugin adds a single [`System`] that contains the logic for advancing the action queue for each `agent`.
-/// The system will be added to the specified [`Stage`], or use [`CoreStage::Last`] as default.
+/// This plugin adds the necessary systems for advancing the action queue for each `agent`.
+/// By default, the systems will be added to [`CoreStage::Last`].
+/// If you want to schedule the systems yourself, use [`get_systems`](Self::get_systems).
 ///
 /// ```rust,no_run
 /// use bevy::prelude::*;
@@ -15,37 +15,40 @@ use crate::*;
 /// fn main() {
 ///     App::new()
 ///         .add_plugins(DefaultPlugins)
-///         .add_plugin(SequentialActionsPlugin::default())
+///         .add_plugin(SequentialActionsPlugin)
 ///         .run();
 /// }
 /// ```
-pub struct SequentialActionsPlugin {
-    stage_label_id: StageLabelId,
-}
+pub struct SequentialActionsPlugin;
 
 impl SequentialActionsPlugin {
-    /// Creates a new plugin with specified [`StageLabel`].
-    pub fn new(stage_label: impl StageLabel) -> Self {
-        Self {
-            stage_label_id: stage_label.as_label(),
-        }
-    }
-}
-
-impl Default for SequentialActionsPlugin {
-    fn default() -> Self {
-        Self::new(CoreStage::Last)
+    /// Returns the systems used by this plugin.
+    /// Useful if you want to schedule the systems yourself.
+    ///
+    /// ```rust,no_run
+    /// use bevy::prelude::*;
+    /// use bevy_sequential_actions::*;
+    ///
+    /// fn main() {
+    ///     App::new()
+    ///         .add_plugins(DefaultPlugins)
+    ///         .add_system_set_to_stage(CoreStage::Last, SequentialActionsPlugin::get_systems())
+    ///         .run();
+    /// }
+    /// ```
+    pub fn get_systems() -> SystemSet {
+        SystemSet::new().with_system(check_actions)
     }
 }
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(self.stage_label_id, check_actions);
+        app.add_system_set_to_stage(CoreStage::Last, Self::get_systems());
     }
 }
 
 #[allow(clippy::type_complexity)]
-pub(super) fn check_actions(
+fn check_actions(
     mut q: Query<(Entity, &CurrentAction, &mut ActionFinished), Changed<ActionFinished>>,
     mut commands: Commands,
 ) {

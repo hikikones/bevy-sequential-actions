@@ -19,7 +19,7 @@ use bevy_sequential_actions::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(SequentialActionsPlugin::default())
+        .add_plugin(SequentialActionsPlugin)
         .run();
 }
 ```
