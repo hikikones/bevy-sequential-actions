@@ -48,7 +48,7 @@ impl Plugin for SequentialActionsPlugin {
 }
 
 #[allow(clippy::type_complexity)]
-pub(super) fn check_actions(
+fn check_actions(
     mut q: Query<(Entity, &CurrentAction, &mut ActionFinished), Changed<ActionFinished>>,
     mut commands: Commands,
 ) {

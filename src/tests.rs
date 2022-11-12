@@ -16,7 +16,7 @@ impl Ecs {
         schedule.add_stage_after(
             "update",
             "check_actions",
-            SystemStage::single(check_actions),
+            SystemStage::single_threaded().with_system_set(SequentialActionsPlugin::get_systems()),
         );
 
         Self { world, schedule }
