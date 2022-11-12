@@ -1,5 +1,4 @@
 use bevy_app::{App, CoreStage, Plugin};
-use bevy_ecs::schedule::StageLabelId;
 
 use crate::*;
 
@@ -16,22 +15,13 @@ use crate::*;
 /// fn main() {
 ///     App::new()
 ///         .add_plugins(DefaultPlugins)
-///         .add_plugin(SequentialActionsPlugin::default())
+///         .add_plugin(SequentialActionsPlugin)
 ///         .run();
 /// }
 /// ```
-pub struct SequentialActionsPlugin {
-    stage_label_id: StageLabelId,
-}
+pub struct SequentialActionsPlugin;
 
 impl SequentialActionsPlugin {
-    /// Creates a new plugin with specified [`StageLabel`].
-    pub fn new(stage_label: impl StageLabel) -> Self {
-        Self {
-            stage_label_id: stage_label.as_label(),
-        }
-    }
-
     /// Returns the systems used by this plugin.
     /// Useful if you want to schedule the systems yourself.
     ///
@@ -48,12 +38,6 @@ impl SequentialActionsPlugin {
     /// ```
     pub fn get_systems() -> SystemSet {
         SystemSet::new().with_system(check_actions)
-    }
-}
-
-impl Default for SequentialActionsPlugin {
-    fn default() -> Self {
-        Self::new(CoreStage::Last)
     }
 }
 
