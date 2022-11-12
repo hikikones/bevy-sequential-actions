@@ -30,6 +30,10 @@ impl SequentialActionsPlugin {
             stage_label_id: stage_label.as_label(),
         }
     }
+
+    pub fn get_systems() -> SystemSet {
+        SystemSet::new().with_system(check_actions)
+    }
 }
 
 impl Default for SequentialActionsPlugin {
