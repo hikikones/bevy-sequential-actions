@@ -1,5 +1,13 @@
 use bevy::prelude::*;
 
+pub(super) struct CameraPlugin;
+
+impl Plugin for CameraPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system_to_stage(StartupStage::PreStartup, spawn_camera);
+    }
+}
+
 pub const CAMERA_OFFSET: Vec3 = Vec3::new(0.0, 10.0, 10.0);
 
 #[derive(Component)]
@@ -8,7 +16,7 @@ pub struct CameraMain;
 #[derive(Component)]
 pub struct CameraPivot;
 
-pub(super) fn spawn_camera(mut commands: Commands) {
+fn spawn_camera(mut commands: Commands) {
     commands
         .spawn_bundle(TransformBundle::default())
         .insert(CameraPivot)

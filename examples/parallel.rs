@@ -13,7 +13,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
-    let agent = commands.spawn_agent(Vec3::ZERO, Quat::IDENTITY);
+    let agent = commands.spawn_agent(AgentConfig::default());
     let camera_pivot = camera_q.single();
 
     commands
