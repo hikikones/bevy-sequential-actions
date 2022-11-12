@@ -5,8 +5,9 @@ use crate::*;
 
 /// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
-/// This plugin adds a single [`System`] that contains the logic for advancing the action queue for each `agent`.
-/// The system will be added to the specified [`Stage`], or use [`CoreStage::Last`] as default.
+/// This plugin adds the necessary systems for advancing the action queue for each `agent`.
+/// By default, the systems will be added to [`CoreStage::Last`].
+/// If you want to schedule the systems yourself, use [`get_systems`](Self::get_systems).
 ///
 /// ```rust,no_run
 /// use bevy::prelude::*;
@@ -33,7 +34,6 @@ impl SequentialActionsPlugin {
 
     /// Returns the systems used by this plugin.
     /// Useful if you want to schedule the systems yourself.
-    /// By default, the systems are added to [`CoreStage::Last`].
     ///
     /// ```rust,no_run
     /// use bevy::prelude::*;
