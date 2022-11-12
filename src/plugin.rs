@@ -45,6 +45,7 @@ impl Default for SequentialActionsPlugin {
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_to_stage(self.stage_label_id, check_actions);
+        app.add_system_set_to_stage(CoreStage::Last, Self::get_systems());
     }
 }
 
