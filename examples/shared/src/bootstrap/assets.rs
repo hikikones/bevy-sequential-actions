@@ -1,5 +1,18 @@
 use bevy::{prelude::*, utils::HashMap};
 
+pub(super) struct AssetsPlugin;
+
+impl Plugin for AssetsPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(MyAssets::default())
+            .add_startup_stage_before(
+                StartupStage::PreStartup,
+                "load_assets",
+                SystemStage::single(load_assets),
+            );
+    }
+}
+
 #[derive(Default)]
 pub(super) struct MyAssets {
     meshes: HashMap<MeshName, Handle<Mesh>>,
@@ -86,7 +99,7 @@ impl MaterialName {
     }
 }
 
-pub(super) fn load(
+fn load_assets(
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut mat_assets: ResMut<Assets<StandardMaterial>>,
     mut my_assets: ResMut<MyAssets>,

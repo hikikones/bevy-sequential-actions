@@ -19,7 +19,10 @@ fn setup(mut commands: Commands) {
     let position = Random::new(Vec3::new(-7.0, 0.0, -4.0), Vec3::new(7.0, 0.0, 4.0));
 
     for _ in 0..10 {
-        let agent = commands.spawn_agent(position.value(), Quat::from_euler_xyz(rotation.value()));
+        let agent = commands.spawn_agent(AgentConfig {
+            position: position.value(),
+            rotation: Quat::from_euler_xyz(rotation.value()),
+        });
 
         commands
             .actions(agent)

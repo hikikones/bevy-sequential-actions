@@ -3,19 +3,33 @@ use bevy_sequential_actions::ActionsBundle;
 
 use super::assets::*;
 
+pub(super) struct AgentPlugin;
+
+impl Plugin for AgentPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system_to_stage(CoreStage::PreUpdate, load_agent);
+    }
+}
+
 #[derive(Component)]
 pub struct Agent;
 
+#[derive(Default)]
+pub struct AgentConfig {
+    pub position: Vec3,
+    pub rotation: Quat,
+}
+
 pub trait SpawnAgentExt {
-    fn spawn_agent(&mut self, translation: Vec3, rotation: Quat) -> Entity;
+    fn spawn_agent(&mut self, config: AgentConfig) -> Entity;
 }
 
 impl SpawnAgentExt for Commands<'_, '_> {
-    fn spawn_agent(&mut self, translation: Vec3, rotation: Quat) -> Entity {
+    fn spawn_agent(&mut self, config: AgentConfig) -> Entity {
         self.spawn()
             .insert_bundle(SpatialBundle::from_transform(Transform {
-                translation,
-                rotation,
+                translation: config.position,
+                rotation: config.rotation,
                 ..Default::default()
             }))
             .insert_bundle(ActionsBundle::new())
@@ -24,7 +38,7 @@ impl SpawnAgentExt for Commands<'_, '_> {
     }
 }
 
-pub(super) fn load_agent(
+fn load_agent(
     agent_added_q: Query<Entity, Added<Agent>>,
     assets: Res<MyAssets>,
     mut commands: Commands,

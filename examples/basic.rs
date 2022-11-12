@@ -18,7 +18,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     // Create entity with ActionsBundle
-    let agent = commands.spawn_agent(Vec3::ZERO, Quat::IDENTITY);
+    let agent = commands.spawn_agent(AgentConfig::default());
 
     // Add a single action with default config
     commands.actions(agent).add(WaitAction::new(1.0));
