@@ -197,11 +197,10 @@ impl WorldActionsExt for World {
                 }
             }
 
-            let mut finished = self.get_mut::<ActionFinished>(agent).unwrap();
-            if finished.reset_count > 0 || finished.persist_count > 0 {
-                finished.reset_count = 0;
-                finished.persist_count = 0;
-            }
+            self.get_mut::<ActionFinished>(agent)
+                .unwrap()
+                .bypass_change_detection()
+                .reset_counts();
         }
     }
 

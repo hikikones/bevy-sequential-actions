@@ -59,9 +59,9 @@ fn check_actions(
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);
                 });
+            } else {
+                finished.reset_count = 0;
             }
-
-            finished.reset_count = 0;
         }
     }
 }
