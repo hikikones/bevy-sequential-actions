@@ -181,6 +181,11 @@ trait WorldActionsExt {
 impl WorldActionsExt for World {
     fn stop_current_action(&mut self, agent: Entity, reason: StopReason) {
         if let Some((mut current_action, mut repeat)) = self.take_current_action(agent) {
+            self.get_mut::<ActionFinished>(agent)
+                .unwrap()
+                .bypass_change_detection()
+                .reset_counts();
+
             for action in current_action.iter_mut() {
                 action.on_stop(agent, self, reason);
             }
@@ -196,11 +201,6 @@ impl WorldActionsExt for World {
                         .push_front((current_action, repeat));
                 }
             }
-
-            self.get_mut::<ActionFinished>(agent)
-                .unwrap()
-                .bypass_change_detection()
-                .reset_counts();
         }
     }
 
