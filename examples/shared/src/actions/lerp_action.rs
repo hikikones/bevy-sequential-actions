@@ -76,18 +76,21 @@ where
                 lerp: lerp_type,
                 target: LerpTarget(self.config.target),
                 agent: LerpAgent(agent),
-                timer: LerpTimer(Timer::from_seconds(self.config.duration.value(), false)),
+                timer: LerpTimer(Timer::from_seconds(
+                    self.config.duration.value(),
+                    TimerMode::Once,
+                )),
             }
         });
 
-        self.entity = Some(world.spawn().insert_bundle(lerp_bundle).id());
+        self.entity = Some(world.spawn(lerp_bundle).id());
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
         let entity = self.entity.unwrap();
 
         if let StopReason::Paused = reason {
-            self.bundle = world.entity_mut(entity).remove_bundle::<LerpBundle>();
+            self.bundle = world.entity_mut(entity).remove::<LerpBundle>();
         }
 
         world.despawn(entity);

@@ -26,15 +26,16 @@ pub trait SpawnAgentExt {
 
 impl SpawnAgentExt for Commands<'_, '_> {
     fn spawn_agent(&mut self, config: AgentConfig) -> Entity {
-        self.spawn()
-            .insert_bundle(SpatialBundle::from_transform(Transform {
+        self.spawn((
+            SpatialBundle::from_transform(Transform {
                 translation: config.position,
                 rotation: config.rotation,
                 ..Default::default()
-            }))
-            .insert_bundle(ActionsBundle::new())
-            .insert(Agent)
-            .id()
+            }),
+            ActionsBundle::new(),
+            Agent,
+        ))
+        .id()
     }
 }
 
@@ -46,7 +47,7 @@ fn load_agent(
     for agent in agent_added_q.iter() {
         commands.entity(agent).with_children(|child| {
             // Capsule
-            child.spawn_bundle(PbrBundle {
+            child.spawn(PbrBundle {
                 mesh: assets.mesh(MeshName::Capsule),
                 material: assets.material(MaterialName::White),
                 transform: Transform {
@@ -61,7 +62,7 @@ fn load_agent(
             let eye_right = Vec3::new(-eye_left.x, eye_left.y, eye_left.z);
             let eye_scale = Vec3::splat(0.15);
 
-            child.spawn_bundle(PbrBundle {
+            child.spawn(PbrBundle {
                 mesh: assets.mesh(MeshName::Icosphere),
                 material: assets.material(MaterialName::Black),
                 transform: Transform {
@@ -71,7 +72,7 @@ fn load_agent(
                 },
                 ..Default::default()
             });
-            child.spawn_bundle(PbrBundle {
+            child.spawn(PbrBundle {
                 mesh: assets.mesh(MeshName::Icosphere),
                 material: assets.material(MaterialName::Black),
                 transform: Transform {

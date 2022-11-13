@@ -12,7 +12,7 @@ impl Plugin for LevelPlugin {
 
 fn spawn_level(assets: Res<MyAssets>, mut commands: Commands) {
     // Ground
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: assets.mesh(MeshName::Cube),
         material: assets.material(MaterialName::DarkGray),
         transform: Transform {
@@ -24,7 +24,7 @@ fn spawn_level(assets: Res<MyAssets>, mut commands: Commands) {
     });
 
     // Light
-    commands.spawn_bundle(DirectionalLightBundle {
+    commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
             illuminance: 25000.0,

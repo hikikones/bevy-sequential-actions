@@ -20,7 +20,7 @@ impl Action for RemoveActionsBundleAction {
     fn on_start(&mut self, agent: Entity, _world: &mut World, commands: &mut ActionCommands) {
         // Remove bundle in a deferred way, and do not advance the action queue.
         commands.add(move |w: &mut World| {
-            w.entity_mut(agent).remove_bundle::<ActionsBundle>();
+            w.entity_mut(agent).remove::<ActionsBundle>();
         });
     }
 

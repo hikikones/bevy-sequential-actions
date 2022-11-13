@@ -69,11 +69,11 @@ where
             }
         });
 
-        world.entity_mut(agent).insert_bundle(rotate_bundle);
+        world.entity_mut(agent).insert(rotate_bundle);
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let bundle = world.entity_mut(agent).remove_bundle::<RotateBundle>();
+        let bundle = world.entity_mut(agent).remove::<RotateBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;

@@ -18,15 +18,15 @@ pub struct CameraPivot;
 
 fn spawn_camera(mut commands: Commands) {
     commands
-        .spawn_bundle(TransformBundle::default())
-        .insert(CameraPivot)
+        .spawn((TransformBundle::default(), CameraPivot))
         .with_children(|child| {
-            child
-                .spawn_bundle(Camera3dBundle {
+            child.spawn((
+                Camera3dBundle {
                     transform: Transform::from_translation(CAMERA_OFFSET)
                         .looking_at(Vec3::ZERO, Vec3::Y),
                     ..Default::default()
-                })
-                .insert(CameraMain);
+                },
+                CameraMain,
+            ));
         });
 }
