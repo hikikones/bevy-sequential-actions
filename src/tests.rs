@@ -41,6 +41,10 @@ impl Ecs {
     fn action_queue(&self, agent: Entity) -> &ActionQueue {
         self.world.get::<ActionQueue>(agent).unwrap()
     }
+
+    fn action_finished(&self, agent: Entity) -> &ActionFinished {
+        self.world.get::<ActionFinished>(agent).unwrap()
+    }
 }
 
 struct CountdownAction {
@@ -608,3 +612,68 @@ fn pause_resume() {
 
     assert!(countdown_value(&mut ecs.world) == 99);
 }
+
+#[test]
+fn reset_count() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_many(
+        ExecutionMode::Parallel,
+        actions![
+            CountdownAction::new(0),
+            CountdownAction::new(1),
+            CountdownAction::new(2),
+        ],
+    );
+
+    assert!(ecs.action_finished(e).reset_count == 0);
+
+    ecs.run();
+
+    assert!(ecs.action_finished(e).reset_count == 1);
+
+    ecs.run();
+
+    assert!(ecs.action_finished(e).reset_count == 2);
+
+    ecs.run();
+
+    assert!(ecs.action_finished(e).reset_count == 0);
+}
+
+// #[test]
+// fn change_detection() {
+//     let mut ecs = Ecs::new();
+//     let e = ecs.spawn_agent();
+
+//     fn changed_count(w: &mut World) -> usize {
+//         w.query_filtered::<(), Changed<ActionFinished>>()
+//             .iter(w)
+//             .count()
+//     }
+
+//     assert!(changed_count(&mut ecs.world) == 1);
+
+//     ecs.world.clear_trackers();
+
+//     ecs.actions(e).add_many(
+//         ExecutionMode::Parallel,
+//         actions![
+//             CountdownAction::new(0),
+//             CountdownAction::new(1),
+//             CountdownAction::new(2),
+//         ],
+//     );
+
+//     assert!(changed_count(&mut ecs.world) == 0);
+
+//     ecs.run();
+
+//     assert!(changed_count(&mut ecs.world) == 1);
+
+//     ecs.world.clear_trackers();
+//     ecs.run();
+
+//     assert!(changed_count(&mut ecs.world) == 2);
+// }
