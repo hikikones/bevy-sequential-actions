@@ -236,7 +236,10 @@ pub struct ActionFinished {
 impl ActionFinished {
     /// Confirms that an [`Action`] is finished by incrementing a counter.
     /// This should be called __every frame__,
-    /// as the counter is reset every frame in the [`Stage`] specified by [`SequentialActionsPlugin`].
+    /// as the counter is reset every frame.
+    ///
+    /// By default, the reset occurs in [`CoreStage::Last`](bevy_app::CoreStage::Last).
+    /// If you want to schedule the reset yourself, see [`SequentialActionsPlugin::get_systems`].
     pub fn confirm_and_reset(&mut self) {
         self.reset_count += 1;
     }
