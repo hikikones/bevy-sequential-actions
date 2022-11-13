@@ -664,38 +664,41 @@ fn reset_count() {
     assert!(ecs.current_action(e).is_none());
 }
 
-// #[test]
-// fn change_detection() {
-//     let mut ecs = Ecs::new();
-//     let e = ecs.spawn_agent();
+#[test]
+fn change_detection() {
+    let mut ecs = Ecs::new();
+    let e1 = ecs.spawn_agent();
+    let e2 = ecs.spawn_agent();
+    let e3 = ecs.spawn_agent();
+    let e4 = ecs.spawn_agent();
 
-//     fn changed_count(w: &mut World) -> usize {
-//         w.query_filtered::<(), Changed<ActionFinished>>()
-//             .iter(w)
-//             .count()
-//     }
+    fn changed_count(w: &mut World) -> usize {
+        w.query_filtered::<(), Changed<ActionFinished>>()
+            .iter(w)
+            .count()
+    }
 
-//     assert!(changed_count(&mut ecs.world) == 1);
+    assert!(changed_count(&mut ecs.world) == 4);
 
-//     ecs.world.clear_trackers();
+    ecs.world.clear_trackers();
 
-//     ecs.actions(e).add_many(
-//         ExecutionMode::Parallel,
-//         actions![
-//             CountdownAction::new(0),
-//             CountdownAction::new(1),
-//             CountdownAction::new(2),
-//         ],
-//     );
+    ecs.actions(e1).add(CountdownAction::new(0));
+    ecs.actions(e2).add(CountdownAction::new(1));
+    ecs.actions(e3).add(CountdownAction::new(2));
+    ecs.actions(e4).add(CountdownAction::new(3));
 
-//     assert!(changed_count(&mut ecs.world) == 0);
+    assert!(changed_count(&mut ecs.world) == 0);
 
-//     ecs.run();
+    ecs.run();
 
-//     assert!(changed_count(&mut ecs.world) == 1);
+    assert!(changed_count(&mut ecs.world) == 1);
 
-//     ecs.world.clear_trackers();
-//     ecs.run();
+    ecs.world.clear_trackers();
 
-//     assert!(changed_count(&mut ecs.world) == 2);
-// }
+    ecs.actions(e3).cancel();
+    ecs.actions(e4).pause();
+
+    ecs.run();
+
+    assert!(changed_count(&mut ecs.world) == 1);
+}
