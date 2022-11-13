@@ -4,26 +4,35 @@ use crate::*;
 
 struct Ecs {
     world: World,
-    schedule: Schedule,
+    update_schedule: Schedule,
+    check_actions_schedule: Schedule,
 }
 
 impl Ecs {
     fn new() -> Self {
-        let world = World::new();
-        let mut schedule = Schedule::default();
-
-        schedule.add_stage("update", SystemStage::single(countdown));
-        schedule.add_stage_after(
-            "update",
-            "check_actions",
-            SystemStage::single_threaded().with_system_set(SequentialActionsPlugin::get_systems()),
-        );
-
-        Self { world, schedule }
+        Self {
+            world: World::new(),
+            update_schedule: Schedule::default()
+                .with_stage("update", SystemStage::single(countdown)),
+            check_actions_schedule: Schedule::default().with_stage(
+                "check_actions",
+                SystemStage::single_threaded()
+                    .with_system_set(SequentialActionsPlugin::get_systems()),
+            ),
+        }
     }
 
     fn run(&mut self) {
-        self.schedule.run(&mut self.world);
+        self.update_schedule.run_once(&mut self.world);
+        self.check_actions_schedule.run_once(&mut self.world);
+    }
+
+    fn run_update_only(&mut self) {
+        self.update_schedule.run_once(&mut self.world);
+    }
+
+    fn run_check_actions_only(&mut self) {
+        self.check_actions_schedule.run_once(&mut self.world);
     }
 
     fn spawn_agent(&mut self) -> Entity {
@@ -629,17 +638,30 @@ fn reset_count() {
 
     assert!(ecs.action_finished(e).reset_count == 0);
 
-    ecs.run();
+    ecs.run_update_only();
 
     assert!(ecs.action_finished(e).reset_count == 1);
 
-    ecs.run();
+    ecs.run_check_actions_only();
+
+    assert!(ecs.action_finished(e).reset_count == 0);
+
+    ecs.run_update_only();
 
     assert!(ecs.action_finished(e).reset_count == 2);
 
-    ecs.run();
+    ecs.run_check_actions_only();
 
     assert!(ecs.action_finished(e).reset_count == 0);
+
+    ecs.run_update_only();
+
+    assert!(ecs.action_finished(e).reset_count == 3);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.action_finished(e).reset_count == 0);
+    assert!(ecs.current_action(e).is_none());
 }
 
 // #[test]
