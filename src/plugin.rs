@@ -60,7 +60,7 @@ fn check_actions(
                     world.finish_action(agent);
                 });
             } else {
-                finished.reset_count = 0;
+                finished.bypass_change_detection().reset_count = 0;
             }
         }
     }
