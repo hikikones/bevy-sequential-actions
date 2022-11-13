@@ -41,8 +41,7 @@ where
         let duration = self.current.take().unwrap_or(self.duration.value());
         self.entity = Some(
             world
-                .spawn()
-                .insert_bundle(WaitBundle {
+                .spawn(WaitBundle {
                     wait: Wait(duration),
                     agent: Agent(agent),
                 })

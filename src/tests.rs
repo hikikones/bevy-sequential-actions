@@ -27,7 +27,7 @@ impl Ecs {
     }
 
     fn spawn_agent(&mut self) -> Entity {
-        self.world.spawn().insert_bundle(ActionsBundle::new()).id()
+        self.world.spawn(ActionsBundle::new()).id()
     }
 
     fn actions(&mut self, agent: Entity) -> AgentWorldActions {
@@ -81,8 +81,7 @@ impl Action for CountdownAction {
     fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
         self.entity = Some(
             world
-                .spawn()
-                .insert_bundle((
+                .spawn((
                     Countdown(self.current.take().unwrap_or(self.count)),
                     Agent(agent),
                 ))
@@ -150,7 +149,7 @@ fn add() {
 #[should_panic]
 fn add_panic() {
     let mut ecs = Ecs::new();
-    let e = ecs.world.spawn().id();
+    let e = ecs.world.spawn_empty().id();
     ecs.actions(e).add(CountdownAction::new(0));
 }
 
@@ -224,7 +223,7 @@ fn next() {
 #[should_panic]
 fn next_panic() {
     let mut ecs = Ecs::new();
-    let e = ecs.world.spawn().id();
+    let e = ecs.world.spawn_empty().id();
     ecs.actions(e).next();
 }
 
@@ -280,7 +279,7 @@ fn pause() {
 #[should_panic]
 fn pause_panic() {
     let mut ecs = Ecs::new();
-    let e = ecs.world.spawn().id();
+    let e = ecs.world.spawn_empty().id();
     ecs.actions(e).pause();
 }
 
@@ -356,7 +355,7 @@ fn clear() {
 #[should_panic]
 fn clear_panic() {
     let mut ecs = Ecs::new();
-    let e = ecs.world.spawn().id();
+    let e = ecs.world.spawn_empty().id();
     ecs.actions(e).clear();
 }
 
@@ -455,7 +454,7 @@ fn remove_bundle() {
         .add(CountdownAction::new(0))
         .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
             commands.add(move |w: &mut World| {
-                w.entity_mut(agent).remove_bundle::<ActionsBundle>();
+                w.entity_mut(agent).remove::<ActionsBundle>();
             });
         })
         .add(CountdownAction::new(0));
