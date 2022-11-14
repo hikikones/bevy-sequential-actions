@@ -705,7 +705,7 @@ fn change_detection() {
 
 #[test]
 #[should_panic]
-fn more_finished_actions_than_active_panic() {
+fn finished_exceed_active_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 

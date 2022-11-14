@@ -64,7 +64,8 @@ fn check_actions(
                 });
             } else if finished_count > action_count {
                 panic!(
-                    "Agent {agent:?} has {action_count} active action(s), \
+                    "The amount of finished action(s) has exceeded active. \
+                    Agent {agent:?} has {action_count} active action(s), \
                     but a total of {finished_count} action(s) have been confirmed finished."
                 );
             }
