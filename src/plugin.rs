@@ -58,20 +58,15 @@ fn check_actions(
             let finished_count = finished.total();
             let action_count = current_action.len();
 
-            #[cfg(debug_assertions)]
-            {
-                if finished_count > action_count {
-                    panic!(
-                        "Agent {agent:?} has currently {action_count} active action(s), \
-                        but a total of {finished_count} action(s) have been confirmed finished."
-                    );
-                }
-            }
-
             if finished_count == action_count {
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);
                 });
+            } else if finished_count > action_count {
+                panic!(
+                    "Agent {agent:?} has {action_count} active action(s), \
+                    but a total of {finished_count} action(s) have been confirmed finished."
+                );
             }
         }
     }

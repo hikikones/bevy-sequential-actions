@@ -702,3 +702,19 @@ fn change_detection() {
 
     assert!(changed_count(&mut ecs.world) == 1);
 }
+
+#[test]
+#[should_panic]
+fn more_finished_actions_than_active_panic() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add(|agent, world: &mut World, _commands: &mut ActionCommands| {
+            let mut finished = world.get_mut::<ActionFinished>(agent).unwrap();
+            finished.confirm_and_persist();
+            finished.confirm_and_reset();
+        });
+
+    ecs.run();
+}
