@@ -55,11 +55,20 @@ fn check_actions(
 ) {
     for (agent, current_action, finished) in action_q.iter() {
         if let Some((current_action, _)) = &current_action.0 {
-            // TODO: Add debug warning when total > len.
-            if finished.total() == current_action.len() {
+            let finished_count = finished.total();
+            let action_count = current_action.len();
+
+            if finished_count == action_count {
                 commands.add(move |world: &mut World| {
                     world.finish_action(agent);
                 });
+            } else if finished_count > action_count {
+                bevy_log::warn!(
+                    "Agent {agent:?} has confirmed {finished_count} finished action(s), \
+                    but is currently only running {action_count} active action(s). \
+                    When an agent has more finished actions than active, \
+                    the action queue will not advance as this is considered a bug."
+                );
             }
         }
     }
