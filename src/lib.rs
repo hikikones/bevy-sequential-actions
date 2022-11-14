@@ -248,6 +248,11 @@ impl ActionFinished {
         self.persist_count += 1;
     }
 
+    fn reset_counts(&mut self) {
+        self.reset_count = 0;
+        self.persist_count = 0;
+    }
+
     fn total(&self) -> u32 {
         self.reset_count as u32 + self.persist_count as u32
     }

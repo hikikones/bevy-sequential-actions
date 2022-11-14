@@ -37,7 +37,9 @@ impl SequentialActionsPlugin {
     /// }
     /// ```
     pub fn get_systems() -> SystemSet {
-        SystemSet::new().with_system(check_actions)
+        SystemSet::new()
+            .with_system(check_actions)
+            .with_system(reset_count.after(check_actions))
     }
 }
 
@@ -47,12 +49,11 @@ impl Plugin for SequentialActionsPlugin {
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn check_actions(
-    mut q: Query<(Entity, &CurrentAction, &mut ActionFinished), Changed<ActionFinished>>,
+    action_q: Query<(Entity, &CurrentAction, &ActionFinished), Changed<ActionFinished>>,
     mut commands: Commands,
 ) {
-    for (agent, current_action, mut finished) in q.iter_mut() {
+    for (agent, current_action, finished) in action_q.iter() {
         if let Some((current_action, _)) = &current_action.0 {
             // TODO: Add debug warning when total > len.
             if finished.total() == current_action.len() {
@@ -60,8 +61,12 @@ fn check_actions(
                     world.finish_action(agent);
                 });
             }
-
-            finished.reset_count = 0;
         }
+    }
+}
+
+fn reset_count(mut finished_q: Query<&mut ActionFinished, Changed<ActionFinished>>) {
+    for mut finished in finished_q.iter_mut() {
+        finished.bypass_change_detection().reset_count = 0;
     }
 }
