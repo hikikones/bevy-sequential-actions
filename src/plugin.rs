@@ -61,6 +61,7 @@ fn check_actions(
             let active_count = current_action.len();
 
             match finished_count.cmp(&active_count) {
+                Ordering::Less => {}
                 Ordering::Equal => {
                     commands.add(move |world: &mut World| {
                         world.finish_action(agent);
@@ -73,7 +74,6 @@ fn check_actions(
                         but a total of {finished_count} action(s) have been confirmed finished."
                     );
                 }
-                Ordering::Less => {}
             }
         }
     }
