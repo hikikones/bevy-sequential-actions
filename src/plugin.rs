@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use bevy_app::{App, CoreStage, Plugin};
 
 use crate::*;
@@ -56,18 +58,22 @@ fn check_actions(
     for (agent, current_action, finished) in action_q.iter() {
         if let Some((current_action, _)) = &current_action.0 {
             let finished_count = finished.total();
-            let action_count = current_action.len();
+            let active_count = current_action.len();
 
-            if finished_count == action_count {
-                commands.add(move |world: &mut World| {
-                    world.finish_action(agent);
-                });
-            } else if finished_count > action_count {
-                panic!(
-                    "Finished actions exceeds active. \
-                    Agent {agent:?} has {action_count} active action(s), \
-                    but a total of {finished_count} action(s) have been confirmed finished."
-                );
+            match finished_count.cmp(&active_count) {
+                Ordering::Equal => {
+                    commands.add(move |world: &mut World| {
+                        world.finish_action(agent);
+                    });
+                }
+                Ordering::Greater => {
+                    panic!(
+                        "Finished actions exceeds active. \
+                        Entity {agent:?} has {active_count} active action(s), \
+                        but a total of {finished_count} action(s) have been confirmed finished."
+                    );
+                }
+                Ordering::Less => {}
             }
         }
     }
