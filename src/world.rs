@@ -267,10 +267,15 @@ impl WorldActionsExt for World {
         if let Some((mut next_action, repeat)) = self.pop_next_action(agent) {
             let mut commands = ActionCommands::new();
 
-            // TODO
-            // for action in next_action.iter_mut() {
-            //     action.on_start(agent, self, &mut commands);
-            // }
+            match &mut next_action {
+                ActionType::Single(action) => action.on_start(agent, self, &mut commands),
+                ActionType::Parallel(actions) => actions
+                    .iter_mut()
+                    .for_each(|action| action.on_start(agent, self, &mut commands)),
+                ActionType::Linked(actions, index) => {
+                    actions[*index].on_start(agent, self, &mut commands)
+                }
+            }
 
             self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));
 
