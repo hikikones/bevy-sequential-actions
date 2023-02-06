@@ -336,6 +336,7 @@ pub enum ExecutionMode {
     Sequential,
     /// Execute the [`actions`](Action) in parallel, i.e. all at once.
     Parallel,
+    Linked,
 }
 
 /// A boxed [`Action`].
@@ -350,24 +351,9 @@ struct ActionQueue(VecDeque<ActionTuple>);
 struct CurrentAction(Option<ActionTuple>);
 
 enum ActionType {
-    One([BoxedAction; 1]),
-    Many(Box<[BoxedAction]>),
-}
-
-impl ActionType {
-    fn iter_mut(&mut self) -> IterMut<BoxedAction> {
-        match self {
-            ActionType::One(a) => a.iter_mut(),
-            ActionType::Many(a) => a.iter_mut(),
-        }
-    }
-
-    fn len(&self) -> u32 {
-        match self {
-            ActionType::One(_) => 1,
-            ActionType::Many(a) => a.len() as u32,
-        }
-    }
+    Single(BoxedAction),
+    Parallel(Box<[BoxedAction]>),
+    Linked(Box<[BoxedAction]>, usize),
 }
 
 impl Deref for ActionQueue {

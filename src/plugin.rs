@@ -58,7 +58,11 @@ fn check_actions(
     for (agent, current_action, finished) in action_q.iter() {
         if let Some((current_action, _)) = &current_action.0 {
             let finished_count = finished.total();
-            let active_count = current_action.len();
+            let active_count = match current_action {
+                ActionType::Single(_) => todo!(),
+                ActionType::Parallel(_) => todo!(),
+                ActionType::Linked(_, _) => todo!(),
+            };
 
             match finished_count.cmp(&active_count) {
                 Ordering::Less => {}
