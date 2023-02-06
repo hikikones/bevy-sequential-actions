@@ -200,20 +200,64 @@ impl WorldActionsExt for World {
                 .bypass_change_detection()
                 .reset_counts();
 
-            // TODO
-            // for action in current_action.iter_mut() {
-            //     action.on_stop(agent, self, reason);
-            // }
+            match &mut current_action {
+                ActionType::Single(action) => {
+                    action.on_stop(agent, self, reason);
 
-            match reason {
-                StopReason::Finished | StopReason::Canceled => {
-                    if repeat.process() {
-                        self.action_queue(agent).push_back((current_action, repeat));
+                    match reason {
+                        StopReason::Finished | StopReason::Canceled => {
+                            if repeat.process() {
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
                     }
                 }
-                StopReason::Paused => {
-                    self.action_queue(agent)
-                        .push_front((current_action, repeat));
+                ActionType::Parallel(actions) => {
+                    actions
+                        .iter_mut()
+                        .for_each(|action| action.on_stop(agent, self, reason));
+
+                    match reason {
+                        StopReason::Finished | StopReason::Canceled => {
+                            if repeat.process() {
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
+                }
+                ActionType::Linked(actions, index) => {
+                    actions[*index].on_stop(agent, self, reason);
+
+                    match reason {
+                        StopReason::Finished => {
+                            *index += 1;
+
+                            if *index == actions.len() {
+                                if repeat.process() {
+                                    *index = 0;
+                                    self.action_queue(agent).push_back((current_action, repeat));
+                                }
+                            }
+                        }
+                        StopReason::Canceled => {
+                            if repeat.process() {
+                                *index = 0;
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
                 }
             }
         }
