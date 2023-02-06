@@ -240,11 +240,12 @@ impl WorldActionsExt for World {
                         StopReason::Finished => {
                             *index += 1;
 
-                            if *index == actions.len() {
-                                if repeat.process() {
-                                    *index = 0;
-                                    self.action_queue(agent).push_back((current_action, repeat));
-                                }
+                            if *index < actions.len() {
+                                self.action_queue(agent)
+                                    .push_front((current_action, repeat));
+                            } else if *index == actions.len() && repeat.process() {
+                                *index = 0;
+                                self.action_queue(agent).push_back((current_action, repeat));
                             }
                         }
                         StopReason::Canceled => {
