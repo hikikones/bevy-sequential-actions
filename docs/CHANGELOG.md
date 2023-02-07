@@ -2,43 +2,68 @@
 
 ## Version 0.6.0
 
-- Update to Bevy 0.9. (#55)
-- Add a collection of actions that run in parallel with the `add_many` method. The collection is treated as "one action", meaning that they all start and stop at the same time, and the action queue will only advance when all actions are finished within the same frame. For this to work, this library now requires that you add the `SequentialActionsPlugin` to your app, as a set of systems at the end of the frame now needs to check for all finished actions. The `finish` method has been removed, as declaring an action as finished is now done with the `ActionFinished` component on an `agent`. The explicit `stop(reason)` method has also been removed. (#45)
-- Add `SequentialActionsPlugin::get_systems` if you want to schedule the systems yourself. (#53)
-- Add `actions!` helper macro for creating a collection of boxed actions. (#47)
-- Add `Repeat::None` variant. (#50)
-- Add `ActionsBundle::new` method. (#52)
-- Rename `ActionCommands::custom` method to `add`. (#48)
-- Remove `ActionMarker` component. (#49)
+- [Update to Bevy 0.9][55]
+- [Add parallel actions][45]
+    - Add `SequentialActionsPlugin`
+    - Replace `finish` method with the `ActionFinished` component
+    - Replace `stop(reason)` method with `cancel` and `pause` methods
+- [Add `SequentialActionsPlugin::get_systems` for scheduling the systems yourself][53]
+- [Add `actions!` helper macro for creating a collection of boxed actions][47]
+- [Add `Repeat::None`][50]
+- [Add `ActionsBundle::new`][52]
+- [Rename `ActionCommands::custom` method to `add`][48]
+- [Remove `ActionMarker` component][49]
 
 ## Version 0.5.0
-
-- Replace `builder` constructs for adding a list of actions with a simple `add_many` method that takes an iterator of boxed actions. Reversing the list before adding to the front is no longer needed. (#40)
-- Replace the repeat bool in `AddConfig` with a `Repeat` enum. You can now specify how many times an action should be repeated before it is permanently removed from the queue. A value of zero means that it will only run once. (#41)
+- [Replace `builder` constructs with `add_many` method][40]
+- [Replace repeat bool with a `Repeat` enum][41]
 
 ## Version 0.4.0
 
-- Building a list of actions is now done through the `builder` method when modifying actions. (#28)
-- Add `skip` method for skipping the next action. (#30)
-- Add `ActionMarker` component to `ActionsBundle`. (#31)
-- Add an anonymous action using a closure. (#34)
-- Add `custom` method to `ActionCommands` for deferred `World` mutation after `Action::on_start` has been called. Used for modifying actions using `World` inside the `Action` trait. (#36)
+- [Add `ActionBuilder` trait][28]
+- [Add `skip` method for skipping the next action in the queue][30]
+- [Add `ActionMarker` component to `ActionsBundle`][31]
+- [Add an anonymous action using a closure][34]
+- [Add deferred World mutation when modifying actions using `ActionCommands`][36]
 
 ## Version 0.3.0
 
-- Update to Bevy 0.8.
-- Remove the `Action::remove` trait method.
-- Rename `Action::start` method to `Action::on_start`.
-- Rename `Action::stop` method to `Action::on_stop`.
-- Add `StopReason` enum and use it as parameter in `Action::on_stop` method.
-- Rename `action(entity)` method to `actions(entity)` for modifying actions.
+- [Update to Bevy 0.8][26]
+- [Rename `Action` trait methods, add `StopReason` enum and other stuff][25]
+    - Add `StopReason` enum and use it as parameter in `Action::on_stop` method
+    - Remove the `Action::remove` trait method
+    - Rename `Action::start` method to `Action::on_start`
+    - Rename `Action::stop` method to `Action::on_stop`
+    - Rename `action(entity)` method to `actions(entity)` for modifying actions
 
 ## Version 0.2.0
 
-- New simplified API for modifying actions.
-- Allow despawning an entity as its _last_ action.
-- Rename `Action::add` to `Action::start`.
+- [Relicense to dual MIT or Apache 2.0][13]
+- [New simplified API for modifying actions][12]
+    - Rename `Action::add` to `Action::start`
+- [Allow despawning an entity as its _last_ action][11]
 
 ## Version 0.1.0
 
 First release! 🎉
+
+[55]: https://github.com/hikikones/bevy-sequential-actions/pull/55
+[53]: https://github.com/hikikones/bevy-sequential-actions/pull/53
+[52]: https://github.com/hikikones/bevy-sequential-actions/pull/52
+[50]: https://github.com/hikikones/bevy-sequential-actions/pull/50
+[49]: https://github.com/hikikones/bevy-sequential-actions/pull/49
+[48]: https://github.com/hikikones/bevy-sequential-actions/pull/48
+[47]: https://github.com/hikikones/bevy-sequential-actions/pull/47
+[45]: https://github.com/hikikones/bevy-sequential-actions/pull/45
+[41]: https://github.com/hikikones/bevy-sequential-actions/pull/41
+[40]: https://github.com/hikikones/bevy-sequential-actions/pull/40
+[36]: https://github.com/hikikones/bevy-sequential-actions/pull/36
+[34]: https://github.com/hikikones/bevy-sequential-actions/pull/34
+[31]: https://github.com/hikikones/bevy-sequential-actions/pull/31
+[30]: https://github.com/hikikones/bevy-sequential-actions/pull/30
+[28]: https://github.com/hikikones/bevy-sequential-actions/pull/28
+[26]: https://github.com/hikikones/bevy-sequential-actions/pull/26
+[25]: https://github.com/hikikones/bevy-sequential-actions/pull/25
+[13]: https://github.com/hikikones/bevy-sequential-actions/pull/13
+[12]: https://github.com/hikikones/bevy-sequential-actions/pull/12
+[11]: https://github.com/hikikones/bevy-sequential-actions/pull/11
