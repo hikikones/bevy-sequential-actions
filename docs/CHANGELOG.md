@@ -21,7 +21,7 @@
 - [Add `skip` method for skipping the next action in the queue][30]
 - [Add `ActionMarker` component to `ActionsBundle`][31]
 - [Add an anonymous action using a closure][34]
-- [Add deferred World mutation when modifying actions using `ActionCommands`][36]
+- [Add deferred `World` mutation when modifying actions using `ActionCommands`][36]
 
 ## Version 0.3.0
 
