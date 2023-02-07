@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.7.0-dev
+
+<!-- TODO -->
+
 ## Version 0.6.0
 
 - [Update to Bevy 0.9][55]
