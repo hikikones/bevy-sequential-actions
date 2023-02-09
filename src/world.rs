@@ -58,13 +58,6 @@ impl ModifyActions for AgentWorldActions<'_> {
 
 pub(super) trait ModifyActionsWorldExt {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionKind>);
-    fn add_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        mode: ExecutionMode,
-        actions: impl BoxedActionIter,
-    );
     fn next_action(&mut self, agent: Entity);
     fn finish_action(&mut self, agent: Entity);
     fn cancel_action(&mut self, agent: Entity);
@@ -136,63 +129,6 @@ impl ModifyActionsWorldExt for World {
         if config.start && !self.has_current_action(agent) {
             self.start_next_action(agent);
         }
-    }
-
-    fn add_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        mode: ExecutionMode,
-        actions: impl BoxedActionIter,
-    ) {
-        // TODO: Remove
-        // let mut queue = self.action_queue(agent);
-
-        // match mode {
-        //     ExecutionMode::Sequential => match config.order {
-        //         AddOrder::Back => {
-        //             for action in actions {
-        //                 queue.push_back((ActionType::Single(action), config.repeat));
-        //             }
-        //         }
-        //         AddOrder::Front => {
-        //             for action in actions.rev() {
-        //                 queue.push_front((ActionType::Single(action), config.repeat));
-        //             }
-        //         }
-        //     },
-        //     ExecutionMode::Parallel => {
-        //         let actions = actions.collect::<Box<[_]>>();
-        //         if !actions.is_empty() {
-        //             match config.order {
-        //                 AddOrder::Back => {
-        //                     queue.push_back((ActionType::Parallel(actions), config.repeat));
-        //                 }
-        //                 AddOrder::Front => {
-        //                     queue.push_front((ActionType::Parallel(actions), config.repeat));
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     ExecutionMode::Linked => match config.order {
-        //         AddOrder::Back => {
-        //             let actions = actions.collect::<Box<[_]>>();
-        //             if !actions.is_empty() {
-        //                 queue.push_back((ActionType::Linked(actions, 0), config.repeat));
-        //             }
-        //         }
-        //         AddOrder::Front => {
-        //             let actions = actions.rev().collect::<Box<[_]>>();
-        //             if !actions.is_empty() {
-        //                 queue.push_front((ActionType::Linked(actions, 0), config.repeat));
-        //             }
-        //         }
-        //     },
-        // }
-
-        // if config.start && !self.has_current_action(agent) {
-        //     self.start_next_action(agent);
-        // }
     }
 
     fn next_action(&mut self, agent: Entity) {

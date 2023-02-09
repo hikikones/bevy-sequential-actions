@@ -188,7 +188,6 @@ impl<T: StateData> Action for SetStateAction<T> {
 use std::{
     collections::VecDeque,
     ops::{Deref, DerefMut},
-    slice::IterMut,
 };
 
 use bevy_ecs::prelude::*;
@@ -403,40 +402,5 @@ impl DerefMut for ActionQueue {
 impl DerefMut for CurrentAction {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
-    }
-}
-
-fn add_action(action: impl Into<ActionType>) {
-    // todo
-}
-
-struct EmptyAction;
-impl Action for EmptyAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        todo!()
-    }
-
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        todo!()
-    }
-}
-
-fn test() {
-    add_action(EmptyAction);
-    add_action(ActionType::Single(Box::new(EmptyAction)));
-}
-
-impl From<BoxedAction> for ActionType {
-    fn from(action: BoxedAction) -> Self {
-        Self::Single(action)
-    }
-}
-
-impl<T> From<T> for ActionType
-where
-    T: Action,
-{
-    fn from(action: T) -> Self {
-        Self::Single(action.into_boxed())
     }
 }
