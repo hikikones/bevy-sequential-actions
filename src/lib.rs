@@ -345,7 +345,7 @@ pub type BoxedAction = Box<dyn Action>;
 pub enum ActionKind {
     Single(BoxedAction),
     Sequence(Box<dyn DoubleEndedIterator<Item = BoxedAction> + Send + Sync>),
-    Parallel(Box<[BoxedAction]>),
+    Parallel(Box<dyn Iterator<Item = BoxedAction> + Send + Sync>),
     Linked(Box<[Box<[BoxedAction]>]>),
 }
 

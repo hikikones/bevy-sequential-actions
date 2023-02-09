@@ -108,6 +108,8 @@ impl ModifyActionsWorldExt for World {
                 }
             }
             ActionKind::Parallel(actions) => {
+                let actions = actions.collect::<Box<_>>();
+
                 if !actions.is_empty() {
                     let mut queue = self.action_queue(agent);
 
