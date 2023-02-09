@@ -200,8 +200,8 @@ mod plugin;
 mod traits;
 mod world;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 pub use action_commands::*;
 pub use commands::*;
