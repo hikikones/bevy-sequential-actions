@@ -83,7 +83,7 @@ impl ModifyActionsWorldExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionKind>) {
         match Into::<ActionKind>::into(action) {
             ActionKind::Single(action) => {
-                let tuple = (ActionType::Single(action.into_boxed()), config.repeat);
+                let tuple = (ActionType::Single(action), config.repeat);
                 let mut queue = self.action_queue(agent);
 
                 match config.order {
