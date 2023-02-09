@@ -25,7 +25,7 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl Into<ActionKind>) -> &mut Self {
+    fn add(&mut self, action: impl Into<ActionType>) -> &mut Self {
         self.world.add_action(self.agent, self.config, action);
         self
     }
@@ -57,7 +57,7 @@ impl ModifyActions for AgentWorldActions<'_> {
 }
 
 pub(super) trait ModifyActionsWorldExt {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionKind>);
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionType>);
     fn next_action(&mut self, agent: Entity);
     fn finish_action(&mut self, agent: Entity);
     fn cancel_action(&mut self, agent: Entity);
@@ -67,10 +67,10 @@ pub(super) trait ModifyActionsWorldExt {
 }
 
 impl ModifyActionsWorldExt for World {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionKind>) {
-        match Into::<ActionKind>::into(action) {
-            ActionKind::Single(action) => {
-                let tuple = (ActionType::Single(action), config.repeat);
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionType>) {
+        match Into::<ActionType>::into(action) {
+            ActionType::Single(action) => {
+                let tuple = (InternalActionType::Single(action), config.repeat);
                 let mut queue = self.action_queue(agent);
 
                 match config.order {
@@ -78,23 +78,23 @@ impl ModifyActionsWorldExt for World {
                     AddOrder::Front => queue.push_front(tuple),
                 }
             }
-            ActionKind::Sequence(actions) => {
+            ActionType::Sequence(actions) => {
                 let mut queue = self.action_queue(agent);
 
                 match config.order {
                     AddOrder::Back => {
                         for action in actions {
-                            queue.push_back((ActionType::Single(action), config.repeat));
+                            queue.push_back((InternalActionType::Single(action), config.repeat));
                         }
                     }
                     AddOrder::Front => {
                         for action in actions.rev() {
-                            queue.push_front((ActionType::Single(action), config.repeat));
+                            queue.push_front((InternalActionType::Single(action), config.repeat));
                         }
                     }
                 }
             }
-            ActionKind::Parallel(actions) => {
+            ActionType::Parallel(actions) => {
                 let actions = actions.collect::<Box<_>>();
 
                 if !actions.is_empty() {
@@ -102,25 +102,26 @@ impl ModifyActionsWorldExt for World {
 
                     match config.order {
                         AddOrder::Back => {
-                            queue.push_back((ActionType::Parallel(actions), config.repeat));
+                            queue.push_back((InternalActionType::Parallel(actions), config.repeat));
                         }
                         AddOrder::Front => {
-                            queue.push_front((ActionType::Parallel(actions), config.repeat));
+                            queue
+                                .push_front((InternalActionType::Parallel(actions), config.repeat));
                         }
                     }
                 }
             }
-            ActionKind::Linked(actions) => {
+            ActionType::Linked(actions) => {
                 let mut queue = self.action_queue(agent);
 
                 // TODO: what if empty?
 
                 match config.order {
                     AddOrder::Back => {
-                        queue.push_back((ActionType::Linked(actions, 0), config.repeat));
+                        queue.push_back((InternalActionType::Linked(actions, 0), config.repeat));
                     }
                     AddOrder::Front => {
-                        queue.push_front((ActionType::Linked(actions, 0), config.repeat));
+                        queue.push_front((InternalActionType::Linked(actions, 0), config.repeat));
                     }
                 }
             }
@@ -182,7 +183,7 @@ impl WorldActionsExt for World {
                 .reset_counts();
 
             match &mut current_action {
-                ActionType::Single(action) => {
+                InternalActionType::Single(action) => {
                     action.on_stop(agent, self, reason);
 
                     match reason {
@@ -197,7 +198,7 @@ impl WorldActionsExt for World {
                         }
                     }
                 }
-                ActionType::Parallel(actions) => {
+                InternalActionType::Parallel(actions) => {
                     actions
                         .iter_mut()
                         .for_each(|action| action.on_stop(agent, self, reason));
@@ -214,7 +215,7 @@ impl WorldActionsExt for World {
                         }
                     }
                 }
-                ActionType::Linked(actions, index) => {
+                InternalActionType::Linked(actions, index) => {
                     for action in actions[*index].iter_mut() {
                         action.on_stop(agent, self, reason);
                     }
@@ -252,11 +253,11 @@ impl WorldActionsExt for World {
             let mut commands = ActionCommands::new();
 
             match &mut next_action {
-                ActionType::Single(action) => action.on_start(agent, self, &mut commands),
-                ActionType::Parallel(actions) => actions
+                InternalActionType::Single(action) => action.on_start(agent, self, &mut commands),
+                InternalActionType::Parallel(actions) => actions
                     .iter_mut()
                     .for_each(|action| action.on_start(agent, self, &mut commands)),
-                ActionType::Linked(actions, index) => {
+                InternalActionType::Linked(actions, index) => {
                     for action in actions[*index].iter_mut() {
                         action.on_start(agent, self, &mut commands)
                     }

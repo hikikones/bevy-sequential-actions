@@ -77,7 +77,7 @@ pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(&mut self, config: AddConfig) -> &mut Self;
 
-    fn add(&mut self, action: impl Into<ActionKind>) -> &mut Self;
+    fn add(&mut self, action: impl Into<ActionType>) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).

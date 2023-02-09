@@ -171,7 +171,7 @@ fn add_many_sequential() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Sequence(actions![
+    ecs.actions(e).add(ActionType::Sequence(actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
@@ -186,7 +186,7 @@ fn add_many_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Parallel(actions![
+    ecs.actions(e).add(ActionType::Parallel(actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
@@ -202,7 +202,7 @@ fn add_many_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Linked(actions_2d![
+    ecs.actions(e).add(ActionType::Linked(actions_2d![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
@@ -219,9 +219,9 @@ fn add_many_empty() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .add(ActionKind::Sequence(actions![]))
-        .add(ActionKind::Parallel(actions![]))
-        .add(ActionKind::Linked(actions_2d![]));
+        .add(ActionType::Sequence(actions![]))
+        .add(ActionType::Parallel(actions![]))
+        .add(ActionType::Linked(actions_2d![]));
 
     assert!(ecs.current_action(e).is_none());
 }
@@ -247,7 +247,7 @@ fn next_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Parallel(actions![
+    ecs.actions(e).add(ActionType::Parallel(actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
@@ -269,7 +269,7 @@ fn next_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Linked(actions_2d![
+    ecs.actions(e).add(ActionType::Linked(actions_2d![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
@@ -315,7 +315,7 @@ fn finish_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Parallel(actions![
+    ecs.actions(e).add(ActionType::Parallel(actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
@@ -337,7 +337,7 @@ fn finish_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Linked(actions_2d![
+    ecs.actions(e).add(ActionType::Linked(actions_2d![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
@@ -387,7 +387,7 @@ fn cancel_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Parallel(actions![
+    ecs.actions(e).add(ActionType::Parallel(actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
@@ -409,7 +409,7 @@ fn cancel_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Linked(actions_2d![
+    ecs.actions(e).add(ActionType::Linked(actions_2d![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
@@ -447,7 +447,7 @@ fn pause_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Parallel(actions![
+    ecs.actions(e).add(ActionType::Parallel(actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
@@ -469,7 +469,7 @@ fn pause_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Linked(actions_2d![
+    ecs.actions(e).add(ActionType::Linked(actions_2d![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
@@ -557,7 +557,7 @@ fn skip_parallel() {
             start: false,
             repeat: Repeat::None,
         })
-        .add(ActionKind::Parallel(actions![
+        .add(ActionType::Parallel(actions![
             CountdownAction::new(0),
             CountdownAction::new(0)
         ]))
@@ -566,7 +566,7 @@ fn skip_parallel() {
             start: false,
             repeat: Repeat::Amount(1),
         })
-        .add(ActionKind::Parallel(actions![
+        .add(ActionType::Parallel(actions![
             CountdownAction::new(0),
             CountdownAction::new(0)
         ]))
@@ -575,7 +575,7 @@ fn skip_parallel() {
             start: false,
             repeat: Repeat::Forever,
         })
-        .add(ActionKind::Parallel(actions![
+        .add(ActionType::Parallel(actions![
             CountdownAction::new(0),
             CountdownAction::new(0)
         ]));
@@ -618,7 +618,7 @@ fn skip_linked() {
             start: false,
             repeat: Repeat::None,
         })
-        .add(ActionKind::Linked(actions_2d![
+        .add(ActionType::Linked(actions_2d![
             [CountdownAction::new(0)],
             [CountdownAction::new(0)],
         ]))
@@ -627,7 +627,7 @@ fn skip_linked() {
             start: false,
             repeat: Repeat::Amount(1),
         })
-        .add(ActionKind::Linked(actions_2d![
+        .add(ActionType::Linked(actions_2d![
             [CountdownAction::new(0)],
             [CountdownAction::new(0)],
         ]))
@@ -636,7 +636,7 @@ fn skip_linked() {
             start: false,
             repeat: Repeat::Forever,
         })
-        .add(ActionKind::Linked(actions_2d![
+        .add(ActionType::Linked(actions_2d![
             [CountdownAction::new(0)],
             [CountdownAction::new(0)],
         ]));
@@ -822,7 +822,7 @@ fn order() {
     let e = ecs.spawn_agent();
 
     // A, B, C
-    ecs.actions(e).add(ActionKind::Sequence(actions![
+    ecs.actions(e).add(ActionType::Sequence(actions![
         Order::<A>::default(),
         Order::<B>::default(),
         Order::<C>::default(),
@@ -846,7 +846,7 @@ fn order() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add(ActionKind::Sequence(actions![
+        .add(ActionType::Sequence(actions![
             Order::<A>::default(),
             Order::<B>::default(),
             Order::<C>::default(),
@@ -871,7 +871,7 @@ fn order() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add(ActionKind::Sequence(actions![
+        .add(ActionType::Sequence(actions![
             Order::<C>::default(),
             Order::<B>::default(),
             Order::<A>::default(),
@@ -933,7 +933,7 @@ fn reset_count() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionKind::Parallel(actions![
+    ecs.actions(e).add(ActionType::Parallel(actions![
         CountdownAction::new(0),
         CountdownAction::new(1),
         CountdownAction::new(2),

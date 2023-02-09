@@ -24,7 +24,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
             repeat: Repeat::Forever,
         })
         .add(WaitAction::new(1.0))
-        .add(ActionKind::Parallel(actions![
+        .add(ActionType::Parallel(actions![
             MoveAction::new(MoveConfig {
                 target: Vec3::X * 3.0,
                 speed: Random::new(0.5, 5.0),
@@ -48,7 +48,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
             }
         ]))
         .add(WaitAction::new(1.0))
-        .add(ActionKind::Parallel(actions![
+        .add(ActionType::Parallel(actions![
             MoveAction::new(MoveConfig {
                 target: -Vec3::X * 3.0,
                 speed: Random::new(0.5, 5.0),

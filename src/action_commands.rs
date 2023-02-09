@@ -58,7 +58,7 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl Into<ActionKind>) -> &mut Self {
+    fn add(&mut self, action: impl Into<ActionType>) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
         let action = action.into();

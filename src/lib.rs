@@ -341,14 +341,14 @@ pub enum ExecutionMode {
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
-pub enum ActionKind {
+pub enum ActionType {
     Single(BoxedAction),
     Sequence(Box<dyn DoubleEndedIterator<Item = BoxedAction> + Send + Sync>),
     Parallel(Box<dyn Iterator<Item = BoxedAction> + Send + Sync>),
     Linked(Box<[Box<[BoxedAction]>]>),
 }
 
-impl<T> From<T> for ActionKind
+impl<T> From<T> for ActionType
 where
     T: Action,
 {
@@ -357,25 +357,25 @@ where
     }
 }
 
-impl From<BoxedAction> for ActionKind {
+impl From<BoxedAction> for ActionType {
     fn from(action: BoxedAction) -> Self {
         Self::Single(action)
     }
 }
 
-type ActionTuple = (ActionType, Repeat);
+enum InternalActionType {
+    Single(BoxedAction),
+    Parallel(Box<[BoxedAction]>),
+    Linked(Box<[Box<[BoxedAction]>]>, usize),
+}
+
+type ActionTuple = (InternalActionType, Repeat);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
 
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
-
-enum ActionType {
-    Single(BoxedAction),
-    Parallel(Box<[BoxedAction]>),
-    Linked(Box<[Box<[BoxedAction]>]>, usize),
-}
 
 impl Deref for ActionQueue {
     type Target = VecDeque<ActionTuple>;
