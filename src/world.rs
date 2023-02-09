@@ -25,7 +25,7 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
+    fn add(&mut self, action: impl Into<ActionKind>) -> &mut Self {
         self.world.add_action(self.agent, self.config, action);
         self
     }
@@ -63,7 +63,7 @@ impl ModifyActions for AgentWorldActions<'_> {
 }
 
 pub(super) trait ModifyActionsWorldExt {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction);
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionKind>);
     fn add_actions(
         &mut self,
         agent: Entity,
@@ -80,13 +80,48 @@ pub(super) trait ModifyActionsWorldExt {
 }
 
 impl ModifyActionsWorldExt for World {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction) {
-        let action_tuple = (ActionType::Single(action.into_boxed()), config.repeat);
-        let mut queue = self.action_queue(agent);
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionKind>) {
+        match Into::<ActionKind>::into(action) {
+            ActionKind::Single(action) => {
+                let tuple = (ActionType::Single(action.into_boxed()), config.repeat);
+                let mut queue = self.action_queue(agent);
 
-        match config.order {
-            AddOrder::Back => queue.push_back(action_tuple),
-            AddOrder::Front => queue.push_front(action_tuple),
+                match config.order {
+                    AddOrder::Back => queue.push_back(tuple),
+                    AddOrder::Front => queue.push_front(tuple),
+                }
+            }
+            ActionKind::Sequence(actions) => {
+                let mut queue = self.action_queue(agent);
+
+                match config.order {
+                    AddOrder::Back => {
+                        for action in actions {
+                            queue.push_back((ActionType::Single(action), config.repeat));
+                        }
+                    }
+                    AddOrder::Front => {
+                        for action in actions.rev() {
+                            queue.push_front((ActionType::Single(action), config.repeat));
+                        }
+                    }
+                }
+            }
+            ActionKind::Parallel(actions) => {
+                if !actions.is_empty() {
+                    let mut queue = self.action_queue(agent);
+
+                    match config.order {
+                        AddOrder::Back => {
+                            queue.push_back((ActionType::Parallel(actions), config.repeat));
+                        }
+                        AddOrder::Front => {
+                            queue.push_front((ActionType::Parallel(actions), config.repeat));
+                        }
+                    }
+                }
+            }
+            ActionKind::Linked(_) => todo!(),
         }
 
         if config.start && !self.has_current_action(agent) {

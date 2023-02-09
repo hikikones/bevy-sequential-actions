@@ -342,6 +342,28 @@ pub enum ExecutionMode {
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
+pub enum ActionKind {
+    Single(BoxedAction),
+    Sequence(Box<dyn DoubleEndedIterator<Item = BoxedAction> + Send + Sync>),
+    Parallel(Box<[BoxedAction]>),
+    Linked(Box<[Box<[BoxedAction]>]>),
+}
+
+impl<T> From<T> for ActionKind
+where
+    T: Action,
+{
+    fn from(action: T) -> Self {
+        Self::Single(action.into_boxed())
+    }
+}
+
+impl From<BoxedAction> for ActionKind {
+    fn from(action: BoxedAction) -> Self {
+        Self::Single(action)
+    }
+}
+
 type ActionTuple = (ActionType, Repeat);
 
 #[derive(Default, Component)]
