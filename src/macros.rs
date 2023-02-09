@@ -20,3 +20,14 @@ macro_rules! actions {
         Box::new( [ $( $crate::IntoBoxedAction::into_boxed($x) ),* ].into_iter() )
     };
 }
+
+#[macro_export]
+macro_rules! actions_2d {
+    [ $( [ $( $d:expr ),* $(,)? ] ),* $(,)? ] => {
+        Box::new([
+            $(
+                Box::new([ $( $crate::IntoBoxedAction::into_boxed($d) ),* ]) as Box<[_]>,
+            )*
+        ])
+    }
+}
