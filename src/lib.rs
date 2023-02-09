@@ -401,6 +401,7 @@ impl Action for EmptyAction {
 
 fn test() {
     add_action(EmptyAction);
+    add_action(ActionType::Single(Box::new(EmptyAction)));
 }
 
 impl From<BoxedAction> for ActionType {
