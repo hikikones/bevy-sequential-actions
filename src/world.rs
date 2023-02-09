@@ -117,7 +117,20 @@ impl ModifyActionsWorldExt for World {
                     }
                 }
             }
-            ActionKind::Linked(_) => todo!(),
+            ActionKind::Linked(actions) => {
+                let mut queue = self.action_queue(agent);
+
+                // TODO: what if empty?
+
+                match config.order {
+                    AddOrder::Back => {
+                        queue.push_back((ActionType::Linked(actions, 0), config.repeat));
+                    }
+                    AddOrder::Front => {
+                        queue.push_front((ActionType::Linked(actions, 0), config.repeat));
+                    }
+                }
+            }
         }
 
         if config.start && !self.has_current_action(agent) {
