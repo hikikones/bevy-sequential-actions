@@ -59,9 +59,9 @@ fn check_actions(
         if let Some((current_action, _)) = &current_action.0 {
             let finished_count = finished.total();
             let active_count = match current_action {
-                ActionType::Single(_) => 1,
+                ActionType::Single(..) => 1,
                 ActionType::Parallel(actions) => actions.len(),
-                ActionType::Linked(_, _) => 1,
+                ActionType::Linked(..) => 1,
             } as u32;
 
             match finished_count.cmp(&active_count) {

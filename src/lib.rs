@@ -375,7 +375,7 @@ struct CurrentAction(Option<ActionTuple>);
 enum ActionType {
     Single(BoxedAction),
     Parallel(Box<[BoxedAction]>),
-    Linked(Box<[BoxedAction]>, usize),
+    Linked(Box<[Box<[BoxedAction]>]>, usize),
 }
 
 impl Deref for ActionQueue {
