@@ -383,3 +383,37 @@ impl DerefMut for CurrentAction {
         &mut self.0
     }
 }
+
+fn add_action(action: impl Into<ActionType>) {
+    // todo
+}
+
+struct EmptyAction;
+impl Action for EmptyAction {
+    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+        todo!()
+    }
+
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        todo!()
+    }
+}
+
+fn test() {
+    add_action(EmptyAction);
+}
+
+impl From<BoxedAction> for ActionType {
+    fn from(action: BoxedAction) -> Self {
+        Self::Single(action)
+    }
+}
+
+impl<T> From<T> for ActionType
+where
+    T: Action,
+{
+    fn from(action: T) -> Self {
+        Self::Single(action.into_boxed())
+    }
+}
