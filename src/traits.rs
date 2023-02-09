@@ -79,9 +79,6 @@ pub trait ModifyActions {
 
     fn add(&mut self, action: impl Into<ActionKind>) -> &mut Self;
 
-    /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self;
-
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(&mut self) -> &mut Self;

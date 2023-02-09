@@ -68,15 +68,6 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
-        let agent = self.agent;
-        let config = self.config;
-        self.commands.push(move |world| {
-            world.add_actions(agent, config, mode, actions);
-        });
-        self
-    }
-
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
         self.commands.push(move |world| {

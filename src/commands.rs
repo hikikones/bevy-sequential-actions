@@ -35,15 +35,6 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         self
     }
 
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
-        let agent = self.agent;
-        let config = self.config;
-        self.commands.add(move |world: &mut World| {
-            world.add_actions(agent, config, mode, actions);
-        });
-        self
-    }
-
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
         self.commands.add(move |world: &mut World| {

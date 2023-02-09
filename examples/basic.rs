@@ -55,14 +55,15 @@ fn setup(mut commands: Commands) {
             order: AddOrder::Front,
             ..Default::default()
         })
-        .add_many(
-            ExecutionMode::Sequential,
-            actions![
-                WaitAction::new(10.0),
-                WaitAction::new(100.0),
-                WaitAction::new(1000.0),
-            ],
-        )
+        // TODO
+        // .add_many(
+        //     ExecutionMode::Sequential,
+        //     actions![
+        //         WaitAction::new(10.0),
+        //         WaitAction::new(100.0),
+        //         WaitAction::new(1000.0),
+        //     ],
+        // )
         // Ain't nobody got time to wait that long, so skip'em
         .skip()
         .skip()
@@ -117,33 +118,34 @@ impl Action for MyCustomAction {
                 start: false,
                 repeat: Repeat::None,
             })
-            .add_many(
-                ExecutionMode::Sequential,
-                actions![
-                    LerpAction::new(LerpConfig {
-                        target: camera,
-                        lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
-                        duration: 1.0,
-                    }),
-                    LerpAction::new(LerpConfig {
-                        target: agent,
-                        lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
-                        duration: 1.0,
-                    }),
-                    WaitAction::new(1.0).into_boxed(),
-                    LerpAction::new(LerpConfig {
-                        target: camera,
-                        lerp_type: LerpType::Position(CAMERA_OFFSET),
-                        duration: 1.0,
-                    }),
-                    WaitAction::new(0.5).into_boxed(),
-                    LerpAction::new(LerpConfig {
-                        target: agent,
-                        lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
-                        duration: 1.0,
-                    }),
-                ],
-            )
+            // TODO
+            // .add_many(
+            //     ExecutionMode::Sequential,
+            //     actions![
+            //         LerpAction::new(LerpConfig {
+            //             target: camera,
+            //             lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
+            //             duration: 1.0,
+            //         }),
+            //         LerpAction::new(LerpConfig {
+            //             target: agent,
+            //             lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
+            //             duration: 1.0,
+            //         }),
+            //         WaitAction::new(1.0).into_boxed(),
+            //         LerpAction::new(LerpConfig {
+            //             target: camera,
+            //             lerp_type: LerpType::Position(CAMERA_OFFSET),
+            //             duration: 1.0,
+            //         }),
+            //         WaitAction::new(0.5).into_boxed(),
+            //         LerpAction::new(LerpConfig {
+            //             target: agent,
+            //             lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
+            //             duration: 1.0,
+            //         }),
+            //     ],
+            // )
             .next();
     }
 

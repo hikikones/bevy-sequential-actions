@@ -30,12 +30,6 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
-        self.world
-            .add_actions(self.agent, self.config, mode, actions);
-        self
-    }
-
     fn next(&mut self) -> &mut Self {
         self.world.next_action(self.agent);
         self
