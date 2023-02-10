@@ -1021,34 +1021,3 @@ fn finished_exceeds_active_panic() {
 
     ecs.run();
 }
-
-macro_rules! foo {
-    ( $( $l:tt ),* $(,)? ) => {
-        Box::new([ $( bar!($l) ),* ])
-    };
-}
-
-macro_rules! bar {
-    [ $( [ $( $d:expr ),* $(,)? ] ),* $(,)? ] => {
-        Box::new([
-            $(
-                $( $d ),*
-            )*
-        ]) as Box<[_]>
-    };
-
-    ( $( $x:expr ),* $(,)? ) => {
-        Box::new( [ $( $x ),* ] )
-    };
-}
-
-#[test]
-fn test() {
-    let a = foo!(1, [3, 2], [2], [21], 22, 1, [0]);
-    for a in a.iter() {
-        print!("\t");
-        for b in a.iter() {
-            print!("{} ", b);
-        }
-    }
-}

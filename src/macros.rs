@@ -18,12 +18,12 @@
 macro_rules! actions {
     ( $( $x:expr ),* $(,)? ) => {
         Box::new( [ $( $crate::IntoBoxedAction::into_boxed($x) ),* ].into_iter() )
-    };
+    }
 }
 
 #[macro_export]
 macro_rules! actions_2d {
-    [ $( [ $( $d:expr ),* $(,)? ] ),* $(,)? ] => {
+    ( $( [ $( $d:expr ),* $(,)? ] ),* $(,)? ) => {
         Box::new([
             $(
                 Box::new([ $( $crate::IntoBoxedAction::into_boxed($d) ),* ]) as Box<[_]>,
