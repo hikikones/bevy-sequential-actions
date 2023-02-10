@@ -72,7 +72,7 @@ impl ModifyActionsWorldExt for World {
             ActionType::Single(action) => {
                 self.action_queue(agent).push(
                     config.order,
-                    (InternalActionType::Single(action), config.repeat),
+                    (ActionTypeInternal::One(action), config.repeat),
                 );
             }
             ActionType::Sequence(actions) => {
@@ -81,12 +81,12 @@ impl ModifyActionsWorldExt for World {
                 match config.order {
                     AddOrder::Back => {
                         for action in actions {
-                            queue.push_back((InternalActionType::Single(action), config.repeat));
+                            queue.push_back((ActionTypeInternal::One(action), config.repeat));
                         }
                     }
                     AddOrder::Front => {
                         for action in actions.rev() {
-                            queue.push_front((InternalActionType::Single(action), config.repeat));
+                            queue.push_front((ActionTypeInternal::One(action), config.repeat));
                         }
                     }
                 }
@@ -97,7 +97,7 @@ impl ModifyActionsWorldExt for World {
                 if !actions.is_empty() {
                     self.action_queue(agent).push(
                         config.order,
-                        (InternalActionType::Parallel(actions), config.repeat),
+                        (ActionTypeInternal::Many(actions), config.repeat),
                     );
                 }
             }
@@ -107,7 +107,7 @@ impl ModifyActionsWorldExt for World {
                 if !actions.is_empty() {
                     self.action_queue(agent).push(
                         config.order,
-                        (InternalActionType::Linked(actions, 0), config.repeat),
+                        (ActionTypeInternal::Linked(actions, 0), config.repeat),
                     );
                 }
             }
@@ -169,7 +169,7 @@ impl WorldActionsExt for World {
                 .reset_counts();
 
             match &mut current_action {
-                InternalActionType::Single(action) => {
+                ActionTypeInternal::One(action) => {
                     action.on_stop(agent, self, reason);
 
                     match reason {
@@ -184,7 +184,7 @@ impl WorldActionsExt for World {
                         }
                     }
                 }
-                InternalActionType::Parallel(actions) => {
+                ActionTypeInternal::Many(actions) => {
                     actions
                         .iter_mut()
                         .for_each(|action| action.on_stop(agent, self, reason));
@@ -201,7 +201,7 @@ impl WorldActionsExt for World {
                         }
                     }
                 }
-                InternalActionType::Linked(actions, index) => {
+                ActionTypeInternal::Linked(actions, index) => {
                     for action in actions[*index].iter_mut() {
                         action.on_stop(agent, self, reason);
                     }
@@ -239,11 +239,11 @@ impl WorldActionsExt for World {
             let mut commands = ActionCommands::new();
 
             match &mut next_action {
-                InternalActionType::Single(action) => action.on_start(agent, self, &mut commands),
-                InternalActionType::Parallel(actions) => actions
+                ActionTypeInternal::One(action) => action.on_start(agent, self, &mut commands),
+                ActionTypeInternal::Many(actions) => actions
                     .iter_mut()
                     .for_each(|action| action.on_start(agent, self, &mut commands)),
-                InternalActionType::Linked(actions, index) => {
+                ActionTypeInternal::Linked(actions, index) => {
                     for action in actions[*index].iter_mut() {
                         action.on_start(agent, self, &mut commands)
                     }

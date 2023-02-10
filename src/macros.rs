@@ -18,35 +18,35 @@ use crate::{Action, BoxedAction};
 /// ```
 #[macro_export]
 macro_rules! actions {
-    ( $( $x:expr ),* $(,)? ) => {
-        [ $( $crate::IntoBoxedAction::into_boxed($x) ),* ]
+    ( $( $action:expr ),* $(,)? ) => {
+        [ $( $crate::IntoBoxedAction::into_boxed($action) ),* ]
     }
 }
 
 #[macro_export]
 macro_rules! sequential_actions {
-    ( $( $x:expr ),* $(,)? ) => {
+    ( $( $action:expr ),* $(,)? ) => {
         $crate::ActionType::Sequence(
-            Box::new( actions![$( $x ),*].into_iter() )
+            Box::new( actions![$( $action ),*].into_iter() )
         )
     };
 }
 
 #[macro_export]
 macro_rules! parallel_actions {
-    ( $( $x:expr ),* $(,)? ) => {
+    ( $( $action:expr ),* $(,)? ) => {
         $crate::ActionType::Parallel(
-            Box::new( actions![$( $x ),*].into_iter() )
+            Box::new( actions![$( $action ),*].into_iter() )
         )
     };
 }
 
 #[macro_export]
 macro_rules! linked_actions {
-    ( $( [ $( $x:expr ),* $(,)? ] ),* $(,)? ) => {
+    ( $( [ $( $action:expr ),* $(,)? ] ),* $(,)? ) => {
         $crate::ActionType::Linked(Box::new([
             $(
-                Box::new( actions![$( $x ),*] ) as Box<[_]>,
+                Box::new( actions![$( $action ),*] ) as Box<[_]>,
             )*
         ].into_iter()))
     }

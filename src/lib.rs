@@ -363,13 +363,13 @@ impl From<BoxedAction> for ActionType {
     }
 }
 
-enum InternalActionType {
-    Single(BoxedAction),
-    Parallel(Box<[BoxedAction]>),
+enum ActionTypeInternal {
+    One(BoxedAction),
+    Many(Box<[BoxedAction]>),
     Linked(Box<[Box<[BoxedAction]>]>, usize),
 }
 
-type ActionTuple = (InternalActionType, Repeat);
+type ActionTuple = (ActionTypeInternal, Repeat);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
