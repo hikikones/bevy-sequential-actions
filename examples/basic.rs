@@ -55,11 +55,11 @@ fn setup(mut commands: Commands) {
             order: AddOrder::Front,
             ..Default::default()
         })
-        .add(ActionType::Sequence(actions![
+        .add(sequential_actions![
             WaitAction::new(10.0),
             WaitAction::new(100.0),
             WaitAction::new(1000.0),
-        ]))
+        ])
         // Ain't nobody got time to wait that long, so skip'em
         .skip()
         .skip()
@@ -114,7 +114,7 @@ impl Action for MyCustomAction {
                 start: false,
                 repeat: Repeat::None,
             })
-            .add(ActionType::Sequence(actions![
+            .add(sequential_actions![
                 LerpAction::new(LerpConfig {
                     target: camera,
                     lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
@@ -137,7 +137,7 @@ impl Action for MyCustomAction {
                     lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
                     duration: 1.0,
                 }),
-            ]))
+            ])
             .next();
     }
 

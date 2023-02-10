@@ -24,7 +24,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
             repeat: Repeat::Forever,
         })
         .add(WaitAction::new(1.0))
-        .add(ActionType::Parallel(actions![
+        .add(parallel_actions![
             MoveAction::new(MoveConfig {
                 target: Vec3::X * 3.0,
                 speed: Random::new(0.5, 5.0),
@@ -46,9 +46,9 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
                     .unwrap()
                     .confirm_and_persist();
             }
-        ]))
+        ])
         .add(WaitAction::new(1.0))
-        .add(ActionType::Parallel(actions![
+        .add(parallel_actions![
             MoveAction::new(MoveConfig {
                 target: -Vec3::X * 3.0,
                 speed: Random::new(0.5, 5.0),
@@ -75,5 +75,5 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
                     println!("on_stop");
                 }
             )
-        ]));
+        ]);
 }

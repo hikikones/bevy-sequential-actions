@@ -171,11 +171,11 @@ fn add_many_sequential() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Sequence(actions![
+    ecs.actions(e).add(sequential_actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 2);
@@ -186,11 +186,11 @@ fn add_many_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Parallel(actions![
+    ecs.actions(e).add(parallel_actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -247,11 +247,11 @@ fn next_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Parallel(actions![
+    ecs.actions(e).add(parallel_actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -315,11 +315,11 @@ fn finish_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Parallel(actions![
+    ecs.actions(e).add(parallel_actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -387,11 +387,11 @@ fn cancel_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Parallel(actions![
+    ecs.actions(e).add(parallel_actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -447,11 +447,11 @@ fn pause_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Parallel(actions![
+    ecs.actions(e).add(parallel_actions![
         CountdownAction::new(0),
         CountdownAction::new(0),
         CountdownAction::new(0),
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -557,28 +557,28 @@ fn skip_parallel() {
             start: false,
             repeat: Repeat::None,
         })
-        .add(ActionType::Parallel(actions![
+        .add(parallel_actions![
             CountdownAction::new(0),
             CountdownAction::new(0)
-        ]))
+        ])
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Amount(1),
         })
-        .add(ActionType::Parallel(actions![
+        .add(parallel_actions![
             CountdownAction::new(0),
             CountdownAction::new(0)
-        ]))
+        ])
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Forever,
         })
-        .add(ActionType::Parallel(actions![
+        .add(parallel_actions![
             CountdownAction::new(0),
             CountdownAction::new(0)
-        ]));
+        ]);
 
     assert!(ecs.action_queue(e).len() == 3);
 
@@ -822,11 +822,11 @@ fn order() {
     let e = ecs.spawn_agent();
 
     // A, B, C
-    ecs.actions(e).add(ActionType::Sequence(actions![
+    ecs.actions(e).add(sequential_actions![
         Order::<A>::default(),
         Order::<B>::default(),
         Order::<C>::default(),
-    ]));
+    ]);
 
     assert!(ecs.world.entity(e).contains::<A>());
 
@@ -846,11 +846,11 @@ fn order() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add(ActionType::Sequence(actions![
+        .add(sequential_actions![
             Order::<A>::default(),
             Order::<B>::default(),
             Order::<C>::default(),
-        ]))
+        ])
         .next();
 
     assert!(ecs.world.entity(e).contains::<A>());
@@ -871,11 +871,11 @@ fn order() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add(ActionType::Sequence(actions![
+        .add(sequential_actions![
             Order::<C>::default(),
             Order::<B>::default(),
             Order::<A>::default(),
-        ]))
+        ])
         .next();
 
     assert!(ecs.world.entity(e).contains::<C>());
@@ -933,11 +933,11 @@ fn reset_count() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Parallel(actions![
+    ecs.actions(e).add(parallel_actions![
         CountdownAction::new(0),
         CountdownAction::new(1),
         CountdownAction::new(2),
-    ]));
+    ]);
 
     assert!(ecs.action_finished(e).reset_count == 0);
 

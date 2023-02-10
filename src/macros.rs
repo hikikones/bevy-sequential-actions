@@ -19,9 +19,16 @@ use crate::{Action, BoxedAction};
 #[macro_export]
 macro_rules! actions {
     ( $( $x:expr ),* $(,)? ) => {
-        Box::new( [ $( $crate::IntoBoxedAction::into_boxed($x) ),* ].into_iter() )
+        [ $( $crate::IntoBoxedAction::into_boxed($x) ),* ]
     }
 }
+
+// #[macro_export]
+// macro_rules! actions {
+//     ( $( $x:expr ),* $(,)? ) => {
+//         Box::new( [ $( $crate::IntoBoxedAction::into_boxed($x) ),* ].into_iter() )
+//     }
+// }
 
 // #[macro_export]
 // macro_rules! actions_2d {
@@ -37,14 +44,18 @@ macro_rules! actions {
 #[macro_export]
 macro_rules! sequential_actions {
     ( $( $x:expr ),* $(,)? ) => {
-        $crate::ActionType::Sequence(actions![$( $x )*])
+        $crate::ActionType::Sequence(
+            Box::new( actions![$( $x ),*].into_iter() )
+        )
     };
 }
 
 #[macro_export]
 macro_rules! parallel_actions {
     ( $( $x:expr ),* $(,)? ) => {
-        $crate::ActionType::Parallel(actions![$( $x )*])
+        $crate::ActionType::Parallel(
+            Box::new( actions![$( $x ),*].into_iter() )
+        )
     };
 }
 
@@ -67,7 +78,7 @@ macro_rules! linked_actions {
             $(
                 // Box::<[dyn ExactSizeIterator<Item = Empty>]>::new( acts![$( $x ),*].into_iter() ),
                 // Box::new([ $( $crate::IntoBoxedAction::into_boxed($x) ),* ]) as Box<[_]>,
-                Box::new([ $( $crate::IntoBoxedAction::into_boxed($x) ),* ]) as Box<[_]>,
+                Box::new( actions![$( $x ),*] ) as Box<[_]>,
             )*
         ].into_iter()))
     }
