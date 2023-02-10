@@ -112,16 +112,22 @@ impl ModifyActionsWorldExt for World {
                 }
             }
             ActionType::Linked(actions) => {
-                let mut queue = self.action_queue(agent);
+                let actions = actions.filter(|a| !a.is_empty()).collect::<Box<[_]>>();
 
-                // TODO: what if empty?
+                if !actions.is_empty() {
+                    let mut queue = self.action_queue(agent);
 
-                match config.order {
-                    AddOrder::Back => {
-                        queue.push_back((InternalActionType::Linked(actions, 0), config.repeat));
-                    }
-                    AddOrder::Front => {
-                        queue.push_front((InternalActionType::Linked(actions, 0), config.repeat));
+                    match config.order {
+                        AddOrder::Back => {
+                            queue
+                                .push_back((InternalActionType::Linked(actions, 0), config.repeat));
+                        }
+                        AddOrder::Front => {
+                            queue.push_front((
+                                InternalActionType::Linked(actions, 0),
+                                config.repeat,
+                            ));
+                        }
                     }
                 }
             }

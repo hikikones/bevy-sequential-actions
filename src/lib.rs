@@ -345,7 +345,7 @@ pub enum ActionType {
     Single(BoxedAction),
     Sequence(Box<dyn DoubleEndedIterator<Item = BoxedAction> + Send + Sync>),
     Parallel(Box<dyn Iterator<Item = BoxedAction> + Send + Sync>),
-    Linked(Box<[Box<[BoxedAction]>]>),
+    Linked(Box<dyn Iterator<Item = Box<[BoxedAction]>> + Send + Sync>),
 }
 
 impl<T> From<T> for ActionType
