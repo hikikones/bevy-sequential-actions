@@ -202,11 +202,11 @@ fn add_many_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Linked(actions_2d![
+    ecs.actions(e).add(linked_actions![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -219,9 +219,9 @@ fn add_many_empty() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .add(ActionType::Sequence(actions![]))
-        .add(ActionType::Parallel(actions![]))
-        .add(ActionType::Linked(actions_2d![]));
+        .add(sequential_actions![])
+        .add(parallel_actions![])
+        .add(linked_actions![]);
 
     assert!(ecs.current_action(e).is_none());
 }
@@ -269,11 +269,11 @@ fn next_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Linked(actions_2d![
+    ecs.actions(e).add(linked_actions![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -337,11 +337,11 @@ fn finish_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Linked(actions_2d![
+    ecs.actions(e).add(linked_actions![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -409,11 +409,11 @@ fn cancel_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Linked(actions_2d![
+    ecs.actions(e).add(linked_actions![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -469,11 +469,11 @@ fn pause_linked() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add(ActionType::Linked(actions_2d![
+    ecs.actions(e).add(linked_actions![
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
         [CountdownAction::new(0)],
-    ]));
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -618,28 +618,28 @@ fn skip_linked() {
             start: false,
             repeat: Repeat::None,
         })
-        .add(ActionType::Linked(actions_2d![
+        .add(linked_actions![
             [CountdownAction::new(0)],
             [CountdownAction::new(0)],
-        ]))
+        ])
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Amount(1),
         })
-        .add(ActionType::Linked(actions_2d![
+        .add(linked_actions![
             [CountdownAction::new(0)],
             [CountdownAction::new(0)],
-        ]))
+        ])
         .config(AddConfig {
             order: AddOrder::Back,
             start: false,
             repeat: Repeat::Forever,
         })
-        .add(ActionType::Linked(actions_2d![
+        .add(linked_actions![
             [CountdownAction::new(0)],
             [CountdownAction::new(0)],
-        ]));
+        ]);
 
     assert!(ecs.action_queue(e).len() == 3);
 

@@ -21,13 +21,39 @@ macro_rules! actions {
     }
 }
 
+// #[macro_export]
+// macro_rules! actions_2d {
+//     ( $( [ $( $d:expr ),* $(,)? ] ),* $(,)? ) => {
+//         Box::new([
+//             $(
+//                 Box::new([ $( $crate::IntoBoxedAction::into_boxed($d) ),* ]) as Box<[_]>,
+//             )*
+//         ])
+//     }
+// }
+
 #[macro_export]
-macro_rules! actions_2d {
-    ( $( [ $( $d:expr ),* $(,)? ] ),* $(,)? ) => {
-        Box::new([
+macro_rules! sequential_actions {
+    ( $( $x:expr ),* $(,)? ) => {
+        $crate::ActionType::Sequence(actions![$( $x )*])
+    };
+}
+
+#[macro_export]
+macro_rules! parallel_actions {
+    ( $( $x:expr ),* $(,)? ) => {
+        $crate::ActionType::Parallel(actions![$( $x )*])
+    };
+}
+
+#[macro_export]
+macro_rules! linked_actions {
+    ( $( [ $( $x:expr ),* $(,)? ] ),* $(,)? ) => {
+        $crate::ActionType::Linked(Box::new([
             $(
-                Box::new([ $( $crate::IntoBoxedAction::into_boxed($d) ),* ]) as Box<[_]>,
+                // actions![$( $x )*]
+                Box::new([ $( $crate::IntoBoxedAction::into_boxed($x) ),* ]) as Box<[_]>,
             )*
-        ])
+        ]))
     }
 }
