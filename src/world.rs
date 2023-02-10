@@ -70,13 +70,10 @@ impl ModifyActionsWorldExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionType>) {
         match Into::<ActionType>::into(action) {
             ActionType::Single(action) => {
-                let tuple = (InternalActionType::Single(action), config.repeat);
-                let mut queue = self.action_queue(agent);
-
-                match config.order {
-                    AddOrder::Back => queue.push_back(tuple),
-                    AddOrder::Front => queue.push_front(tuple),
-                }
+                self.action_queue(agent).push(
+                    config.order,
+                    (InternalActionType::Single(action), config.repeat),
+                );
             }
             ActionType::Sequence(actions) => {
                 let mut queue = self.action_queue(agent);
@@ -98,37 +95,20 @@ impl ModifyActionsWorldExt for World {
                 let actions = actions.collect::<Box<_>>();
 
                 if !actions.is_empty() {
-                    let mut queue = self.action_queue(agent);
-
-                    match config.order {
-                        AddOrder::Back => {
-                            queue.push_back((InternalActionType::Parallel(actions), config.repeat));
-                        }
-                        AddOrder::Front => {
-                            queue
-                                .push_front((InternalActionType::Parallel(actions), config.repeat));
-                        }
-                    }
+                    self.action_queue(agent).push(
+                        config.order,
+                        (InternalActionType::Parallel(actions), config.repeat),
+                    );
                 }
             }
             ActionType::Linked(actions) => {
                 let actions = actions.filter(|a| !a.is_empty()).collect::<Box<[_]>>();
 
                 if !actions.is_empty() {
-                    let mut queue = self.action_queue(agent);
-
-                    match config.order {
-                        AddOrder::Back => {
-                            queue
-                                .push_back((InternalActionType::Linked(actions, 0), config.repeat));
-                        }
-                        AddOrder::Front => {
-                            queue.push_front((
-                                InternalActionType::Linked(actions, 0),
-                                config.repeat,
-                            ));
-                        }
-                    }
+                    self.action_queue(agent).push(
+                        config.order,
+                        (InternalActionType::Linked(actions, 0), config.repeat),
+                    );
                 }
             }
         }

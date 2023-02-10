@@ -374,6 +374,15 @@ type ActionTuple = (InternalActionType, Repeat);
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
 
+impl ActionQueue {
+    fn push(&mut self, order: AddOrder, action: ActionTuple) {
+        match order {
+            AddOrder::Back => self.0.push_back(action),
+            AddOrder::Front => self.0.push_front(action),
+        }
+    }
+}
+
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
 
