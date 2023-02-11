@@ -366,6 +366,14 @@ impl From<BoxedAction> for ActionType {
 pub struct LinkedActionsBuilder(Vec<OneOrMany>);
 
 impl LinkedActionsBuilder {
+    const fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn build(self) -> ActionTypeInternal_temp {
+        todo!()
+    }
+
     pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         self.0.push(OneOrMany::One(action.into_boxed()));
         self
@@ -387,6 +395,12 @@ impl LinkedActionsBuilder {
 enum OneOrMany {
     One(BoxedAction),
     Many(Box<[BoxedAction]>),
+}
+
+enum ActionTypeInternal_temp {
+    One(BoxedAction),
+    Many(Box<[BoxedAction]>),
+    Linked(Box<[OneOrMany]>, usize),
 }
 
 enum ActionTypeInternal {
