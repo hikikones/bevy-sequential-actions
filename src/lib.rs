@@ -363,6 +363,32 @@ impl From<BoxedAction> for ActionType {
     }
 }
 
+pub struct LinkedActionsBuilder(Vec<OneOrMany>);
+
+impl LinkedActionsBuilder {
+    pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
+        self.0.push(OneOrMany::One(action.into_boxed()));
+        self
+    }
+
+    pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
+        for action in actions.into_iter() {
+            self.0.push(OneOrMany::One(action.into_boxed()));
+        }
+        self
+    }
+
+    pub fn add_parallel(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
+        self.0.push(OneOrMany::Many(actions.collect()));
+        self
+    }
+}
+
+enum OneOrMany {
+    One(BoxedAction),
+    Many(Box<[BoxedAction]>),
+}
+
 enum ActionTypeInternal {
     One(BoxedAction),
     Many(Box<[BoxedAction]>),

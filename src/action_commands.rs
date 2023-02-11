@@ -68,6 +68,10 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
+    fn add_linked(&mut self, builder: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
+        todo!()
+    }
+
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
         self.commands.push(move |world| {

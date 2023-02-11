@@ -79,6 +79,8 @@ pub trait ModifyActions {
 
     fn add(&mut self, action: impl Into<ActionType>) -> &mut Self;
 
+    fn add_linked(&mut self, builder: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self;
+
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(&mut self) -> &mut Self;

@@ -232,6 +232,12 @@ fn add_many_empty() {
         .add(linked_actions![]);
 
     assert!(ecs.current_action(e).is_none());
+
+    ecs.actions(e).add_linked(|builder| {
+        builder
+            .add(CountdownAction::new(0))
+            .add_sequence(actions![CountdownAction::new(0)].into_iter());
+    });
 }
 
 #[test]
