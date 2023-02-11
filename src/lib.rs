@@ -370,8 +370,8 @@ impl LinkedActionsBuilder {
         Self(Vec::new())
     }
 
-    fn build(self) -> ActionTypeInternal_temp {
-        todo!()
+    fn build(self) -> Box<[OneOrMany]> {
+        self.0.into_boxed_slice()
     }
 
     pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
@@ -381,13 +381,18 @@ impl LinkedActionsBuilder {
 
     pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
         for action in actions.into_iter() {
-            self.0.push(OneOrMany::One(action.into_boxed()));
+            self.0.push(OneOrMany::One(action));
         }
         self
     }
 
     pub fn add_parallel(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
-        self.0.push(OneOrMany::Many(actions.collect()));
+        let actions = actions.collect::<Box<[_]>>();
+
+        if !actions.is_empty() {
+            self.0.push(OneOrMany::Many(actions));
+        }
+
         self
     }
 }
@@ -395,12 +400,6 @@ impl LinkedActionsBuilder {
 enum OneOrMany {
     One(BoxedAction),
     Many(Box<[BoxedAction]>),
-}
-
-enum ActionTypeInternal_temp {
-    One(BoxedAction),
-    Many(Box<[BoxedAction]>),
-    Linked(Box<[OneOrMany]>, usize),
 }
 
 enum ActionTypeInternal {

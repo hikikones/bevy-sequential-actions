@@ -29,53 +29,75 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
         let config = self.config;
         let action = action.into();
+
         self.commands.add(move |world: &mut World| {
             world.add_action(agent, config, action);
         });
+
         self
     }
 
-    fn add_linked(&mut self, builder: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
-        todo!()
+    fn add_linked(&mut self, f: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        let mut actions = LinkedActionsBuilder::new();
+        f(&mut actions);
+
+        self.commands.add(move |world: &mut World| {
+            world.add_linked_actions(agent, config, actions);
+        });
+
+        self
     }
 
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
+
         self.commands.add(move |world: &mut World| {
             world.next_action(agent);
         });
+
         self
     }
 
     fn cancel(&mut self) -> &mut Self {
         let agent = self.agent;
+
         self.commands.add(move |world: &mut World| {
             world.cancel_action(agent);
         });
+
         self
     }
 
     fn pause(&mut self) -> &mut Self {
         let agent = self.agent;
+
         self.commands.add(move |world: &mut World| {
             world.pause_action(agent);
         });
+
         self
     }
 
     fn skip(&mut self) -> &mut Self {
         let agent = self.agent;
+
         self.commands.add(move |world: &mut World| {
             world.skip_action(agent);
         });
+
         self
     }
 
     fn clear(&mut self) -> &mut Self {
         let agent = self.agent;
+
         self.commands.add(move |world: &mut World| {
             world.clear_actions(agent);
         });
+
         self
     }
 }

@@ -5,13 +5,6 @@ use crate::*;
 pub struct ActionCommands(Vec<Box<dyn FnOnce(&mut World)>>);
 
 impl ActionCommands {
-    fn push<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut World) + 'static,
-    {
-        self.0.push(Box::new(f));
-    }
-
     pub(super) fn new() -> Self {
         Self(Vec::new())
     }
@@ -24,11 +17,8 @@ impl ActionCommands {
 
     /// Adds a custom command to the command queue.
     /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
-    pub fn add<F>(&mut self, f: F) -> &mut Self
-    where
-        F: FnOnce(&mut World) + 'static,
-    {
-        self.push(f);
+    pub fn add(&mut self, f: impl FnOnce(&mut World) + 'static) -> &mut Self {
+        self.0.push(Box::new(f));
         self
     }
 }
@@ -62,53 +52,75 @@ impl ModifyActions for AgentActions<'_> {
         let agent = self.agent;
         let config = self.config;
         let action = action.into();
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.add_action(agent, config, action);
         });
+
         self
     }
 
-    fn add_linked(&mut self, builder: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
-        todo!()
+    fn add_linked(&mut self, f: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        let mut actions = LinkedActionsBuilder::new();
+        f(&mut actions);
+
+        self.commands.add(move |world: &mut World| {
+            world.add_linked_actions(agent, config, actions);
+        });
+
+        self
     }
 
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.next_action(agent);
         });
+
         self
     }
 
     fn cancel(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.cancel_action(agent);
         });
+
         self
     }
 
     fn pause(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.pause_action(agent);
         });
+
         self
     }
 
     fn skip(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.skip_action(agent);
         });
+
         self
     }
 
     fn clear(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.clear_actions(agent);
         });
+
         self
     }
 }

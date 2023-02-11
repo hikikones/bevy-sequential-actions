@@ -30,8 +30,14 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn add_linked(&mut self, builder: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
-        todo!()
+    fn add_linked(&mut self, f: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
+        let mut actions = LinkedActionsBuilder::new();
+        f(&mut actions);
+
+        self.world
+            .add_linked_actions(self.agent, self.config, actions);
+
+        self
     }
 
     fn next(&mut self) -> &mut Self {
@@ -62,11 +68,11 @@ impl ModifyActions for AgentWorldActions<'_> {
 
 pub(super) trait ModifyActionsWorldExt {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl Into<ActionType>);
-    fn add_linked(
+    fn add_linked_actions(
         &mut self,
         agent: Entity,
         config: AddConfig,
-        actions: impl FnOnce(&mut LinkedActionsBuilder),
+        actions: LinkedActionsBuilder,
     );
     fn next_action(&mut self, agent: Entity);
     fn finish_action(&mut self, agent: Entity);
@@ -128,13 +134,17 @@ impl ModifyActionsWorldExt for World {
         }
     }
 
-    fn add_linked(
+    fn add_linked_actions(
         &mut self,
         agent: Entity,
         config: AddConfig,
-        actions: impl FnOnce(&mut LinkedActionsBuilder),
+        actions: LinkedActionsBuilder,
     ) {
-        todo!()
+        let actions = actions.build();
+
+        if !actions.is_empty() {
+            todo!()
+        }
     }
 
     fn next_action(&mut self, agent: Entity) {
