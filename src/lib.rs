@@ -369,6 +369,16 @@ enum ActionTypeInternal {
     Linked(Box<[Box<[BoxedAction]>]>, usize),
 }
 
+impl ActionTypeInternal {
+    fn len(&self) -> u32 {
+        match self {
+            ActionTypeInternal::One(_) => 1,
+            ActionTypeInternal::Many(actions) => actions.len() as u32,
+            ActionTypeInternal::Linked(actions, index) => actions[*index].len() as u32,
+        }
+    }
+}
+
 type ActionTuple = (ActionTypeInternal, Repeat);
 
 #[derive(Default, Component)]

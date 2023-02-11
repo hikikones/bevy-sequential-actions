@@ -54,6 +54,14 @@ impl Ecs {
     fn action_finished(&self, agent: Entity) -> &ActionFinished {
         self.world.get::<ActionFinished>(agent).unwrap()
     }
+
+    fn active_count(&self, agent: Entity) -> u32 {
+        self.current_action(agent).as_ref().unwrap().0.len()
+    }
+
+    fn finished_count(&self, agent: Entity) -> u32 {
+        self.action_finished(agent).total()
+    }
 }
 
 struct CountdownAction {
@@ -964,6 +972,61 @@ fn reset_count() {
     ecs.run_check_actions_only();
 
     assert!(ecs.action_finished(e).reset_count == 0);
+    assert!(ecs.current_action(e).is_none());
+}
+
+#[test]
+fn finished_count() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add(CountdownAction::new(0));
+
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 1);
+    assert!(ecs.finished_count(e) == 1);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.finished_count(e) == 0);
+    assert!(ecs.current_action(e).is_none());
+
+    ecs.actions(e).add(parallel_actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
+
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 3);
+    assert!(ecs.finished_count(e) == 3);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.finished_count(e) == 0);
+    assert!(ecs.current_action(e).is_none());
+
+    ecs.actions(e).add(linked_actions![
+        [CountdownAction::new(0)],
+        [CountdownAction::new(0), CountdownAction::new(0)],
+    ]);
+
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 1);
+    assert!(ecs.finished_count(e) == 1);
+
+    ecs.run_check_actions_only();
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 2);
+    assert!(ecs.finished_count(e) == 2);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.finished_count(e) == 0);
     assert!(ecs.current_action(e).is_none());
 }
 
