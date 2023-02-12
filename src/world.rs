@@ -110,52 +110,8 @@ impl ModifyActionsWorldExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction) {
         self.action_queue(agent).push(
             config.order,
-            (ActionTypeInternal::One(action.into_boxed()), config.repeat),
+            (ActionType::One(action.into_boxed()), config.repeat),
         );
-        // match Into::<ActionType>::into(action) {
-        //     ActionType::Single(action) => {
-        //         self.action_queue(agent).push(
-        //             config.order,
-        //             (ActionTypeInternal::One(action), config.repeat),
-        //         );
-        //     }
-        //     ActionType::Sequence(actions) => {
-        //         let mut queue = self.action_queue(agent);
-
-        //         match config.order {
-        //             AddOrder::Back => {
-        //                 for action in actions {
-        //                     queue.push_back((ActionTypeInternal::One(action), config.repeat));
-        //                 }
-        //             }
-        //             AddOrder::Front => {
-        //                 for action in actions.rev() {
-        //                     queue.push_front((ActionTypeInternal::One(action), config.repeat));
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     ActionType::Parallel(actions) => {
-        //         let actions = actions.collect::<Box<_>>();
-
-        //         if !actions.is_empty() {
-        //             self.action_queue(agent).push(
-        //                 config.order,
-        //                 (ActionTypeInternal::Many(actions), config.repeat),
-        //             );
-        //         }
-        //     }
-        //     ActionType::Linked(actions) => {
-        //         let actions = actions.filter(|a| !a.is_empty()).collect::<Box<[_]>>();
-
-        //         if !actions.is_empty() {
-        //             self.action_queue(agent).push(
-        //                 config.order,
-        //                 (ActionTypeInternal::Linked(actions, 0), config.repeat),
-        //             );
-        //         }
-        //     }
-        // }
 
         if config.start && !self.has_current_action(agent) {
             self.start_next_action(agent);
@@ -173,14 +129,18 @@ impl ModifyActionsWorldExt for World {
         match config.order {
             AddOrder::Back => {
                 for action in actions {
-                    queue.push_back((ActionTypeInternal::One(action), config.repeat));
+                    queue.push_back((ActionType::One(action), config.repeat));
                 }
             }
             AddOrder::Front => {
                 for action in actions.rev() {
-                    queue.push_front((ActionTypeInternal::One(action), config.repeat));
+                    queue.push_front((ActionType::One(action), config.repeat));
                 }
             }
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
         }
     }
 
@@ -193,10 +153,12 @@ impl ModifyActionsWorldExt for World {
         let actions = actions.collect::<Box<_>>();
 
         if !actions.is_empty() {
-            self.action_queue(agent).push(
-                config.order,
-                (ActionTypeInternal::Many(actions), config.repeat),
-            );
+            self.action_queue(agent)
+                .push(config.order, (ActionType::Many(actions), config.repeat));
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
         }
     }
 
@@ -212,11 +174,14 @@ impl ModifyActionsWorldExt for World {
         let actions = builder.build();
 
         if !actions.is_empty() {
-            todo!()
-            // self.action_queue(agent).push(
-            //     config.order,
-            //     (ActionTypeInternal::Linked(actions, 0), config.repeat),
-            // );
+            self.action_queue(agent).push(
+                config.order,
+                (ActionType::Linked(actions, 0), config.repeat),
+            );
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
         }
     }
 
@@ -271,7 +236,7 @@ impl WorldActionsExt for World {
                 .reset_counts();
 
             match &mut current_action {
-                ActionTypeInternal::One(action) => {
+                ActionType::One(action) => {
                     action.on_stop(agent, self, reason);
 
                     match reason {
@@ -286,7 +251,7 @@ impl WorldActionsExt for World {
                         }
                     }
                 }
-                ActionTypeInternal::Many(actions) => {
+                ActionType::Many(actions) => {
                     actions
                         .iter_mut()
                         .for_each(|action| action.on_stop(agent, self, reason));
@@ -303,9 +268,12 @@ impl WorldActionsExt for World {
                         }
                     }
                 }
-                ActionTypeInternal::Linked(actions, index) => {
-                    for action in actions[*index].iter_mut() {
-                        action.on_stop(agent, self, reason);
+                ActionType::Linked(actions, index) => {
+                    match &mut actions[*index] {
+                        OneOrMany::One(action) => action.on_stop(agent, self, reason),
+                        OneOrMany::Many(actions) => actions
+                            .iter_mut()
+                            .for_each(|action| action.on_stop(agent, self, reason)),
                     }
 
                     match reason {
@@ -341,15 +309,16 @@ impl WorldActionsExt for World {
             let mut commands = ActionCommands::new();
 
             match &mut next_action {
-                ActionTypeInternal::One(action) => action.on_start(agent, self, &mut commands),
-                ActionTypeInternal::Many(actions) => actions
+                ActionType::One(action) => action.on_start(agent, self, &mut commands),
+                ActionType::Many(actions) => actions
                     .iter_mut()
                     .for_each(|action| action.on_start(agent, self, &mut commands)),
-                ActionTypeInternal::Linked(actions, index) => {
-                    for action in actions[*index].iter_mut() {
-                        action.on_start(agent, self, &mut commands)
-                    }
-                }
+                ActionType::Linked(actions, index) => match &mut actions[*index] {
+                    OneOrMany::One(action) => action.on_start(agent, self, &mut commands),
+                    OneOrMany::Many(actions) => actions
+                        .iter_mut()
+                        .for_each(|action| action.on_start(agent, self, &mut commands)),
+                },
             }
 
             self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));

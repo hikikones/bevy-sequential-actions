@@ -1,5 +1,3 @@
-use crate::{Action, BoxedAction};
-
 /// Helper macro for creating a collection of boxed actions.
 ///
 /// ```rust,no_run
@@ -22,32 +20,3 @@ macro_rules! actions {
         [ $( $crate::IntoBoxedAction::into_boxed($action) ),* ].into_iter()
     }
 }
-
-// #[macro_export]
-// macro_rules! sequential_actions {
-//     ( $( $action:expr ),* $(,)? ) => {
-//         $crate::ActionType::Sequence(
-//             Box::new( actions![$( $action ),*].into_iter() )
-//         )
-//     };
-// }
-
-// #[macro_export]
-// macro_rules! parallel_actions {
-//     ( $( $action:expr ),* $(,)? ) => {
-//         $crate::ActionType::Parallel(
-//             Box::new( actions![$( $action ),*].into_iter() )
-//         )
-//     };
-// }
-
-// #[macro_export]
-// macro_rules! linked_actions {
-//     ( $( [ $( $action:expr ),* $(,)? ] ),* $(,)? ) => {
-//         $crate::ActionType::Linked(Box::new([
-//             $(
-//                 Box::new( actions![$( $action ),*] ) as Box<[_]>,
-//             )*
-//         ].into_iter()))
-//     }
-// }

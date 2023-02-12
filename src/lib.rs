@@ -329,39 +329,8 @@ pub enum StopReason {
     Paused,
 }
 
-/// The execution mode for a collection of [`actions`](Action) to be added.
-pub enum ExecutionMode {
-    /// Execute the [`actions`](Action) in sequence, i.e. one by one.
-    Sequential,
-    /// Execute the [`actions`](Action) in parallel, i.e. all at once.
-    Parallel,
-    Linked,
-}
-
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
-
-pub enum ActionType {
-    Single(BoxedAction),
-    Sequence(Box<dyn DoubleEndedIterator<Item = BoxedAction> + Send + Sync>),
-    Parallel(Box<dyn Iterator<Item = BoxedAction> + Send + Sync>),
-    Linked(Box<dyn Iterator<Item = Box<[BoxedAction]>> + Send + Sync>),
-}
-
-impl<T> From<T> for ActionType
-where
-    T: Action,
-{
-    fn from(action: T) -> Self {
-        Self::Single(action.into_boxed())
-    }
-}
-
-impl From<BoxedAction> for ActionType {
-    fn from(action: BoxedAction) -> Self {
-        Self::Single(action)
-    }
-}
 
 pub struct LinkedActionsBuilder(Vec<OneOrMany>);
 
@@ -397,28 +366,31 @@ impl LinkedActionsBuilder {
     }
 }
 
+enum ActionType {
+    One(BoxedAction),
+    Many(Box<[BoxedAction]>),
+    Linked(Box<[OneOrMany]>, usize),
+}
+
+impl ActionType {
+    fn len(&self) -> u32 {
+        match self {
+            ActionType::One(_) => 1,
+            ActionType::Many(actions) => actions.len() as u32,
+            ActionType::Linked(actions, index) => match &actions[*index] {
+                OneOrMany::One(_) => 1,
+                OneOrMany::Many(actions) => actions.len() as u32,
+            },
+        }
+    }
+}
+
 enum OneOrMany {
     One(BoxedAction),
     Many(Box<[BoxedAction]>),
 }
 
-enum ActionTypeInternal {
-    One(BoxedAction),
-    Many(Box<[BoxedAction]>),
-    Linked(Box<[Box<[BoxedAction]>]>, usize),
-}
-
-impl ActionTypeInternal {
-    fn len(&self) -> u32 {
-        match self {
-            ActionTypeInternal::One(_) => 1,
-            ActionTypeInternal::Many(actions) => actions.len() as u32,
-            ActionTypeInternal::Linked(actions, index) => actions[*index].len() as u32,
-        }
-    }
-}
-
-type ActionTuple = (ActionTypeInternal, Repeat);
+type ActionTuple = (ActionType, Repeat);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
