@@ -32,16 +32,19 @@ impl ModifyActions for AgentWorldActions<'_> {
 
     fn add_sequence(
         &mut self,
-        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
     ) -> &mut Self {
-        todo!()
+        self.world.add_actions(self.agent, self.config, actions);
+        self
     }
 
     fn add_parallel(
         &mut self,
         actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
     ) -> &mut Self {
-        todo!()
+        self.world
+            .add_parallel_actions(self.agent, self.config, actions);
+        self
     }
 
     fn add_linked(
