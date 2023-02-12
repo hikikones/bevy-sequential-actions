@@ -77,9 +77,22 @@ pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(&mut self, config: AddConfig) -> &mut Self;
 
-    fn add(&mut self, action: impl Into<ActionType>) -> &mut Self;
+    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self;
 
-    fn add_linked(&mut self, builder: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self;
+    fn add_sequence(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self;
+
+    fn add_parallel(
+        &mut self,
+        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self;
+
+    fn add_linked(
+        &mut self,
+        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
+    ) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).

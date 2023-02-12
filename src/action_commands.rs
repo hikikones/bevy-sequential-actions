@@ -48,10 +48,9 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl Into<ActionType>) -> &mut Self {
+    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
-        let action = action.into();
 
         self.commands.add(move |world| {
             world.add_action(agent, config, action);
@@ -60,15 +59,43 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add_linked(&mut self, f: impl FnOnce(&mut LinkedActionsBuilder)) -> &mut Self {
+    fn add_sequence(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
 
-        let mut actions = LinkedActionsBuilder::new();
-        f(&mut actions);
+        self.commands.add(move |world: &mut World| {
+            world.add_actions(agent, config, actions);
+        });
+
+        self
+    }
+
+    fn add_parallel(
+        &mut self,
+        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
 
         self.commands.add(move |world: &mut World| {
-            world.add_linked_actions(agent, config, actions);
+            world.add_parallel_actions(agent, config, actions);
+        });
+
+        self
+    }
+
+    fn add_linked(
+        &mut self,
+        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        self.commands.add(move |world: &mut World| {
+            world.add_linked_actions(agent, config, f);
         });
 
         self

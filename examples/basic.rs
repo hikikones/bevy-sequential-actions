@@ -55,7 +55,7 @@ fn setup(mut commands: Commands) {
             order: AddOrder::Front,
             ..Default::default()
         })
-        .add(sequential_actions![
+        .add_sequence(actions![
             WaitAction::new(10.0),
             WaitAction::new(100.0),
             WaitAction::new(1000.0),
@@ -114,7 +114,7 @@ impl Action for MyCustomAction {
                 start: false,
                 repeat: Repeat::None,
             })
-            .add(sequential_actions![
+            .add_sequence(actions![
                 LerpAction::new(LerpConfig {
                     target: camera,
                     lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
