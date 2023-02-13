@@ -69,9 +69,7 @@ fn setup(mut commands: Commands) {
     // as the whole collection is treated as "one action".
     commands
         .actions(agent)
-        .add_many(
-            ExecutionMode::Parallel,
-            actions![
+        .add_sequence(actions![
                 action_d,
                 action_e,
                 action_f,
@@ -332,6 +330,7 @@ pub enum StopReason {
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
+/// Builder for linked actions.
 pub struct LinkedActionsBuilder(Vec<OneOrMany>);
 
 impl LinkedActionsBuilder {
@@ -343,11 +342,13 @@ impl LinkedActionsBuilder {
         self.0.into_boxed_slice()
     }
 
+    /// Add a single [`action`](Action).
     pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         self.0.push(OneOrMany::One(action.into_boxed()));
         self
     }
 
+    /// Add a collection of sequential actions.
     pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
         for action in actions.into_iter() {
             self.0.push(OneOrMany::One(action));
@@ -355,6 +356,7 @@ impl LinkedActionsBuilder {
         self
     }
 
+    /// Add a collection of parallel actions.
     pub fn add_parallel(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
         let actions = actions.collect::<Box<[_]>>();
 
