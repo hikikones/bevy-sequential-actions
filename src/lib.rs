@@ -69,7 +69,7 @@ fn setup(mut commands: Commands) {
     // as the whole collection is treated as "one action".
     commands
         .actions(agent)
-        .add_sequence(actions![
+        .add_parallel(actions![
                 action_d,
                 action_e,
                 action_f,
