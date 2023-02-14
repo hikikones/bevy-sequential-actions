@@ -92,8 +92,9 @@ pub trait ModifyActions {
         actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
     ) -> &mut Self;
 
-    /// Adds a collection of linked actions to the queue that are executed sequentially.
-    /// When a linked action is either [`canceled`](Self::cancel) TODO
+    /// Adds a collection of _linked_ actions to the queue that are executed sequentially.
+    /// Being linked simply means that if any action in the collection is [`canceled`](ModifyActions::cancel),
+    /// then the remaining actions in the collection are ignored.
     fn add_linked(
         &mut self,
         f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
