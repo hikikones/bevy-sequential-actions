@@ -2,7 +2,7 @@
 
 ## Version 0.7.0-dev
 
-<!-- TODO -->
+- [Add linked actions][63]
 
 ## Version 0.6.0
 
@@ -42,6 +42,7 @@
 
 First release! 🎉
 
+[63]: https://github.com/hikikones/bevy-sequential-actions/pull/63
 [55]: https://github.com/hikikones/bevy-sequential-actions/pull/55
 [53]: https://github.com/hikikones/bevy-sequential-actions/pull/53
 [52]: https://github.com/hikikones/bevy-sequential-actions/pull/52
