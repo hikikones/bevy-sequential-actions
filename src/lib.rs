@@ -350,7 +350,7 @@ impl LinkedActionsBuilder {
 
     /// Add a collection of sequential actions.
     pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
-        for action in actions.into_iter() {
+        for action in actions {
             self.0.push(OneOrMany::One(action));
         }
         self
