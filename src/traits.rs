@@ -93,7 +93,7 @@ pub trait ModifyActions {
     ) -> &mut Self;
 
     /// Adds a collection of _linked_ actions to the queue that are executed sequentially.
-    /// Being linked simply means that if any action in the collection is [`canceled`](ModifyActions::cancel),
+    /// Linked actions have the property that if any of them are [`canceled`](ModifyActions::cancel),
     /// then the remaining actions in the collection are ignored.
     fn add_linked(
         &mut self,
