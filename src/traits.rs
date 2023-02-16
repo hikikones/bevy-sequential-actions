@@ -55,14 +55,6 @@ impl IntoBoxedAction for BoxedAction {
     }
 }
 
-/// Trait alias for a collection of actions.
-pub trait BoxedActionIter: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static {}
-
-impl<T> BoxedActionIter for T where
-    T: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static
-{
-}
-
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
