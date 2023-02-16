@@ -20,6 +20,21 @@ pub struct AgentWorldActions<'w> {
 }
 
 impl ModifyActions for AgentWorldActions<'_> {
+    fn start(&mut self, start: bool) -> &mut Self {
+        self.config.start = start;
+        self
+    }
+
+    fn order(&mut self, order: AddOrder) -> &mut Self {
+        self.config.order = order;
+        self
+    }
+
+    fn repeat(&mut self, repeat: Repeat) -> &mut Self {
+        self.config.repeat = repeat;
+        self
+    }
+
     fn config(&mut self, config: AddConfig) -> &mut Self {
         self.config = config;
         self
