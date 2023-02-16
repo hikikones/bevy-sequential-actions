@@ -18,11 +18,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
 
     commands
         .actions(agent)
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::Forever,
-        })
+        .repeat(Repeat::Forever)
         .add(WaitAction::new(1.0))
         .add_parallel(actions![
             MoveAction::new(MoveConfig {

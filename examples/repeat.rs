@@ -33,11 +33,7 @@ fn setup(mut commands: Commands) {
 
         commands
             .actions(agent)
-            .config(AddConfig {
-                order: AddOrder::Back,
-                start: true,
-                repeat,
-            })
+            .repeat(repeat)
             .add(WaitAction::new(0.5))
             .add(MoveAction::new(MoveConfig {
                 target: end,

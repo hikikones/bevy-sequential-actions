@@ -69,8 +69,6 @@ pub trait ModifyActions {
     fn start(&mut self, start: bool) -> &mut Self;
     fn order(&mut self, order: AddOrder) -> &mut Self;
     fn repeat(&mut self, repeat: Repeat) -> &mut Self;
-    /// Sets the current [`config`](AddConfig) for actions to be added.
-    fn config(&mut self, config: AddConfig) -> &mut Self;
 
     /// Adds a single [`action`](Action) to the queue.
     fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self;

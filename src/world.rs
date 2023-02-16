@@ -35,11 +35,6 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn config(&mut self, config: AddConfig) -> &mut Self {
-        self.config = config;
-        self
-    }
-
     fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         self.world.add_action(self.agent, self.config, action);
         self

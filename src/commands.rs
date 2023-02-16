@@ -35,11 +35,6 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         self
     }
 
-    fn config(&mut self, config: AddConfig) -> &mut Self {
-        self.config = config;
-        self
-    }
-
     fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         let agent = self.agent;
         let config = self.config;

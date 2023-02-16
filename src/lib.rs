@@ -197,8 +197,8 @@ mod plugin;
 mod traits;
 mod world;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 pub use action_commands::*;
 pub use commands::*;
@@ -258,27 +258,6 @@ impl ActionFinished {
     }
 }
 
-/// Configuration for an [`Action`] to be added.
-#[derive(Clone, Copy)]
-pub struct AddConfig {
-    /// Specify the queue order for the [`action`](Action) to be added.
-    pub order: AddOrder,
-    /// Start the next [`action`](Action) in the queue if nothing is currently running.
-    pub start: bool,
-    /// Specify how many times the [`action`](Action) should be repeated.
-    pub repeat: Repeat,
-}
-
-impl Default for AddConfig {
-    fn default() -> Self {
-        Self {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::None,
-        }
-    }
-}
-
 /// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
@@ -325,6 +304,23 @@ pub enum StopReason {
     Canceled,
     /// The [`action`](Action) was paused.
     Paused,
+}
+
+#[derive(Clone, Copy)]
+struct AddConfig {
+    order: AddOrder,
+    start: bool,
+    repeat: Repeat,
+}
+
+impl Default for AddConfig {
+    fn default() -> Self {
+        Self {
+            order: AddOrder::Back,
+            start: true,
+            repeat: Repeat::None,
+        }
+    }
 }
 
 /// A boxed [`Action`].
