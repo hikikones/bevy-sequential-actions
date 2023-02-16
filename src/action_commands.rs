@@ -5,13 +5,6 @@ use crate::*;
 pub struct ActionCommands(Vec<Box<dyn FnOnce(&mut World)>>);
 
 impl ActionCommands {
-    fn push<F>(&mut self, f: F)
-    where
-        F: FnOnce(&mut World) + 'static,
-    {
-        self.0.push(Box::new(f));
-    }
-
     pub(super) fn new() -> Self {
         Self(Vec::new())
     }
@@ -24,11 +17,8 @@ impl ActionCommands {
 
     /// Adds a custom command to the command queue.
     /// Used for modifying actions in a deferred way using [`World`] inside the [`Action`] trait.
-    pub fn add<F>(&mut self, f: F) -> &mut Self
-    where
-        F: FnOnce(&mut World) + 'static,
-    {
-        self.push(f);
+    pub fn add(&mut self, f: impl FnOnce(&mut World) + 'static) -> &mut Self {
+        self.0.push(Box::new(f));
         self
     }
 }
@@ -61,58 +51,103 @@ impl ModifyActions for AgentActions<'_> {
     fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.add_action(agent, config, action);
         });
+
         self
     }
 
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
+    fn add_sequence(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
-        self.commands.push(move |world| {
-            world.add_actions(agent, config, mode, actions);
+
+        self.commands.add(move |world: &mut World| {
+            world.add_actions(agent, config, actions);
         });
+
+        self
+    }
+
+    fn add_parallel(
+        &mut self,
+        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        self.commands.add(move |world: &mut World| {
+            world.add_parallel_actions(agent, config, actions);
+        });
+
+        self
+    }
+
+    fn add_linked(
+        &mut self,
+        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        self.commands.add(move |world: &mut World| {
+            world.add_linked_actions(agent, config, f);
+        });
+
         self
     }
 
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.next_action(agent);
         });
+
         self
     }
 
     fn cancel(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.cancel_action(agent);
         });
+
         self
     }
 
     fn pause(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.pause_action(agent);
         });
+
         self
     }
 
     fn skip(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.skip_action(agent);
         });
+
         self
     }
 
     fn clear(&mut self) -> &mut Self {
         let agent = self.agent;
-        self.commands.push(move |world| {
+
+        self.commands.add(move |world| {
             world.clear_actions(agent);
         });
+
         self
     }
 }

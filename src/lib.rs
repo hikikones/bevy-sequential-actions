@@ -69,9 +69,7 @@ fn setup(mut commands: Commands) {
     // as the whole collection is treated as "one action".
     commands
         .actions(agent)
-        .add_many(
-            ExecutionMode::Parallel,
-            actions![
+        .add_parallel(actions![
                 action_d,
                 action_e,
                 action_f,
@@ -188,7 +186,6 @@ impl<T: StateData> Action for SetStateAction<T> {
 use std::{
     collections::VecDeque,
     ops::{Deref, DerefMut},
-    slice::IterMut,
 };
 
 use bevy_ecs::prelude::*;
@@ -330,45 +327,87 @@ pub enum StopReason {
     Paused,
 }
 
-/// The execution mode for a collection of [`actions`](Action) to be added.
-pub enum ExecutionMode {
-    /// Execute the [`actions`](Action) in sequence, i.e. one by one.
-    Sequential,
-    /// Execute the [`actions`](Action) in parallel, i.e. all at once.
-    Parallel,
-}
-
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
+
+/// Builder for linked actions.
+pub struct LinkedActionsBuilder(Vec<OneOrMany>);
+
+impl LinkedActionsBuilder {
+    const fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    fn build(self) -> Box<[OneOrMany]> {
+        self.0.into_boxed_slice()
+    }
+
+    /// Add a single [`action`](Action).
+    pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
+        self.0.push(OneOrMany::One(action.into_boxed()));
+        self
+    }
+
+    /// Add a collection of sequential actions.
+    pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
+        for action in actions {
+            self.0.push(OneOrMany::One(action));
+        }
+        self
+    }
+
+    /// Add a collection of parallel actions.
+    pub fn add_parallel(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
+        let actions = actions.collect::<Box<[_]>>();
+
+        if !actions.is_empty() {
+            self.0.push(OneOrMany::Many(actions));
+        }
+
+        self
+    }
+}
+
+enum ActionType {
+    One(BoxedAction),
+    Many(Box<[BoxedAction]>),
+    Linked(Box<[OneOrMany]>, usize),
+}
+
+impl ActionType {
+    fn len(&self) -> u32 {
+        match self {
+            ActionType::One(_) => 1,
+            ActionType::Many(actions) => actions.len() as u32,
+            ActionType::Linked(actions, index) => match &actions[*index] {
+                OneOrMany::One(_) => 1,
+                OneOrMany::Many(actions) => actions.len() as u32,
+            },
+        }
+    }
+}
+
+enum OneOrMany {
+    One(BoxedAction),
+    Many(Box<[BoxedAction]>),
+}
 
 type ActionTuple = (ActionType, Repeat);
 
 #[derive(Default, Component)]
 struct ActionQueue(VecDeque<ActionTuple>);
 
+impl ActionQueue {
+    fn push(&mut self, order: AddOrder, action: ActionTuple) {
+        match order {
+            AddOrder::Back => self.0.push_back(action),
+            AddOrder::Front => self.0.push_front(action),
+        }
+    }
+}
+
 #[derive(Default, Component)]
 struct CurrentAction(Option<ActionTuple>);
-
-enum ActionType {
-    One([BoxedAction; 1]),
-    Many(Box<[BoxedAction]>),
-}
-
-impl ActionType {
-    fn iter_mut(&mut self) -> IterMut<BoxedAction> {
-        match self {
-            ActionType::One(a) => a.iter_mut(),
-            ActionType::Many(a) => a.iter_mut(),
-        }
-    }
-
-    fn len(&self) -> u32 {
-        match self {
-            ActionType::One(_) => 1,
-            ActionType::Many(a) => a.len() as u32,
-        }
-    }
-}
 
 impl Deref for ActionQueue {
     type Target = VecDeque<ActionTuple>;

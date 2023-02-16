@@ -55,14 +55,6 @@ impl IntoBoxedAction for BoxedAction {
     }
 }
 
-/// Trait alias for a collection of actions.
-pub trait BoxedActionIter: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static {}
-
-impl<T> BoxedActionIter for T where
-    T: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static
-{
-}
-
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
@@ -77,11 +69,28 @@ pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(&mut self, config: AddConfig) -> &mut Self;
 
-    /// Adds an [`action`](Action) to the queue with the current [`config`](AddConfig).
+    /// Adds a single [`action`](Action) to the queue.
     fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self;
 
-    /// Adds a collection of [`actions`](Action) to the queue with the current [`config`](AddConfig).
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self;
+    /// Adds a collection of actions to the queue that are executed sequentially, i.e. one by one.
+    fn add_sequence(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self;
+
+    /// Adds a collection of actions to the queue that are executed in parallel, i.e. all at once.
+    fn add_parallel(
+        &mut self,
+        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self;
+
+    /// Adds a collection of _linked_ actions to the queue that are executed sequentially.
+    /// Linked actions have the property that if any of them are [`canceled`](ModifyActions::cancel),
+    /// then the remaining actions in the collection are ignored.
+    fn add_linked(
+        &mut self,
+        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
+    ) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).

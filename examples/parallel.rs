@@ -24,62 +24,56 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
             repeat: Repeat::Forever,
         })
         .add(WaitAction::new(1.0))
-        .add_many(
-            ExecutionMode::Parallel,
-            actions![
-                MoveAction::new(MoveConfig {
-                    target: Vec3::X * 3.0,
-                    speed: Random::new(0.5, 5.0),
-                    rotate: false,
-                }),
-                RotateAction::new(RotateConfig {
-                    target: RotateType::Look(Vec3::X),
-                    speed: Random::new(std::f32::consts::FRAC_PI_8, std::f32::consts::PI),
-                }),
-                LerpAction::new(LerpConfig {
-                    target: camera_pivot,
-                    lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::X, Vec3::Y)),
-                    duration: Random::new(2.0, 6.0),
-                }),
+        .add_parallel(actions![
+            MoveAction::new(MoveConfig {
+                target: Vec3::X * 3.0,
+                speed: Random::new(0.5, 5.0),
+                rotate: false,
+            }),
+            RotateAction::new(RotateConfig {
+                target: RotateType::Look(Vec3::X),
+                speed: Random::new(std::f32::consts::FRAC_PI_8, std::f32::consts::PI),
+            }),
+            LerpAction::new(LerpConfig {
+                target: camera_pivot,
+                lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::X, Vec3::Y)),
+                duration: Random::new(2.0, 6.0),
+            }),
+            |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
+                println!("on_start");
+                world
+                    .get_mut::<ActionFinished>(agent)
+                    .unwrap()
+                    .confirm_and_persist();
+            }
+        ])
+        .add(WaitAction::new(1.0))
+        .add_parallel(actions![
+            MoveAction::new(MoveConfig {
+                target: -Vec3::X * 3.0,
+                speed: Random::new(0.5, 5.0),
+                rotate: false,
+            }),
+            RotateAction::new(RotateConfig {
+                target: RotateType::Look(-Vec3::X),
+                speed: Random::new(std::f32::consts::FRAC_PI_8, std::f32::consts::PI),
+            }),
+            LerpAction::new(LerpConfig {
+                target: camera_pivot,
+                lerp_type: LerpType::Rotation(Quat::from_look(Vec3::X, Vec3::Y)),
+                duration: Random::new(2.0, 6.0),
+            }),
+            (
                 |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
-                    println!("on_start");
+                    println!("on_start and... ");
                     world
                         .get_mut::<ActionFinished>(agent)
                         .unwrap()
                         .confirm_and_persist();
+                },
+                |_agent: Entity, _world: &mut World, _reason: StopReason| {
+                    println!("on_stop");
                 }
-            ],
-        )
-        .add(WaitAction::new(1.0))
-        .add_many(
-            ExecutionMode::Parallel,
-            actions![
-                MoveAction::new(MoveConfig {
-                    target: -Vec3::X * 3.0,
-                    speed: Random::new(0.5, 5.0),
-                    rotate: false,
-                }),
-                RotateAction::new(RotateConfig {
-                    target: RotateType::Look(-Vec3::X),
-                    speed: Random::new(std::f32::consts::FRAC_PI_8, std::f32::consts::PI),
-                }),
-                LerpAction::new(LerpConfig {
-                    target: camera_pivot,
-                    lerp_type: LerpType::Rotation(Quat::from_look(Vec3::X, Vec3::Y)),
-                    duration: Random::new(2.0, 6.0),
-                }),
-                (
-                    |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
-                        println!("on_start and... ");
-                        world
-                            .get_mut::<ActionFinished>(agent)
-                            .unwrap()
-                            .confirm_and_persist();
-                    },
-                    |_agent: Entity, _world: &mut World, _reason: StopReason| {
-                        println!("on_stop");
-                    }
-                )
-            ],
-        );
+            )
+        ]);
 }

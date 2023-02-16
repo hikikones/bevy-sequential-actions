@@ -30,9 +30,28 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn add_many(&mut self, mode: ExecutionMode, actions: impl BoxedActionIter) -> &mut Self {
+    fn add_sequence(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
+        self.world.add_actions(self.agent, self.config, actions);
+        self
+    }
+
+    fn add_parallel(
+        &mut self,
+        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
         self.world
-            .add_actions(self.agent, self.config, mode, actions);
+            .add_parallel_actions(self.agent, self.config, actions);
+        self
+    }
+
+    fn add_linked(
+        &mut self,
+        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
+    ) -> &mut Self {
+        self.world.add_linked_actions(self.agent, self.config, f);
         self
     }
 
@@ -68,8 +87,19 @@ pub(super) trait ModifyActionsWorldExt {
         &mut self,
         agent: Entity,
         config: AddConfig,
-        mode: ExecutionMode,
-        actions: impl BoxedActionIter,
+        actions: impl DoubleEndedIterator<Item = BoxedAction>,
+    );
+    fn add_parallel_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl Iterator<Item = BoxedAction>,
+    );
+    fn add_linked_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl FnOnce(&mut LinkedActionsBuilder),
     );
     fn next_action(&mut self, agent: Entity);
     fn finish_action(&mut self, agent: Entity);
@@ -81,13 +111,10 @@ pub(super) trait ModifyActionsWorldExt {
 
 impl ModifyActionsWorldExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction) {
-        let action_tuple = (ActionType::One([action.into_boxed()]), config.repeat);
-        let mut queue = self.action_queue(agent);
-
-        match config.order {
-            AddOrder::Back => queue.push_back(action_tuple),
-            AddOrder::Front => queue.push_front(action_tuple),
-        }
+        self.action_queue(agent).push(
+            config.order,
+            (ActionType::One(action.into_boxed()), config.repeat),
+        );
 
         if config.start && !self.has_current_action(agent) {
             self.start_next_action(agent);
@@ -98,37 +125,62 @@ impl ModifyActionsWorldExt for World {
         &mut self,
         agent: Entity,
         config: AddConfig,
-        mode: ExecutionMode,
-        actions: impl BoxedActionIter,
+        actions: impl DoubleEndedIterator<Item = BoxedAction>,
     ) {
         let mut queue = self.action_queue(agent);
 
-        match mode {
-            ExecutionMode::Sequential => match config.order {
-                AddOrder::Back => {
-                    for action in actions {
-                        queue.push_back((ActionType::One([action]), config.repeat));
-                    }
-                }
-                AddOrder::Front => {
-                    for action in actions.rev() {
-                        queue.push_front((ActionType::One([action]), config.repeat));
-                    }
-                }
-            },
-            ExecutionMode::Parallel => {
-                let action = actions.collect::<Box<[_]>>();
-                if !action.is_empty() {
-                    match config.order {
-                        AddOrder::Back => {
-                            queue.push_back((ActionType::Many(action), config.repeat))
-                        }
-                        AddOrder::Front => {
-                            queue.push_front((ActionType::Many(action), config.repeat))
-                        }
-                    }
+        match config.order {
+            AddOrder::Back => {
+                for action in actions {
+                    queue.push_back((ActionType::One(action), config.repeat));
                 }
             }
+            AddOrder::Front => {
+                for action in actions.rev() {
+                    queue.push_front((ActionType::One(action), config.repeat));
+                }
+            }
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn add_parallel_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl Iterator<Item = BoxedAction>,
+    ) {
+        let actions = actions.collect::<Box<_>>();
+
+        if !actions.is_empty() {
+            self.action_queue(agent)
+                .push(config.order, (ActionType::Many(actions), config.repeat));
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn add_linked_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        f: impl FnOnce(&mut LinkedActionsBuilder),
+    ) {
+        let mut builder = LinkedActionsBuilder::new();
+        f(&mut builder);
+
+        let actions = builder.build();
+
+        if !actions.is_empty() {
+            self.action_queue(agent).push(
+                config.order,
+                (ActionType::Linked(actions, 0), config.repeat),
+            );
         }
 
         if config.start && !self.has_current_action(agent) {
@@ -186,19 +238,70 @@ impl WorldActionsExt for World {
                 .bypass_change_detection()
                 .reset_counts();
 
-            for action in current_action.iter_mut() {
-                action.on_stop(agent, self, reason);
-            }
+            match &mut current_action {
+                ActionType::One(action) => {
+                    action.on_stop(agent, self, reason);
 
-            match reason {
-                StopReason::Finished | StopReason::Canceled => {
-                    if repeat.process() {
-                        self.action_queue(agent).push_back((current_action, repeat));
+                    match reason {
+                        StopReason::Finished | StopReason::Canceled => {
+                            if repeat.process() {
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
                     }
                 }
-                StopReason::Paused => {
-                    self.action_queue(agent)
-                        .push_front((current_action, repeat));
+                ActionType::Many(actions) => {
+                    actions
+                        .iter_mut()
+                        .for_each(|action| action.on_stop(agent, self, reason));
+
+                    match reason {
+                        StopReason::Finished | StopReason::Canceled => {
+                            if repeat.process() {
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
+                }
+                ActionType::Linked(actions, index) => {
+                    match &mut actions[*index] {
+                        OneOrMany::One(action) => action.on_stop(agent, self, reason),
+                        OneOrMany::Many(actions) => actions
+                            .iter_mut()
+                            .for_each(|action| action.on_stop(agent, self, reason)),
+                    }
+
+                    match reason {
+                        StopReason::Finished => {
+                            *index += 1;
+
+                            if *index < actions.len() {
+                                self.action_queue(agent)
+                                    .push_front((current_action, repeat));
+                            } else if *index == actions.len() && repeat.process() {
+                                *index = 0;
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Canceled => {
+                            if repeat.process() {
+                                *index = 0;
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
                 }
             }
         }
@@ -208,8 +311,17 @@ impl WorldActionsExt for World {
         if let Some((mut next_action, repeat)) = self.pop_next_action(agent) {
             let mut commands = ActionCommands::new();
 
-            for action in next_action.iter_mut() {
-                action.on_start(agent, self, &mut commands);
+            match &mut next_action {
+                ActionType::One(action) => action.on_start(agent, self, &mut commands),
+                ActionType::Many(actions) => actions
+                    .iter_mut()
+                    .for_each(|action| action.on_start(agent, self, &mut commands)),
+                ActionType::Linked(actions, index) => match &mut actions[*index] {
+                    OneOrMany::One(action) => action.on_start(agent, self, &mut commands),
+                    OneOrMany::Many(actions) => actions
+                        .iter_mut()
+                        .for_each(|action| action.on_start(agent, self, &mut commands)),
+                },
             }
 
             self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));

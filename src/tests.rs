@@ -54,6 +54,14 @@ impl Ecs {
     fn action_finished(&self, agent: Entity) -> &ActionFinished {
         self.world.get::<ActionFinished>(agent).unwrap()
     }
+
+    fn active_count(&self, agent: Entity) -> u32 {
+        self.current_action(agent).as_ref().unwrap().0.len()
+    }
+
+    fn finished_count(&self, agent: Entity) -> u32 {
+        self.action_finished(agent).total()
+    }
 }
 
 struct CountdownAction {
@@ -171,15 +179,11 @@ fn add_many_sequential() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add_many(
-        ExecutionMode::Sequential,
-        [
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-        ]
-        .into_iter(),
-    );
+    ecs.actions(e).add_sequence(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 2);
@@ -190,15 +194,11 @@ fn add_many_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add_many(
-        ExecutionMode::Parallel,
-        [
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-            CountdownAction::new(0).into_boxed(),
-        ]
-        .into_iter(),
-    );
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
 
     assert!(ecs.current_action(e).is_some());
     assert!(ecs.action_queue(e).len() == 0);
@@ -206,12 +206,32 @@ fn add_many_parallel() {
 }
 
 #[test]
-fn add_many_parallel_empty() {
+fn add_many_linked() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_linked(|builder| {
+        builder.add_sequence(actions![
+            CountdownAction::new(0),
+            CountdownAction::new(0),
+            CountdownAction::new(0)
+        ]);
+    });
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+}
+
+#[test]
+fn add_many_empty() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .add_many(ExecutionMode::Parallel, [].into_iter());
+        .add_sequence(actions![])
+        .add_parallel(actions![])
+        .add_linked(|_| {});
 
     assert!(ecs.current_action(e).is_none());
 }
@@ -230,6 +250,52 @@ fn next() {
 
     assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Canceled>());
+}
+
+#[test]
+fn next_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 3);
+
+    ecs.actions(e).next();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
+}
+
+#[test]
+fn next_linked() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_linked(|builder| {
+        builder.add_sequence(actions![
+            CountdownAction::new(0),
+            CountdownAction::new(0),
+            CountdownAction::new(0)
+        ]);
+    });
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+
+    ecs.actions(e).next();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
 }
 
 #[test]
@@ -257,6 +323,64 @@ fn finish() {
 }
 
 #[test]
+fn finish_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 3);
+
+    ecs.run();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
+}
+
+#[test]
+fn finish_linked() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_linked(|builder| {
+        builder.add_sequence(actions![
+            CountdownAction::new(0),
+            CountdownAction::new(0),
+            CountdownAction::new(0)
+        ]);
+    });
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+
+    ecs.run();
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+
+    ecs.run();
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+
+    ecs.run();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
+}
+
+#[test]
 fn cancel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
@@ -273,6 +397,52 @@ fn cancel() {
 }
 
 #[test]
+fn cancel_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 3);
+
+    ecs.actions(e).cancel();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
+}
+
+#[test]
+fn cancel_linked() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_linked(|builder| {
+        builder.add_sequence(actions![
+            CountdownAction::new(0),
+            CountdownAction::new(0),
+            CountdownAction::new(0)
+        ]);
+    });
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+
+    ecs.actions(e).cancel();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
+}
+
+#[test]
 fn pause() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
@@ -286,6 +456,52 @@ fn pause() {
 
     assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Paused>());
+}
+
+#[test]
+fn pause_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 3);
+
+    ecs.actions(e).pause();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 1);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
+}
+
+#[test]
+fn pause_linked() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add_linked(|builder| {
+        builder.add_sequence(actions![
+            CountdownAction::new(0),
+            CountdownAction::new(0),
+            CountdownAction::new(0)
+        ]);
+    });
+
+    assert!(ecs.current_action(e).is_some());
+    assert!(ecs.action_queue(e).len() == 0);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 1);
+
+    ecs.actions(e).pause();
+
+    assert!(ecs.current_action(e).is_none());
+    assert!(ecs.action_queue(e).len() == 1);
+    assert!(ecs.world.query::<&Countdown>().iter(&mut ecs.world).count() == 0);
 }
 
 #[test]
@@ -320,6 +536,116 @@ fn skip() {
             repeat: Repeat::Forever,
         })
         .add(CountdownAction::new(0));
+
+    assert!(ecs.action_queue(e).len() == 3);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
+}
+
+#[test]
+fn skip_parallel() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::None,
+        })
+        .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)])
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::Amount(1),
+        })
+        .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)])
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::Forever,
+        })
+        .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+
+    assert!(ecs.action_queue(e).len() == 3);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 2);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
+
+    ecs.actions(e).skip();
+
+    assert!(ecs.action_queue(e).len() == 1);
+}
+
+#[test]
+fn skip_linked() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::None,
+        })
+        .add_linked(|builder| {
+            builder.add_sequence(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+        })
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::Amount(1),
+        })
+        .add_linked(|builder| {
+            builder.add_sequence(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+        })
+        .config(AddConfig {
+            order: AddOrder::Back,
+            start: false,
+            repeat: Repeat::Forever,
+        })
+        .add_linked(|builder| {
+            builder.add_sequence(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+        });
 
     assert!(ecs.action_queue(e).len() == 3);
 
@@ -438,8 +764,6 @@ fn repeat_forever() {
 
 #[test]
 fn despawn() {
-    use bevy::prelude::DespawnRecursiveExt;
-
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
@@ -447,7 +771,7 @@ fn despawn() {
         .add(CountdownAction::new(0))
         .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
             commands.add(move |w: &mut World| {
-                w.entity_mut(agent).despawn_recursive();
+                w.despawn(agent);
             });
         })
         .add(CountdownAction::new(0));
@@ -504,15 +828,11 @@ fn order() {
     let e = ecs.spawn_agent();
 
     // A, B, C
-    ecs.actions(e).add_many(
-        ExecutionMode::Sequential,
-        [
-            Order::<A>::default().into_boxed(),
-            Order::<B>::default().into_boxed(),
-            Order::<C>::default().into_boxed(),
-        ]
-        .into_iter(),
-    );
+    ecs.actions(e).add_sequence(actions![
+        Order::<A>::default(),
+        Order::<B>::default(),
+        Order::<C>::default(),
+    ]);
 
     assert!(ecs.world.entity(e).contains::<A>());
 
@@ -532,15 +852,11 @@ fn order() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add_many(
-            ExecutionMode::Sequential,
-            [
-                Order::<A>::default().into_boxed(),
-                Order::<B>::default().into_boxed(),
-                Order::<C>::default().into_boxed(),
-            ]
-            .into_iter(),
-        )
+        .add_sequence(actions![
+            Order::<A>::default(),
+            Order::<B>::default(),
+            Order::<C>::default(),
+        ])
         .next();
 
     assert!(ecs.world.entity(e).contains::<A>());
@@ -561,15 +877,11 @@ fn order() {
             start: false,
             repeat: Repeat::Amount(0),
         })
-        .add_many(
-            ExecutionMode::Sequential,
-            [
-                Order::<C>::default().into_boxed(),
-                Order::<B>::default().into_boxed(),
-                Order::<A>::default().into_boxed(),
-            ]
-            .into_iter(),
-        )
+        .add_sequence(actions![
+            Order::<C>::default(),
+            Order::<B>::default(),
+            Order::<A>::default(),
+        ])
         .next();
 
     assert!(ecs.world.entity(e).contains::<C>());
@@ -627,14 +939,11 @@ fn reset_count() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e).add_many(
-        ExecutionMode::Parallel,
-        actions![
-            CountdownAction::new(0),
-            CountdownAction::new(1),
-            CountdownAction::new(2),
-        ],
-    );
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(1),
+        CountdownAction::new(2),
+    ]);
 
     assert!(ecs.action_finished(e).reset_count == 0);
 
@@ -661,6 +970,62 @@ fn reset_count() {
     ecs.run_check_actions_only();
 
     assert!(ecs.action_finished(e).reset_count == 0);
+    assert!(ecs.current_action(e).is_none());
+}
+
+#[test]
+fn finished_count() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e).add(CountdownAction::new(0));
+
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 1);
+    assert!(ecs.finished_count(e) == 1);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.finished_count(e) == 0);
+    assert!(ecs.current_action(e).is_none());
+
+    ecs.actions(e).add_parallel(actions![
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+        CountdownAction::new(0),
+    ]);
+
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 3);
+    assert!(ecs.finished_count(e) == 3);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.finished_count(e) == 0);
+    assert!(ecs.current_action(e).is_none());
+
+    ecs.actions(e).add_linked(|builder| {
+        builder
+            .add(CountdownAction::new(0))
+            .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+    });
+
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 1);
+    assert!(ecs.finished_count(e) == 1);
+
+    ecs.run_check_actions_only();
+    ecs.run_update_only();
+
+    assert!(ecs.active_count(e) == 2);
+    assert!(ecs.finished_count(e) == 2);
+
+    ecs.run_check_actions_only();
+
+    assert!(ecs.finished_count(e) == 0);
     assert!(ecs.current_action(e).is_none());
 }
 
