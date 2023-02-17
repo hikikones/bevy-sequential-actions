@@ -8,7 +8,7 @@
 /// # let action_a = QuitAction;
 /// # let action_b = QuitAction;
 /// #
-/// let actions: std::array::IntoIter<BoxedAction, 3> = actions![
+/// let actions: std::array::IntoIter<Box<dyn Action>, 3> = actions![
 ///         action_a,
 ///         action_b,
 ///         |agent: Entity, world: &mut World, commands: &mut ActionCommands| {
@@ -19,6 +19,6 @@
 #[macro_export]
 macro_rules! actions {
     ( $( $action:expr ),* $(,)? ) => {
-        [ $( $crate::IntoBoxedAction::into_boxed($action) ),* ].into_iter()
+        [ $( ::core::convert::Into::<::std::boxed::Box<dyn $crate::Action>>::into($action) ),* ].into_iter()
     }
 }

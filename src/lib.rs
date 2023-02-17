@@ -318,9 +318,6 @@ impl AddConfig {
     }
 }
 
-/// A boxed [`Action`].
-pub type BoxedAction = Box<dyn Action>;
-
 /// Builder for linked actions.
 pub struct LinkedActionsBuilder(Vec<OneOrMany>);
 
@@ -334,8 +331,8 @@ impl LinkedActionsBuilder {
     }
 
     /// Add a single [`action`](Action).
-    pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
-        self.0.push(OneOrMany::One(action.into_boxed()));
+    pub fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
+        self.0.push(OneOrMany::One(action.into()));
         self
     }
 
@@ -383,6 +380,7 @@ enum OneOrMany {
     Many(Box<[BoxedAction]>),
 }
 
+type BoxedAction = Box<dyn Action>;
 type ActionTuple = (ActionType, Repeat);
 
 #[derive(Default, Component)]

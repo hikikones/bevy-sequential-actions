@@ -9,6 +9,15 @@ pub trait Action: Send + Sync + 'static {
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
 }
 
+impl<T> From<T> for BoxedAction
+where
+    T: Action,
+{
+    fn from(action: T) -> Self {
+        Box::new(action)
+    }
+}
+
 impl<Start> Action for Start
 where
     Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
@@ -31,27 +40,6 @@ where
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         (self.1)(agent, world, reason);
-    }
-}
-
-/// Conversion into a [`BoxedAction`].
-pub trait IntoBoxedAction: Send + Sync + 'static {
-    /// Convert `self` into [`BoxedAction`].
-    fn into_boxed(self) -> BoxedAction;
-}
-
-impl<T> IntoBoxedAction for T
-where
-    T: Action,
-{
-    fn into_boxed(self) -> BoxedAction {
-        Box::new(self)
-    }
-}
-
-impl IntoBoxedAction for BoxedAction {
-    fn into_boxed(self) -> BoxedAction {
-        self
     }
 }
 
@@ -80,7 +68,7 @@ pub trait ModifyActions {
     fn repeat(&mut self, repeat: Repeat) -> &mut Self;
 
     /// Adds a single [`action`](Action) to the queue.
-    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self;
+    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
 
     /// Adds a collection of actions to the queue that are executed sequentially, i.e. one by one.
     fn add_sequence(

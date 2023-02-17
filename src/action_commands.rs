@@ -58,9 +58,10 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
+    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
+        let action = action.into();
 
         self.commands.add(move |world| {
             world.add_action(agent, config, action);
