@@ -3,6 +3,7 @@
 ## Version 0.7.0-dev
 
 - [Add linked actions][63]
+- [Replace `config` with `start`, `order` and `repeat` methods][64]
 
 ## Version 0.6.0
 
@@ -42,6 +43,7 @@
 
 First release! 🎉
 
+[64]: https://github.com/hikikones/bevy-sequential-actions/pull/64
 [63]: https://github.com/hikikones/bevy-sequential-actions/pull/63
 [55]: https://github.com/hikikones/bevy-sequential-actions/pull/55
 [53]: https://github.com/hikikones/bevy-sequential-actions/pull/53
