@@ -89,7 +89,7 @@ pub trait ModifyActions {
     fn repeat(&mut self, repeat: Repeat) -> &mut Self;
 
     /// Adds a single [`action`](Action) to the queue.
-    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self;
+    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
 
     /// Adds a collection of actions to the queue that are executed sequentially, i.e. one by one.
     fn add_sequence(

@@ -35,8 +35,9 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
-        self.world.add_action(self.agent, self.config, action);
+    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
+        self.world
+            .add_action(self.agent, self.config, action.into());
         self
     }
 
@@ -92,7 +93,7 @@ impl ModifyActions for AgentWorldActions<'_> {
 }
 
 pub(super) trait ModifyActionsWorldExt {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction);
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction);
     fn add_actions(
         &mut self,
         agent: Entity,
@@ -120,11 +121,9 @@ pub(super) trait ModifyActionsWorldExt {
 }
 
 impl ModifyActionsWorldExt for World {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: impl IntoBoxedAction) {
-        self.action_queue(agent).push(
-            config.order,
-            (ActionType::One(action.into_boxed()), config.repeat),
-        );
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction) {
+        self.action_queue(agent)
+            .push(config.order, (ActionType::One(action), config.repeat));
 
         if config.start && !self.has_current_action(agent) {
             self.start_next_action(agent);
