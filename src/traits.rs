@@ -95,9 +95,11 @@ pub trait ModifyActions {
     fn next(&mut self) -> &mut Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`canceled`](StopReason::Canceled).
+    /// To resume the action queue, call [`next`](Self::next).
     fn cancel(&mut self) -> &mut Self;
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
+    /// To resume the action queue, call [`next`](Self::next).
     fn pause(&mut self) -> &mut Self;
 
     /// Skips the next [`action`](Action) in the queue.
