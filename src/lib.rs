@@ -53,14 +53,9 @@ fn setup(mut commands: Commands) {
     // Add multiple actions with custom config
     commands
         .actions(agent)
-        .config(AddConfig {
-            // Add each action to the back of the queue
-            order: AddOrder::Back,
-            // Start the next action if nothing is currently running
-            start: true,
-            // Repeat the action
-            repeat: Repeat::None,
-        })
+        .start(true) // Start the next action if nothing is currently running
+        .order(AddOrder::Back) // Add each action to the back of the queue
+        .repeat(Repeat::None) // Repeat the action
         .add(action_b)
         .add(action_c);
 
@@ -197,8 +192,8 @@ mod plugin;
 mod traits;
 mod world;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 pub use action_commands::*;
 pub use commands::*;

@@ -518,23 +518,12 @@ fn skip() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Amount(0),
-        })
+        .start(false)
+        .repeat(Repeat::Amount(0))
         .add(CountdownAction::new(0))
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Amount(1),
-        })
+        .repeat(Repeat::Amount(1))
         .add(CountdownAction::new(0))
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Forever,
-        })
+        .repeat(Repeat::Forever)
         .add(CountdownAction::new(0));
 
     assert!(ecs.action_queue(e).len() == 3);
@@ -570,23 +559,11 @@ fn skip_parallel() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::None,
-        })
+        .start(false)
         .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)])
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Amount(1),
-        })
+        .repeat(Repeat::Amount(1))
         .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)])
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Forever,
-        })
+        .repeat(Repeat::Forever)
         .add_parallel(actions![CountdownAction::new(0), CountdownAction::new(0)]);
 
     assert!(ecs.action_queue(e).len() == 3);
@@ -622,27 +599,15 @@ fn skip_linked() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::None,
-        })
+        .start(false)
         .add_linked(|builder| {
             builder.add_sequence(actions![CountdownAction::new(0), CountdownAction::new(0)]);
         })
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Amount(1),
-        })
+        .repeat(Repeat::Amount(1))
         .add_linked(|builder| {
             builder.add_sequence(actions![CountdownAction::new(0), CountdownAction::new(0)]);
         })
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: false,
-            repeat: Repeat::Forever,
-        })
+        .repeat(Repeat::Forever)
         .add_linked(|builder| {
             builder.add_sequence(actions![CountdownAction::new(0), CountdownAction::new(0)]);
         });
@@ -704,17 +669,9 @@ fn repeat_amount() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::Amount(0),
-        })
+        .repeat(Repeat::Amount(0))
         .add(CountdownAction::new(0))
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::Amount(1),
-        })
+        .repeat(Repeat::Amount(1))
         .add(CountdownAction::new(0));
 
     assert!(ecs.current_action(e).is_some());
@@ -741,11 +698,7 @@ fn repeat_forever() {
     let e = ecs.spawn_agent();
 
     ecs.actions(e)
-        .config(AddConfig {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::Forever,
-        })
+        .repeat(Repeat::Forever)
         .add(CountdownAction::new(0));
 
     assert!(ecs.current_action(e).is_some());
@@ -847,11 +800,9 @@ fn order() {
     // A, B, C
     ecs.actions(e)
         .clear()
-        .config(AddConfig {
-            order: AddOrder::Front,
-            start: false,
-            repeat: Repeat::Amount(0),
-        })
+        .start(false)
+        .order(AddOrder::Front)
+        .repeat(Repeat::Amount(0))
         .add_sequence(actions![
             Order::<A>::default(),
             Order::<B>::default(),
@@ -872,11 +823,9 @@ fn order() {
     // C, B, A
     ecs.actions(e)
         .clear()
-        .config(AddConfig {
-            order: AddOrder::Front,
-            start: false,
-            repeat: Repeat::Amount(0),
-        })
+        .start(false)
+        .order(AddOrder::Front)
+        .repeat(Repeat::Amount(0))
         .add_sequence(actions![
             Order::<C>::default(),
             Order::<B>::default(),
@@ -912,11 +861,7 @@ fn pause_resume() {
 
     ecs.actions(e)
         .pause()
-        .config(AddConfig {
-            order: AddOrder::Front,
-            start: true,
-            repeat: Repeat::None,
-        })
+        .order(AddOrder::Front)
         .add(CountdownAction::new(2));
 
     assert!(countdown_value(&mut ecs.world) == 2);
