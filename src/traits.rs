@@ -43,27 +43,6 @@ where
     }
 }
 
-/// Conversion into a [`BoxedAction`].
-pub trait IntoBoxedAction: Send + Sync + 'static {
-    /// Convert `self` into [`BoxedAction`].
-    fn into_boxed(self) -> BoxedAction;
-}
-
-impl<T> IntoBoxedAction for T
-where
-    T: Action,
-{
-    fn into_boxed(self) -> BoxedAction {
-        Box::new(self)
-    }
-}
-
-impl IntoBoxedAction for BoxedAction {
-    fn into_boxed(self) -> BoxedAction {
-        self
-    }
-}
-
 /// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.

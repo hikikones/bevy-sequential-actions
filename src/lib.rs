@@ -334,8 +334,8 @@ impl LinkedActionsBuilder {
     }
 
     /// Add a single [`action`](Action).
-    pub fn add(&mut self, action: impl IntoBoxedAction) -> &mut Self {
-        self.0.push(OneOrMany::One(action.into_boxed()));
+    pub fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
+        self.0.push(OneOrMany::One(action.into()));
         self
     }
 
