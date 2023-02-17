@@ -6,7 +6,7 @@ impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
     fn actions(&'c mut self, agent: Entity) -> AgentCommandsActions<'c, 'w, 's> {
         AgentCommandsActions {
             agent,
-            config: AddConfig::default(),
+            config: AddConfig::new(),
             commands: self,
         }
     }

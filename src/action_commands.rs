@@ -29,7 +29,7 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
     fn actions(&'a mut self, agent: Entity) -> AgentActions<'a> {
         AgentActions {
             agent,
-            config: AddConfig::default(),
+            config: AddConfig::new(),
             commands: self,
         }
     }

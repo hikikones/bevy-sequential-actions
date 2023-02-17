@@ -313,8 +313,8 @@ struct AddConfig {
     repeat: Repeat,
 }
 
-impl Default for AddConfig {
-    fn default() -> Self {
+impl AddConfig {
+    const fn new() -> Self {
         Self {
             order: AddOrder::Back,
             start: true,

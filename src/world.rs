@@ -6,7 +6,7 @@ impl<'a> ActionsProxy<'a> for World {
     fn actions(&'a mut self, agent: Entity) -> AgentWorldActions<'a> {
         AgentWorldActions {
             agent,
-            config: AddConfig::default(),
+            config: AddConfig::new(),
             world: self,
         }
     }
