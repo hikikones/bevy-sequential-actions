@@ -66,8 +66,17 @@ pub trait ActionsProxy<'a> {
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
+    /// Specify if the next [`action`](Action) in the queue should [`start`](Action::on_start) when added.
+    /// It will only start if nothing is currently running.
+    /// Default is `true`.
     fn start(&mut self, start: bool) -> &mut Self;
+
+    /// Specify the queue order for actions to be added.
+    /// Default is [`AddOrder::Back`].
     fn order(&mut self, order: AddOrder) -> &mut Self;
+
+    /// Specify the repeat configuration for actions to be added.
+    /// Default is [`Repeat::None`].
     fn repeat(&mut self, repeat: Repeat) -> &mut Self;
 
     /// Adds a single [`action`](Action) to the queue.
