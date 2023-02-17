@@ -209,7 +209,6 @@ impl ModifyActionsWorldExt for World {
 
     fn cancel_action(&mut self, agent: Entity) {
         self.stop_current_action(agent, StopReason::Canceled);
-        self.start_next_action(agent);
     }
 
     fn pause_action(&mut self, agent: Entity) {
