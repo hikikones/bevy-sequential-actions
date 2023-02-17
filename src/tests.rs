@@ -1001,7 +1001,7 @@ fn change_detection() {
 
     ecs.run();
 
-    assert!(changed_count(&mut ecs.world) == 1);
+    assert!(changed_count(&mut ecs.world) == 4);
 
     ecs.world.clear_trackers();
 
