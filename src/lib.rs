@@ -318,9 +318,6 @@ impl AddConfig {
     }
 }
 
-/// A boxed [`Action`].
-pub type BoxedAction = Box<dyn Action>;
-
 /// Builder for linked actions.
 pub struct LinkedActionsBuilder(Vec<OneOrMany>);
 
@@ -383,6 +380,7 @@ enum OneOrMany {
     Many(Box<[BoxedAction]>),
 }
 
+type BoxedAction = Box<dyn Action>;
 type ActionTuple = (ActionType, Repeat);
 
 #[derive(Default, Component)]
