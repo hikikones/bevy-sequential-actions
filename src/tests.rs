@@ -397,6 +397,22 @@ fn cancel() {
 }
 
 #[test]
+fn cancel_none() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add(CountdownAction::new(0))
+        .add(CountdownAction::new(0));
+
+    assert!(ecs.current_action(e).is_some());
+
+    ecs.actions(e).cancel();
+
+    assert!(ecs.current_action(e).is_none());
+}
+
+#[test]
 fn cancel_parallel() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
@@ -456,6 +472,22 @@ fn pause() {
 
     assert!(!ecs.world.entity(e).contains::<Active>());
     assert!(ecs.world.entity(e).contains::<Paused>());
+}
+
+#[test]
+fn pause_none() {
+    let mut ecs = Ecs::new();
+    let e = ecs.spawn_agent();
+
+    ecs.actions(e)
+        .add(CountdownAction::new(0))
+        .add(CountdownAction::new(0));
+
+    assert!(ecs.current_action(e).is_some());
+
+    ecs.actions(e).pause();
+
+    assert!(ecs.current_action(e).is_none());
 }
 
 #[test]
