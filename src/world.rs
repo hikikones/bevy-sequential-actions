@@ -6,7 +6,7 @@ impl<'a> ActionsProxy<'a> for World {
     fn actions(&'a mut self, agent: Entity) -> AgentWorldActions<'a> {
         AgentWorldActions {
             agent,
-            config: AddConfig::default(),
+            config: AddConfig::new(),
             world: self,
         }
     }
@@ -20,8 +20,18 @@ pub struct AgentWorldActions<'w> {
 }
 
 impl ModifyActions for AgentWorldActions<'_> {
-    fn config(&mut self, config: AddConfig) -> &mut Self {
-        self.config = config;
+    fn start(&mut self, start: bool) -> &mut Self {
+        self.config.start = start;
+        self
+    }
+
+    fn order(&mut self, order: AddOrder) -> &mut Self {
+        self.config.order = order;
+        self
+    }
+
+    fn repeat(&mut self, repeat: Repeat) -> &mut Self {
+        self.config.repeat = repeat;
         self
     }
 

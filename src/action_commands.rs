@@ -29,7 +29,7 @@ impl<'a> ActionsProxy<'a> for ActionCommands {
     fn actions(&'a mut self, agent: Entity) -> AgentActions<'a> {
         AgentActions {
             agent,
-            config: AddConfig::default(),
+            config: AddConfig::new(),
             commands: self,
         }
     }
@@ -43,8 +43,18 @@ pub struct AgentActions<'a> {
 }
 
 impl ModifyActions for AgentActions<'_> {
-    fn config(&mut self, config: AddConfig) -> &mut Self {
-        self.config = config;
+    fn start(&mut self, start: bool) -> &mut Self {
+        self.config.start = start;
+        self
+    }
+
+    fn order(&mut self, order: AddOrder) -> &mut Self {
+        self.config.order = order;
+        self
+    }
+
+    fn repeat(&mut self, repeat: Repeat) -> &mut Self {
+        self.config.repeat = repeat;
         self
     }
 

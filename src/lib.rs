@@ -53,14 +53,9 @@ fn setup(mut commands: Commands) {
     // Add multiple actions with custom config
     commands
         .actions(agent)
-        .config(AddConfig {
-            // Add each action to the back of the queue
-            order: AddOrder::Back,
-            // Start the next action if nothing is currently running
-            start: true,
-            // Repeat the action
-            repeat: Repeat::None,
-        })
+        .start(true) // Start the next action if nothing is currently running
+        .order(AddOrder::Back) // Add each action to the back of the queue
+        .repeat(Repeat::None) // Repeat the action
         .add(action_b)
         .add(action_c);
 
@@ -258,27 +253,6 @@ impl ActionFinished {
     }
 }
 
-/// Configuration for an [`Action`] to be added.
-#[derive(Clone, Copy)]
-pub struct AddConfig {
-    /// Specify the queue order for the [`action`](Action) to be added.
-    pub order: AddOrder,
-    /// Start the next [`action`](Action) in the queue if nothing is currently running.
-    pub start: bool,
-    /// Specify how many times the [`action`](Action) should be repeated.
-    pub repeat: Repeat,
-}
-
-impl Default for AddConfig {
-    fn default() -> Self {
-        Self {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::None,
-        }
-    }
-}
-
 /// The queue order for an [`Action`] to be added.
 #[derive(Clone, Copy)]
 pub enum AddOrder {
@@ -325,6 +299,23 @@ pub enum StopReason {
     Canceled,
     /// The [`action`](Action) was paused.
     Paused,
+}
+
+#[derive(Clone, Copy)]
+struct AddConfig {
+    order: AddOrder,
+    start: bool,
+    repeat: Repeat,
+}
+
+impl AddConfig {
+    const fn new() -> Self {
+        Self {
+            order: AddOrder::Back,
+            start: true,
+            repeat: Repeat::None,
+        }
+    }
 }
 
 /// A boxed [`Action`].

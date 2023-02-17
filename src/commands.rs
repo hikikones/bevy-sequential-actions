@@ -6,7 +6,7 @@ impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
     fn actions(&'c mut self, agent: Entity) -> AgentCommandsActions<'c, 'w, 's> {
         AgentCommandsActions {
             agent,
-            config: AddConfig::default(),
+            config: AddConfig::new(),
             commands: self,
         }
     }
@@ -20,8 +20,18 @@ pub struct AgentCommandsActions<'c, 'w, 's> {
 }
 
 impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
-    fn config(&mut self, config: AddConfig) -> &mut Self {
-        self.config = config;
+    fn start(&mut self, start: bool) -> &mut Self {
+        self.config.start = start;
+        self
+    }
+
+    fn order(&mut self, order: AddOrder) -> &mut Self {
+        self.config.order = order;
+        self
+    }
+
+    fn repeat(&mut self, repeat: Repeat) -> &mut Self {
+        self.config.repeat = repeat;
         self
     }
 

@@ -26,11 +26,7 @@ fn setup(mut commands: Commands) {
 
         commands
             .actions(agent)
-            .config(AddConfig {
-                order: AddOrder::Back,
-                start: true,
-                repeat: Repeat::Forever,
-            })
+            .repeat(Repeat::Forever)
             .add(WaitAction::new(seconds))
             .add(RotateAction::new(RotateConfig {
                 target: RotateType::Euler(rotation),

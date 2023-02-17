@@ -26,14 +26,12 @@ fn setup(mut commands: Commands) {
     // Add multiple actions with custom config
     commands
         .actions(agent)
-        .config(AddConfig {
-            // Add each action to the back of the queue
-            order: AddOrder::Back,
-            // Start the next action if nothing is currently running
-            start: true,
-            // Repeat the action
-            repeat: Repeat::None,
-        })
+        // Start the next action if nothing is currently running
+        .start(true)
+        // Add each action to the back of the queue
+        .order(AddOrder::Back)
+        // Repeat the action
+        .repeat(Repeat::None)
         .add(MoveAction::new(MoveConfig {
             target: -Vec3::X * 2.0,
             speed: 4.0,
@@ -50,11 +48,8 @@ fn setup(mut commands: Commands) {
     // Add a collection of actions
     commands
         .actions(agent)
-        .config(AddConfig {
-            // This time, add each action to the front of the queue
-            order: AddOrder::Front,
-            ..Default::default()
-        })
+        // This time, add each action to the front of the queue
+        .order(AddOrder::Front)
         .add_sequence(actions![
             WaitAction::new(10.0),
             WaitAction::new(100.0),
@@ -109,11 +104,8 @@ impl Action for MyCustomAction {
 
         commands
             .actions(agent)
-            .config(AddConfig {
-                order: AddOrder::Front,
-                start: false,
-                repeat: Repeat::None,
-            })
+            .start(false)
+            .order(AddOrder::Front)
             .add_sequence(actions![
                 LerpAction::new(LerpConfig {
                     target: camera,
@@ -166,9 +158,6 @@ fn my_system(agent_q: Query<Entity, With<Agent>>, mut commands: Commands) {
     let agent = agent_q.single();
     commands
         .actions(agent)
-        .config(AddConfig {
-            order: AddOrder::Front,
-            ..Default::default()
-        })
+        .order(AddOrder::Front)
         .add(WaitAction::new(1.0));
 }
