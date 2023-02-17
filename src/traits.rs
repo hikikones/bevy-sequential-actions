@@ -9,6 +9,15 @@ pub trait Action: Send + Sync + 'static {
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
 }
 
+impl<T> From<T> for BoxedAction
+where
+    T: Action,
+{
+    fn from(action: T) -> Self {
+        Box::new(action)
+    }
+}
+
 impl<Start> Action for Start
 where
     Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
