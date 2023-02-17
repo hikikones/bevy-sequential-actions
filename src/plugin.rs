@@ -39,9 +39,7 @@ impl SequentialActionsPlugin {
     /// }
     /// ```
     pub fn get_systems() -> SystemSet {
-        SystemSet::new()
-            .with_system(check_actions)
-            .with_system(reset_count.after(check_actions))
+        SystemSet::new().with_system(check_actions)
     }
 }
 
@@ -78,11 +76,5 @@ fn check_actions(
                 }
             }
         }
-    }
-}
-
-fn reset_count(mut finished_q: Query<&mut ActionFinished, Changed<ActionFinished>>) {
-    for mut finished in finished_q.iter_mut() {
-        // finished.bypass_change_detection().reset_count = 0;
     }
 }
