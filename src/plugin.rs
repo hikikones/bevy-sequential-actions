@@ -52,16 +52,18 @@ impl Plugin for SequentialActionsPlugin {
 }
 
 fn check_actions(
-    action_q: Query<(Entity, &CurrentAction, &ActionFinished), Changed<ActionFinished>>,
+    mut action_q: Query<(Entity, &CurrentAction, &mut ActionFinished), Changed<ActionFinished>>,
     mut commands: Commands,
 ) {
-    for (agent, current_action, finished) in action_q.iter() {
+    for (agent, current_action, mut finished) in action_q.iter_mut() {
         if let Some((current_action, _)) = &current_action.0 {
             let finished_count = finished.total();
             let active_count = current_action.len();
 
             match finished_count.cmp(&active_count) {
-                Ordering::Less => {}
+                Ordering::Less => {
+                    finished.reset_count = 0;
+                }
                 Ordering::Equal => {
                     commands.add(move |world: &mut World| {
                         world.finish_action(agent);
@@ -81,6 +83,6 @@ fn check_actions(
 
 fn reset_count(mut finished_q: Query<&mut ActionFinished, Changed<ActionFinished>>) {
     for mut finished in finished_q.iter_mut() {
-        finished.bypass_change_detection().reset_count = 0;
+        // finished.bypass_change_detection().reset_count = 0;
     }
 }
