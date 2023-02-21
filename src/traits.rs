@@ -90,6 +90,10 @@ pub trait ModifyActions {
         f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
     ) -> &mut Self;
 
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
+    /// but only if there are no actions currently running.
+    fn execute(&mut self) -> &mut Self;
+
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(&mut self) -> &mut Self;
