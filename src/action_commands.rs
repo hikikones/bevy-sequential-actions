@@ -112,6 +112,16 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
+    fn execute(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.commands.add(move |world: &mut World| {
+            world.execute_actions(agent);
+        });
+
+        self
+    }
+
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
 

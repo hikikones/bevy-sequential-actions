@@ -6,6 +6,7 @@
 - [Replace `config` with `start`, `order` and `repeat` methods][64]
 - [Replace `IntoBoxedAction` trait with `From<Box<dyn Action>>`][65]
 - [Don't advance the action queue when canceling][67]
+- [Add `execute` method to `ModifyActions` trait][68]
 
 ## Version 0.6.0
 
@@ -45,6 +46,7 @@
 
 First release! 🎉
 
+[68]: https://github.com/hikikones/bevy-sequential-actions/pull/68
 [67]: https://github.com/hikikones/bevy-sequential-actions/pull/67
 [65]: https://github.com/hikikones/bevy-sequential-actions/pull/65
 [64]: https://github.com/hikikones/bevy-sequential-actions/pull/64

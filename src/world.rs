@@ -66,6 +66,11 @@ impl ModifyActions for AgentWorldActions<'_> {
         self
     }
 
+    fn execute(&mut self) -> &mut Self {
+        self.world.execute_actions(self.agent);
+        self
+    }
+
     fn next(&mut self) -> &mut Self {
         self.world.next_action(self.agent);
         self
@@ -112,6 +117,7 @@ pub(super) trait ModifyActionsWorldExt {
         config: AddConfig,
         actions: impl FnOnce(&mut LinkedActionsBuilder),
     );
+    fn execute_actions(&mut self, agent: Entity);
     fn next_action(&mut self, agent: Entity);
     fn finish_action(&mut self, agent: Entity);
     fn cancel_action(&mut self, agent: Entity);
@@ -193,6 +199,12 @@ impl ModifyActionsWorldExt for World {
         }
 
         if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn execute_actions(&mut self, agent: Entity) {
+        if !self.has_current_action(agent) {
             self.start_next_action(agent);
         }
     }
