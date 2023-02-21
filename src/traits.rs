@@ -91,7 +91,7 @@ pub trait ModifyActions {
     ) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
-    /// but only if there are no actions currently running.
+    /// but only if there is no action currently running.
     fn execute(&mut self) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.

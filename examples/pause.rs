@@ -50,7 +50,7 @@ fn input(
     if keyboard.just_pressed(KeyCode::Space) {
         for agent in agents_q.iter() {
             if *is_paused {
-                commands.actions(agent).next();
+                commands.actions(agent).execute();
             } else {
                 commands.actions(agent).pause();
             }
