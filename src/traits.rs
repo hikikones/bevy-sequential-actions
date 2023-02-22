@@ -54,8 +54,8 @@ pub trait ActionsProxy<'a> {
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
-    /// Specify if the next [`action`](Action) in the queue should [`start`](Action::on_start) when added.
-    /// It will only start if nothing is currently running.
+    /// Specify if the next [`action`](Action) in the queue should [`start`](Action::on_start)
+    /// when new actions are added. The next action will only start if nothing is currently running.
     /// Default is `true`.
     fn start(&mut self, start: bool) -> &mut Self;
 
