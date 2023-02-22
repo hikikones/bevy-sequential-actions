@@ -150,12 +150,13 @@ See the [examples](examples/) for more usage, specifically the [shared actions](
 Each example can be run with `cargo run --example <example>`.
 Consider running with `--release` as debug builds can be quite slow.
 
-| Example    | Description                                                                            |
-| ---------- | -------------------------------------------------------------------------------------- |
-| `basic`    | Shows the basic usage of the library by adding some actions and then quitting the app. |
-| `pause`    | Shows how to pause and resume an action when pressing `space`.                         |
-| `repeat`   | Shows how to add actions that repeat `n` times and forever.                            |
-| `parallel` | Shows how to add a collection of actions that run in parallel.                         |
+| Example    | Description                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `basic`    | Shows the basic usage of the library by adding some actions and then quitting the app.                                                                             |
+| `pause`    | Shows how to pause and resume an action when pressing `space`.                                                                                                     |
+| `repeat`   | Shows how to add actions that repeat `n` times and forever.                                                                                                        |
+| `parallel` | Shows how to add a collection of actions that run in parallel.                                                                                                     |
+| `moba`     | Shows how actions can be used to control a unit. Right click for movement, hold down left shift for queueing movements and press `space` for canceling everything. |
 
 ## Compatibility
 
