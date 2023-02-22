@@ -12,7 +12,7 @@ fn main() {
         .add_system_set_to_stage(
             CoreStage::PreUpdate,
             SystemSet::new()
-                .with_system(input_move)
+                .with_system(input_movement)
                 .with_system(input_clear),
         )
         .run();
@@ -23,7 +23,7 @@ fn setup(mut commands: Commands, mut ground_q: Query<&mut Transform, With<Ground
     ground_q.single_mut().scale = Vec3::new(100.0, 1.0, 100.0);
 }
 
-fn input_move(
+fn input_movement(
     mouse: Res<Input<MouseButton>>,
     keyboard: Res<Input<KeyCode>>,
     windows: Res<Windows>,
