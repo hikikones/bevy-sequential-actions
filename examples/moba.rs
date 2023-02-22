@@ -33,9 +33,9 @@ fn input_move(
 ) {
     if mouse.just_pressed(MouseButton::Right) {
         let window = windows.get_primary().unwrap();
-        if let Some(pos) = window.cursor_position() {
+        if let Some(cursor_pos) = window.cursor_position() {
             let (camera, transform) = camera_q.single();
-            if let Some(ray) = camera.viewport_to_world(transform, pos) {
+            if let Some(ray) = camera.viewport_to_world(transform, cursor_pos) {
                 let agent = agent_q.single();
                 let hit = ray.intersect_plane();
                 let mut actions = commands.actions(agent);
