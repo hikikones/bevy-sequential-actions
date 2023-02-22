@@ -7,6 +7,7 @@ mod level;
 
 pub use agent::*;
 pub use camera::*;
+pub use level::*;
 
 pub struct BootstrapPlugin;
 
