@@ -28,8 +28,10 @@ fn main() {
 
 #### Modifying Actions
 
-An action is anything that implements the [`Action`] trait, and can be added to any [`Entity`] that contains the [`ActionsBundle`].
+An action is anything that implements the [`Action`] trait,
+and can be added to any [`Entity`] that contains the [`ActionsBundle`].
 An entity with actions is referred to as an `agent`.
+See the [`ModifyActions`] trait for available methods.
 
 ```rust,no_run
 # use bevy::prelude::*;
@@ -41,35 +43,20 @@ fn setup(mut commands: Commands) {
 #   let action_b = QuitAction;
 #   let action_c = QuitAction;
 #   let action_d = QuitAction;
-#   let action_e = QuitAction;
-#   let action_f = QuitAction;
 #
-    // Create entity with ActionsBundle
-    let agent = commands.spawn_bundle(ActionsBundle::new()).id();
-
-    // Add a single action with default config
-    commands.actions(agent).add(action_a);
-
-    // Add multiple actions with custom config
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         .actions(agent)
-        .start(true) // Start the next action if nothing is currently running
-        .order(AddOrder::Back) // Add each action to the back of the queue
-        .repeat(Repeat::None) // Repeat the action
-        .add(action_b)
-        .add(action_c);
-
-    // Add a collection of actions that run in parallel.
-    // This means that all actions will start and stop at the same time,
-    // as the whole collection is treated as "one action".
-    commands
-        .actions(agent)
+        .add(action_a)
         .add_parallel(actions![
-                action_d,
-                action_e,
-                action_f,
-            ]
-        );
+            action_b,
+            action_c
+        ])
+        .repeat(Repeat::Forever)
+        .order(AddOrder::Back)
+        .add(action_d)
+        // ...
+#       ;
 }
 ```
 
@@ -80,7 +67,7 @@ The [`Action`] trait contains two methods:
 * The [`on_start`](Action::on_start) method which is called when an action is started.
 * The [`on_stop`](Action::on_stop) method which is called when an action is stopped.
 
-Every action is responsible for advancing the queue.
+In order for the action queue to advance, every action has to somehow signal when they are finished.
 There are two ways of doing this:
 
 * Using the [`ActionFinished`] component on an `agent`.
