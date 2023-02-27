@@ -145,7 +145,7 @@ impl Action for FancyAction {
         // it is important that the modifications happens after the on_start method.
 
         // Add a custom command for deferred world mutation.
-        commands.add(move |world| {
+        commands.add(move |world: &mut World| {
             world.run_system(my_system);
             world.actions(agent).next();
         });
