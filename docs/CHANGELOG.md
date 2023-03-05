@@ -3,6 +3,7 @@
 ## Version 0.7.0-dev
 
 - [Add linked actions][63]
+    - Replaces the `add_many` method with `add_sequence` and `add_parallel`
 - [Replace `config` with `start`, `order` and `repeat` methods][64]
 - [Replace `IntoBoxedAction` trait with `From<Box<dyn Action>>`][65]
 - [Don't advance the action queue when canceling][67]
@@ -13,6 +14,9 @@
 
 - [Update to Bevy 0.9][55]
 - [Add parallel actions][45]
+    - Introduces the `SequentialActionsPlugin`
+    - Replaces the `finish` method with the `ActionFinished` component
+    - Replaces the `stop(reason)` method with `cancel` and `pause`
 - [Add `SequentialActionsPlugin::get_systems` for scheduling the systems yourself][53]
 - [Add `actions!` helper macro for creating a collection of boxed actions][47]
 - [Add `Repeat::None`][50]
@@ -36,11 +40,17 @@
 
 - [Update to Bevy 0.8][26]
 - [Rename `Action` trait methods, add `StopReason` enum and other stuff][25]
+    - Adds `StopReason` enum for `Action::on_stop` method
+    - Removes the `Action::remove` trait method
+    - Renames `Action::start` method to `Action::on_start`
+    - Renames `Action::stop` method to `Action::on_stop`
+    - Renames `action(entity)` method to `actions(entity)` for modifying actions
 
 ## Version 0.2.0
 
 - [Relicense to dual MIT or Apache 2.0][13]
 - [New simplified API for modifying actions][12]
+    - Renames `Action::add` method to `Action::start`
 - [Allow despawning an entity as its _last_ action][11]
 
 ## Version 0.1.0
