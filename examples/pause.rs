@@ -9,7 +9,11 @@ fn main() {
         .add_plugin(BootstrapPlugin)
         .add_plugin(ActionsPlugin)
         .add_startup_system(setup)
-        .add_system_to_stage(CoreStage::PreUpdate, input)
+        .add_system(
+            input
+                .in_base_set(CoreSet::PreUpdate)
+                .after(bevy::input::InputSystem),
+        )
         .run();
 }
 
