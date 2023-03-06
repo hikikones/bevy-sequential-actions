@@ -41,8 +41,6 @@ fn input_movement(
                         actions.clear();
                     }
 
-                    // TODO: check that it works
-
                     actions.add(MoveAction::new(MoveConfig {
                         target: ray.direction * distance + ray.origin,
                         speed: 6.0,
@@ -64,16 +62,3 @@ fn input_clear(
         commands.actions(agent).clear();
     }
 }
-
-// trait IntersectPlane {
-//     fn intersect_plane(&self) -> Vec3;
-// }
-
-// impl IntersectPlane for Ray {
-//     fn intersect_plane(&self) -> Vec3 {
-//         let plane_normal = Vec3::Y;
-//         let denominator = self.direction.dot(plane_normal);
-//         let intersect_dist = plane_normal.dot(-self.origin) / denominator;
-//         self.direction * intersect_dist + self.origin
-//     }
-// }
