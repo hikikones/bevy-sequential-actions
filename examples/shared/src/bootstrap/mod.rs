@@ -17,6 +17,6 @@ impl Plugin for BootstrapPlugin {
             .add_plugin(level::LevelPlugin)
             .add_plugin(camera::CameraPlugin)
             .add_plugin(agent::AgentPlugin)
-            .add_system_to_stage(CoreStage::PreUpdate, bevy::window::close_on_esc);
+            .add_system(bevy::window::close_on_esc);
     }
 }

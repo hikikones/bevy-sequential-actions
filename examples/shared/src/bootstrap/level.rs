@@ -6,7 +6,7 @@ pub(super) struct LevelPlugin;
 
 impl Plugin for LevelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PreStartup, spawn_level);
+        app.add_startup_system(spawn_level.in_base_set(StartupSet::PreStartup));
     }
 }
 
