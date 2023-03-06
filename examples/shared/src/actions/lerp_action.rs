@@ -90,7 +90,7 @@ where
         let entity = self.entity.unwrap();
 
         if let StopReason::Paused = reason {
-            self.bundle = world.entity_mut(entity).remove::<LerpBundle>();
+            self.bundle = world.entity_mut(entity).take::<LerpBundle>();
         }
 
         world.despawn(entity);
