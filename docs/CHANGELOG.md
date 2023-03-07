@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.7.0-dev
+## Version 0.7.0
 
 - [Update to Bevy 0.10][73]
 - [Add linked actions][63]
