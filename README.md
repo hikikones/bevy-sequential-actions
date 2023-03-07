@@ -116,14 +116,12 @@ the logic for advancing the action queue will not work properly.
 This is why `ActionCommands` was created, so you can modify actions inside the `Action` trait in a deferred way.
 
 ```rust
-pub struct SetStateAction<T: StateData>(T);
+pub struct SetStateAction<S: States>(S);
 
-impl<T: StateData> Action for SetStateAction<T> {
+impl<S: States> Action for SetStateAction<S> {
     fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        world
-            .resource_mut::<State<T>>()
-            .set(self.0.clone())
-            .unwrap();
+        // Set state
+        world.resource_mut::<NextState<S>>().set(self.0.clone());
 
         // Bad. The action queue will advance immediately.
         world.actions(agent).next();

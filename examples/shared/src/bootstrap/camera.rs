@@ -4,7 +4,7 @@ pub(super) struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PreStartup, spawn_camera);
+        app.add_startup_system(spawn_camera.in_base_set(StartupSet::PreStartup));
     }
 }
 

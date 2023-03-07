@@ -12,9 +12,9 @@ categories = ["game-development"]
 readme = "README.md"
 
 [dependencies]
-bevy_ecs = "0.9"
-bevy_app = "0.9"
+bevy_ecs = "0.10"
+bevy_app = "0.10"
 
 [dev-dependencies]
 shared = { path = "examples/shared" }
-bevy = "0.9"
+bevy = "0.10"

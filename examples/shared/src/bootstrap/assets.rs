@@ -4,12 +4,15 @@ pub(super) struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(MyAssets::default())
-            .add_startup_stage_before(
-                StartupStage::PreStartup,
-                "load_assets",
-                SystemStage::single(load_assets),
-            );
+        #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+        #[system_set(base)]
+        struct LoadAssets;
+
+        app.insert_resource(MyAssets::default()).add_startup_system(
+            load_assets
+                .in_base_set(LoadAssets)
+                .before(StartupSet::PreStartup),
+        );
     }
 }
 
@@ -40,10 +43,10 @@ pub(super) enum MeshName {
 impl MeshName {
     fn mesh(&self) -> Mesh {
         match self {
-            MeshName::Quad => Mesh::from(shape::Quad::default()),
-            MeshName::Cube => Mesh::from(shape::Cube::default()),
-            MeshName::Capsule => Mesh::from(shape::Capsule::default()),
-            MeshName::Icosphere => Mesh::from(shape::Icosphere::default()),
+            MeshName::Quad => shape::Quad::default().into(),
+            MeshName::Cube => shape::Cube::default().into(),
+            MeshName::Capsule => shape::Capsule::default().into(),
+            MeshName::Icosphere => shape::Icosphere::default().try_into().unwrap(),
         }
     }
 

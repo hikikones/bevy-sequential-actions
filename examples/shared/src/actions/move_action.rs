@@ -71,7 +71,7 @@ where
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         let mut agent = world.entity_mut(agent);
-        let bundle = agent.remove::<MoveBundle>();
+        let bundle = agent.take::<MoveBundle>();
 
         if self.config.rotate {
             agent.remove::<Rotate>();

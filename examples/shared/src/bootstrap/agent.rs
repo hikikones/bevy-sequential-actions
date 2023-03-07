@@ -7,7 +7,7 @@ pub(super) struct AgentPlugin;
 
 impl Plugin for AgentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(CoreStage::PreUpdate, load_agent);
+        app.add_system(load_agent.in_base_set(CoreSet::PreUpdate));
     }
 }
 

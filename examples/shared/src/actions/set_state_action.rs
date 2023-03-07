@@ -1,20 +1,17 @@
-use bevy::{ecs::schedule::StateData, prelude::*};
+use bevy::{ecs::schedule::States, prelude::*};
 use bevy_sequential_actions::*;
 
-pub struct SetStateAction<T: StateData>(T);
+pub struct SetStateAction<S: States>(S);
 
-impl<T: StateData> SetStateAction<T> {
-    pub fn new(state: T) -> Self {
+impl<S: States> SetStateAction<S> {
+    pub fn new(state: S) -> Self {
         Self(state)
     }
 }
 
-impl<T: StateData> Action for SetStateAction<T> {
+impl<S: States> Action for SetStateAction<S> {
     fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        world
-            .resource_mut::<State<T>>()
-            .set(self.0.clone())
-            .unwrap();
+        world.resource_mut::<NextState<S>>().set(self.0.clone());
 
         commands.actions(agent).next();
     }

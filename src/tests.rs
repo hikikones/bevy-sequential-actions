@@ -10,29 +10,30 @@ struct Ecs {
 
 impl Ecs {
     fn new() -> Self {
+        let mut update_schedule = Schedule::default();
+        update_schedule.add_system(countdown);
+
+        let mut check_actions_schedule = Schedule::default();
+        check_actions_schedule.add_systems(SequentialActionsPlugin::get_systems());
+
         Self {
             world: World::new(),
-            update_schedule: Schedule::default()
-                .with_stage("update", SystemStage::single(countdown)),
-            check_actions_schedule: Schedule::default().with_stage(
-                "check_actions",
-                SystemStage::single_threaded()
-                    .with_system_set(SequentialActionsPlugin::get_systems()),
-            ),
+            update_schedule,
+            check_actions_schedule,
         }
     }
 
     fn run(&mut self) {
-        self.update_schedule.run_once(&mut self.world);
-        self.check_actions_schedule.run_once(&mut self.world);
+        self.update_schedule.run(&mut self.world);
+        self.check_actions_schedule.run(&mut self.world);
     }
 
     fn run_update_only(&mut self) {
-        self.update_schedule.run_once(&mut self.world);
+        self.update_schedule.run(&mut self.world);
     }
 
     fn run_check_actions_only(&mut self) {
-        self.check_actions_schedule.run_once(&mut self.world);
+        self.check_actions_schedule.run(&mut self.world);
     }
 
     fn spawn_agent(&mut self) -> Entity {

@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
-use bevy_app::{App, CoreStage, Plugin};
+use bevy_app::{App, CoreSet, Plugin};
+use bevy_ecs::schedule::SystemConfigs;
 
 use crate::*;
 
@@ -34,18 +35,18 @@ impl SequentialActionsPlugin {
     /// fn main() {
     ///     App::new()
     ///         .add_plugins(DefaultPlugins)
-    ///         .add_system_set_to_stage(CoreStage::Last, SequentialActionsPlugin::get_systems())
+    ///         .add_systems(SequentialActionsPlugin::get_systems().in_base_set(CoreSet::Last))
     ///         .run();
     /// }
     /// ```
-    pub fn get_systems() -> SystemSet {
-        SystemSet::new().with_system(check_actions)
+    pub fn get_systems() -> SystemConfigs {
+        (check_actions,).into_configs()
     }
 }
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set_to_stage(CoreStage::Last, Self::get_systems());
+        app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
     }
 }
 

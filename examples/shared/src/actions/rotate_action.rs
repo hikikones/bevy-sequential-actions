@@ -73,7 +73,7 @@ where
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        let bundle = world.entity_mut(agent).remove::<RotateBundle>();
+        let bundle = world.entity_mut(agent).take::<RotateBundle>();
 
         if let StopReason::Paused = reason {
             self.bundle = bundle;

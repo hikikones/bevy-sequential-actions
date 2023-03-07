@@ -2,6 +2,7 @@
 
 ## Version 0.7.0-dev
 
+- [Update to Bevy 0.10][73]
 - [Add linked actions][63]
     - Replaces the `add_many` method with `add_sequence` and `add_parallel`
 - [Add `execute` method to `ModifyActions` trait][68]
@@ -10,6 +11,7 @@
 - [Don't advance the action queue when canceling][67]
 - [Use `Command` and `CommandQueue` in `ActionCommands`][71]
 
+[73]: https://github.com/hikikones/bevy-sequential-actions/pull/73
 [71]: https://github.com/hikikones/bevy-sequential-actions/pull/71
 [68]: https://github.com/hikikones/bevy-sequential-actions/pull/68
 [67]: https://github.com/hikikones/bevy-sequential-actions/pull/67
