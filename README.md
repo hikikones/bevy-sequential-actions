@@ -160,6 +160,7 @@ Consider running with `--release` as debug builds can be quite slow.
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
+| 0.10 | 0.7                     |
 | 0.9  | 0.6                     |
 | 0.8  | 0.3 — 0.5               |
 | 0.7  | 0.1 — 0.2               |
