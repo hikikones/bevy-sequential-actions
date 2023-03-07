@@ -60,8 +60,7 @@ There are two ways of doing this:
   By default, a system at the end of the frame will advance the queue if all active actions are finished.
   This is the typical approach as it composes well with other actions running in parallel.
 * Calling the `next` method on an `agent`.
-  This simply advances the queue at the end of the current stage it was called in.
-  Useful for short one-at-a-time actions.
+  This simply advances the queue, and is useful for short one-at-a-time actions.
 
 A simple wait action follows.
 

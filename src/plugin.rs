@@ -8,8 +8,8 @@ use crate::*;
 /// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
 /// This plugin adds the necessary systems for advancing the action queue for each `agent`.
-/// By default, the systems will be added to [`CoreStage::Last`].
-/// If you want to schedule the systems yourself, use [`get_systems`](Self::get_systems).
+/// By default, the systems will be added to [`CoreSet::Last`].
+/// If you want to schedule the systems yourself, see [`get_systems`](Self::get_systems).
 ///
 /// ```rust,no_run
 /// use bevy::prelude::*;
