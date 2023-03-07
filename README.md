@@ -81,7 +81,7 @@ impl Action for WaitAction {
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         // Remove the wait component from the agent
-        let wait = world.entity_mut(agent).remove::<Wait>();
+        let wait = world.entity_mut(agent).take::<Wait>();
 
         // Store current duration when paused
         if let StopReason::Paused = reason {
