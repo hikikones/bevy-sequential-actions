@@ -1,5 +1,7 @@
 # Changelog
 
+## Version 0.8.0-dev
+
 ## Version 0.7.0
 
 - [Update to Bevy 0.10][73]
