@@ -197,8 +197,15 @@ pub struct ActionsBundle {
 impl ActionsBundle {
     /// Creates a new [`Bundle`] that contains the necessary components
     /// that all entities with actions must have.
-    pub fn new() -> Self {
-        Self::default()
+    pub const fn new() -> Self {
+        Self {
+            finished: ActionFinished {
+                reset_count: 0,
+                persist_count: 0,
+            },
+            queue: ActionQueue(VecDeque::new()),
+            current: CurrentAction(None),
+        }
     }
 }
 
