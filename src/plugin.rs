@@ -24,6 +24,9 @@ use crate::*;
 /// ```
 pub struct SequentialActionsPlugin;
 
+// TODO: Rework custom scheduling.
+// Cannot use get_systems() currently as the DeferredActions resource is now required.
+
 impl SequentialActionsPlugin {
     /// Returns the systems used by this plugin.
     /// Useful if you want to schedule the systems yourself.
