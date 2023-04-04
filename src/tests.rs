@@ -43,7 +43,7 @@ impl Ecs {
         self.world.spawn(ActionsBundle::new()).id()
     }
 
-    fn actions(&mut self, agent: Entity) -> AgentWorldActions {
+    fn actions(&mut self, agent: Entity) -> AgentActions {
         self.world.actions(agent)
     }
 

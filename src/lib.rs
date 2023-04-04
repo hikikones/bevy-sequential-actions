@@ -167,7 +167,6 @@ use std::collections::VecDeque;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 
-// mod action_commands;
 mod commands;
 mod macros;
 mod plugin;
@@ -177,7 +176,6 @@ mod world;
 #[cfg(test)]
 mod tests;
 
-// pub use action_commands::*;
 pub use commands::*;
 pub use macros::*;
 pub use plugin::*;

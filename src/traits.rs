@@ -52,6 +52,12 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 
+pub trait DeferredActionsProxy<'a> {
+    type Modifier: ModifyActions;
+
+    fn deferred_actions(&'a mut self, agent: Entity) -> Self::Modifier;
+}
+
 /// Methods for modifying actions.
 pub trait ModifyActions {
     /// Specify if the next [`action`](Action) in the queue should [`start`](Action::on_start)

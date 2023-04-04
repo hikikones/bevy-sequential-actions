@@ -3,10 +3,10 @@ use bevy_ecs::system::{Command, CommandQueue};
 use crate::*;
 
 impl<'a> ActionsProxy<'a> for World {
-    type Modifier = AgentWorldActions<'a>;
+    type Modifier = AgentActions<'a>;
 
-    fn actions(&'a mut self, agent: Entity) -> AgentWorldActions<'a> {
-        AgentWorldActions {
+    fn actions(&'a mut self, agent: Entity) -> Self::Modifier {
+        Self::Modifier {
             agent,
             config: AddConfig::new(),
             world: self,
@@ -15,13 +15,13 @@ impl<'a> ActionsProxy<'a> for World {
 }
 
 /// Modify actions using [`World`].
-pub struct AgentWorldActions<'w> {
+pub struct AgentActions<'w> {
     agent: Entity,
     config: AddConfig,
     world: &'w mut World,
 }
 
-impl ModifyActions for AgentWorldActions<'_> {
+impl ModifyActions for AgentActions<'_> {
     fn start(&mut self, start: bool) -> &mut Self {
         self.config.start = start;
         self
@@ -99,311 +99,11 @@ impl ModifyActions for AgentWorldActions<'_> {
     }
 }
 
-pub(super) trait ModifyActionsWorldExt {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction);
-    fn add_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        actions: impl DoubleEndedIterator<Item = BoxedAction>,
-    );
-    fn add_parallel_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        actions: impl Iterator<Item = BoxedAction>,
-    );
-    fn add_linked_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        actions: impl FnOnce(&mut LinkedActionsBuilder),
-    );
-    fn execute_actions(&mut self, agent: Entity);
-    fn next_action(&mut self, agent: Entity);
-    fn finish_action(&mut self, agent: Entity);
-    fn cancel_action(&mut self, agent: Entity);
-    fn pause_action(&mut self, agent: Entity);
-    fn skip_action(&mut self, agent: Entity);
-    fn clear_actions(&mut self, agent: Entity);
-}
-
-impl ModifyActionsWorldExt for World {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction) {
-        self.action_queue(agent)
-            .push(config.order, (ActionType::One(action), config.repeat));
-
-        if config.start && !self.has_current_action(agent) {
-            self.start_next_action(agent);
-        }
-    }
-
-    fn add_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        actions: impl DoubleEndedIterator<Item = BoxedAction>,
-    ) {
-        let mut queue = self.action_queue(agent);
-
-        match config.order {
-            AddOrder::Back => {
-                for action in actions {
-                    queue.push_back((ActionType::One(action), config.repeat));
-                }
-            }
-            AddOrder::Front => {
-                for action in actions.rev() {
-                    queue.push_front((ActionType::One(action), config.repeat));
-                }
-            }
-        }
-
-        if config.start && !self.has_current_action(agent) {
-            self.start_next_action(agent);
-        }
-    }
-
-    fn add_parallel_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        actions: impl Iterator<Item = BoxedAction>,
-    ) {
-        let actions = actions.collect::<Box<_>>();
-
-        if !actions.is_empty() {
-            self.action_queue(agent)
-                .push(config.order, (ActionType::Many(actions), config.repeat));
-        }
-
-        if config.start && !self.has_current_action(agent) {
-            self.start_next_action(agent);
-        }
-    }
-
-    fn add_linked_actions(
-        &mut self,
-        agent: Entity,
-        config: AddConfig,
-        f: impl FnOnce(&mut LinkedActionsBuilder),
-    ) {
-        let mut builder = LinkedActionsBuilder::new();
-        f(&mut builder);
-
-        let actions = builder.build();
-
-        if !actions.is_empty() {
-            self.action_queue(agent).push(
-                config.order,
-                (ActionType::Linked(actions, 0), config.repeat),
-            );
-        }
-
-        if config.start && !self.has_current_action(agent) {
-            self.start_next_action(agent);
-        }
-    }
-
-    fn execute_actions(&mut self, agent: Entity) {
-        if !self.has_current_action(agent) {
-            self.start_next_action(agent);
-        }
-    }
-
-    fn next_action(&mut self, agent: Entity) {
-        self.stop_current_action(agent, StopReason::Canceled);
-        self.start_next_action(agent);
-    }
-
-    fn finish_action(&mut self, agent: Entity) {
-        self.stop_current_action(agent, StopReason::Finished);
-        self.start_next_action(agent);
-    }
-
-    fn cancel_action(&mut self, agent: Entity) {
-        self.stop_current_action(agent, StopReason::Canceled);
-    }
-
-    fn pause_action(&mut self, agent: Entity) {
-        self.stop_current_action(agent, StopReason::Paused);
-    }
-
-    fn skip_action(&mut self, agent: Entity) {
-        if let Some((action, mut repeat)) = self.pop_next_action(agent) {
-            if repeat.process() {
-                self.action_queue(agent).push_back((action, repeat));
-            }
-        }
-    }
-
-    fn clear_actions(&mut self, agent: Entity) {
-        self.stop_current_action(agent, StopReason::Canceled);
-        self.action_queue(agent).clear();
-    }
-}
-
-trait WorldActionsExt {
-    fn stop_current_action(&mut self, agent: Entity, reason: StopReason);
-    fn start_next_action(&mut self, agent: Entity);
-    fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple>;
-    fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple>;
-    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
-    fn push_deferred_action(&mut self, command: impl Command);
-    fn apply_deferred_actions(&mut self);
-    fn has_current_action(&self, agent: Entity) -> bool;
-}
-
-impl WorldActionsExt for World {
-    fn stop_current_action(&mut self, agent: Entity, reason: StopReason) {
-        if let Some((mut current_action, mut repeat)) = self.take_current_action(agent) {
-            println!("STOP");
-
-            self.get_mut::<ActionFinished>(agent)
-                .unwrap()
-                .bypass_change_detection()
-                .reset_counts();
-
-            match &mut current_action {
-                ActionType::One(action) => {
-                    action.on_stop(agent, self, reason);
-
-                    match reason {
-                        StopReason::Finished | StopReason::Canceled => {
-                            if repeat.process() {
-                                self.action_queue(agent).push_back((current_action, repeat));
-                            }
-                        }
-                        StopReason::Paused => {
-                            self.action_queue(agent)
-                                .push_front((current_action, repeat));
-                        }
-                    }
-                }
-                ActionType::Many(actions) => {
-                    actions
-                        .iter_mut()
-                        .for_each(|action| action.on_stop(agent, self, reason));
-
-                    match reason {
-                        StopReason::Finished | StopReason::Canceled => {
-                            if repeat.process() {
-                                self.action_queue(agent).push_back((current_action, repeat));
-                            }
-                        }
-                        StopReason::Paused => {
-                            self.action_queue(agent)
-                                .push_front((current_action, repeat));
-                        }
-                    }
-                }
-                ActionType::Linked(actions, index) => {
-                    match &mut actions[*index] {
-                        OneOrMany::One(action) => action.on_stop(agent, self, reason),
-                        OneOrMany::Many(actions) => actions
-                            .iter_mut()
-                            .for_each(|action| action.on_stop(agent, self, reason)),
-                    }
-
-                    match reason {
-                        StopReason::Finished => {
-                            *index += 1;
-
-                            if *index < actions.len() {
-                                self.action_queue(agent)
-                                    .push_front((current_action, repeat));
-                            } else if *index == actions.len() && repeat.process() {
-                                *index = 0;
-                                self.action_queue(agent).push_back((current_action, repeat));
-                            }
-                        }
-                        StopReason::Canceled => {
-                            if repeat.process() {
-                                *index = 0;
-                                self.action_queue(agent).push_back((current_action, repeat));
-                            }
-                        }
-                        StopReason::Paused => {
-                            self.action_queue(agent)
-                                .push_front((current_action, repeat));
-                        }
-                    }
-                }
-            }
-
-            self.apply_deferred_actions();
-        }
-    }
-
-    fn start_next_action(&mut self, agent: Entity) {
-        if let Some((mut next_action, repeat)) = self.pop_next_action(agent) {
-            println!("START");
-
-            match &mut next_action {
-                ActionType::One(action) => action.on_start(agent, self),
-                ActionType::Many(actions) => actions
-                    .iter_mut()
-                    .for_each(|action| action.on_start(agent, self)),
-                ActionType::Linked(actions, index) => match &mut actions[*index] {
-                    OneOrMany::One(action) => action.on_start(agent, self),
-                    OneOrMany::Many(actions) => actions
-                        .iter_mut()
-                        .for_each(|action| action.on_start(agent, self)),
-                },
-            }
-
-            self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));
-
-            self.apply_deferred_actions();
-        }
-    }
-
-    fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple> {
-        self.get_mut::<CurrentAction>(agent).unwrap().take()
-    }
-
-    fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple> {
-        self.action_queue(agent).pop_front()
-    }
-
-    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue> {
-        self.get_mut::<ActionQueue>(agent).unwrap()
-    }
-
-    fn push_deferred_action(&mut self, command: impl Command) {
-        self.resource_mut::<DeferredActions>().push(command);
-    }
-
-    fn apply_deferred_actions(&mut self) {
-        println!("Apply deferred actions");
-        let mut actions = std::mem::take(&mut self.resource_mut::<DeferredActions>().0);
-        actions.apply(self);
-        // self.resource_scope(|world, mut actions: Mut<DeferredActions>| {
-        //     actions.0.apply(world);
-        // });
-        println!("Done");
-    }
-
-    fn has_current_action(&self, agent: Entity) -> bool {
-        self.get::<CurrentAction>(agent).unwrap().is_some()
-    }
-}
-
-//
-// Deferred actions
-//
-
 #[derive(Default, Resource, Deref, DerefMut)]
 pub(super) struct DeferredActions(CommandQueue);
 
-pub trait DeferredActionsProxy<'a> {
-    type Modifier: ModifyActions;
-
-    fn deferred_actions(&'a mut self, agent: Entity) -> Self::Modifier;
-}
-
 impl<'w> DeferredActionsProxy<'w> for World {
-    type Modifier = DeferredWorldActions<'w>;
+    type Modifier = DeferredAgentActions<'w>;
 
     fn deferred_actions(&'w mut self, agent: Entity) -> Self::Modifier {
         Self::Modifier {
@@ -414,19 +114,19 @@ impl<'w> DeferredActionsProxy<'w> for World {
     }
 }
 
-pub struct DeferredWorldActions<'w> {
+pub struct DeferredAgentActions<'w> {
     agent: Entity,
     config: AddConfig,
     world: &'w mut World,
 }
 
-impl<'w> DeferredWorldActions<'w> {
+impl<'w> DeferredAgentActions<'w> {
     pub fn custom(&mut self, command: impl Command) {
         self.world.resource_mut::<DeferredActions>().0.push(command);
     }
 }
 
-impl ModifyActions for DeferredWorldActions<'_> {
+impl ModifyActions for DeferredAgentActions<'_> {
     fn start(&mut self, start: bool) -> &mut Self {
         self.config.start = start;
         self
@@ -554,5 +254,286 @@ impl ModifyActions for DeferredWorldActions<'_> {
         });
 
         self
+    }
+}
+
+pub(super) trait WorldActionsExt {
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction);
+    fn add_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl DoubleEndedIterator<Item = BoxedAction>,
+    );
+    fn add_parallel_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl Iterator<Item = BoxedAction>,
+    );
+    fn add_linked_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl FnOnce(&mut LinkedActionsBuilder),
+    );
+    fn execute_actions(&mut self, agent: Entity);
+    fn next_action(&mut self, agent: Entity);
+    fn finish_action(&mut self, agent: Entity);
+    fn cancel_action(&mut self, agent: Entity);
+    fn pause_action(&mut self, agent: Entity);
+    fn skip_action(&mut self, agent: Entity);
+    fn clear_actions(&mut self, agent: Entity);
+}
+
+impl WorldActionsExt for World {
+    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction) {
+        self.action_queue(agent)
+            .push(config.order, (ActionType::One(action), config.repeat));
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn add_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl DoubleEndedIterator<Item = BoxedAction>,
+    ) {
+        let mut queue = self.action_queue(agent);
+
+        match config.order {
+            AddOrder::Back => {
+                for action in actions {
+                    queue.push_back((ActionType::One(action), config.repeat));
+                }
+            }
+            AddOrder::Front => {
+                for action in actions.rev() {
+                    queue.push_front((ActionType::One(action), config.repeat));
+                }
+            }
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn add_parallel_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        actions: impl Iterator<Item = BoxedAction>,
+    ) {
+        let actions = actions.collect::<Box<_>>();
+
+        if !actions.is_empty() {
+            self.action_queue(agent)
+                .push(config.order, (ActionType::Many(actions), config.repeat));
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn add_linked_actions(
+        &mut self,
+        agent: Entity,
+        config: AddConfig,
+        f: impl FnOnce(&mut LinkedActionsBuilder),
+    ) {
+        let mut builder = LinkedActionsBuilder::new();
+        f(&mut builder);
+
+        let actions = builder.build();
+
+        if !actions.is_empty() {
+            self.action_queue(agent).push(
+                config.order,
+                (ActionType::Linked(actions, 0), config.repeat),
+            );
+        }
+
+        if config.start && !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn execute_actions(&mut self, agent: Entity) {
+        if !self.has_current_action(agent) {
+            self.start_next_action(agent);
+        }
+    }
+
+    fn next_action(&mut self, agent: Entity) {
+        self.stop_current_action(agent, StopReason::Canceled);
+        self.start_next_action(agent);
+    }
+
+    fn finish_action(&mut self, agent: Entity) {
+        self.stop_current_action(agent, StopReason::Finished);
+        self.start_next_action(agent);
+    }
+
+    fn cancel_action(&mut self, agent: Entity) {
+        self.stop_current_action(agent, StopReason::Canceled);
+    }
+
+    fn pause_action(&mut self, agent: Entity) {
+        self.stop_current_action(agent, StopReason::Paused);
+    }
+
+    fn skip_action(&mut self, agent: Entity) {
+        if let Some((action, mut repeat)) = self.pop_next_action(agent) {
+            if repeat.process() {
+                self.action_queue(agent).push_back((action, repeat));
+            }
+        }
+    }
+
+    fn clear_actions(&mut self, agent: Entity) {
+        self.stop_current_action(agent, StopReason::Canceled);
+        self.action_queue(agent).clear();
+    }
+}
+
+trait WorldHelperExt {
+    fn stop_current_action(&mut self, agent: Entity, reason: StopReason);
+    fn start_next_action(&mut self, agent: Entity);
+    fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple>;
+    fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple>;
+    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
+    fn push_deferred_action(&mut self, command: impl Command);
+    fn apply_deferred_actions(&mut self);
+    fn has_current_action(&self, agent: Entity) -> bool;
+}
+
+impl WorldHelperExt for World {
+    fn stop_current_action(&mut self, agent: Entity, reason: StopReason) {
+        if let Some((mut current_action, mut repeat)) = self.take_current_action(agent) {
+            self.get_mut::<ActionFinished>(agent)
+                .unwrap()
+                .bypass_change_detection()
+                .reset_counts();
+
+            match &mut current_action {
+                ActionType::One(action) => {
+                    action.on_stop(agent, self, reason);
+
+                    match reason {
+                        StopReason::Finished | StopReason::Canceled => {
+                            if repeat.process() {
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
+                }
+                ActionType::Many(actions) => {
+                    actions
+                        .iter_mut()
+                        .for_each(|action| action.on_stop(agent, self, reason));
+
+                    match reason {
+                        StopReason::Finished | StopReason::Canceled => {
+                            if repeat.process() {
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
+                }
+                ActionType::Linked(actions, index) => {
+                    match &mut actions[*index] {
+                        OneOrMany::One(action) => action.on_stop(agent, self, reason),
+                        OneOrMany::Many(actions) => actions
+                            .iter_mut()
+                            .for_each(|action| action.on_stop(agent, self, reason)),
+                    }
+
+                    match reason {
+                        StopReason::Finished => {
+                            *index += 1;
+
+                            if *index < actions.len() {
+                                self.action_queue(agent)
+                                    .push_front((current_action, repeat));
+                            } else if *index == actions.len() && repeat.process() {
+                                *index = 0;
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Canceled => {
+                            if repeat.process() {
+                                *index = 0;
+                                self.action_queue(agent).push_back((current_action, repeat));
+                            }
+                        }
+                        StopReason::Paused => {
+                            self.action_queue(agent)
+                                .push_front((current_action, repeat));
+                        }
+                    }
+                }
+            }
+
+            self.apply_deferred_actions();
+        }
+    }
+
+    fn start_next_action(&mut self, agent: Entity) {
+        if let Some((mut next_action, repeat)) = self.pop_next_action(agent) {
+            match &mut next_action {
+                ActionType::One(action) => action.on_start(agent, self),
+                ActionType::Many(actions) => actions
+                    .iter_mut()
+                    .for_each(|action| action.on_start(agent, self)),
+                ActionType::Linked(actions, index) => match &mut actions[*index] {
+                    OneOrMany::One(action) => action.on_start(agent, self),
+                    OneOrMany::Many(actions) => actions
+                        .iter_mut()
+                        .for_each(|action| action.on_start(agent, self)),
+                },
+            }
+
+            self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));
+
+            self.apply_deferred_actions();
+        }
+    }
+
+    fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple> {
+        self.get_mut::<CurrentAction>(agent).unwrap().take()
+    }
+
+    fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple> {
+        self.action_queue(agent).pop_front()
+    }
+
+    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue> {
+        self.get_mut::<ActionQueue>(agent).unwrap()
+    }
+
+    fn push_deferred_action(&mut self, command: impl Command) {
+        self.resource_mut::<DeferredActions>().push(command);
+    }
+
+    fn apply_deferred_actions(&mut self) {
+        let mut actions = std::mem::take(&mut self.resource_mut::<DeferredActions>().0);
+        actions.apply(self);
+    }
+
+    fn has_current_action(&self, agent: Entity) -> bool {
+        self.get::<CurrentAction>(agent).unwrap().is_some()
     }
 }

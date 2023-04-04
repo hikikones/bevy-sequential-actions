@@ -100,8 +100,6 @@ impl Action for MyCustomAction {
             .query_filtered::<Entity, With<CameraMain>>()
             .single(world);
 
-        println!("Custom action");
-
         world
             .deferred_actions(agent)
             .start(false)
@@ -131,8 +129,6 @@ impl Action for MyCustomAction {
                 }),
             ])
             .next();
-
-        println!("End custom action");
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
