@@ -6,7 +6,7 @@ pub trait Action: Send + Sync + 'static {
     fn on_start(&mut self, agent: Entity, world: &mut World);
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
+    fn on_stop(&mut self, agent: Entity, world: &mut World);
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
     fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}
@@ -29,21 +29,7 @@ where
         (self)(agent, world);
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-}
-
-impl<Start, Stop> Action for (Start, Stop)
-where
-    Start: FnMut(Entity, &mut World) + Send + Sync + 'static,
-    Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync + 'static,
-{
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
-        (self.0)(agent, world);
-    }
-
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        (self.1)(agent, world, reason);
-    }
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World) {}
 }
 
 /// Proxy method for modifying actions.
@@ -75,32 +61,8 @@ pub trait ModifyActions {
     /// Default is [`AddOrder::Back`].
     fn order(&mut self, order: AddOrder) -> &mut Self;
 
-    /// Specify the repeat configuration for actions to be added.
-    /// Default is [`Repeat::None`].
-    fn repeat(&mut self, repeat: Repeat) -> &mut Self;
-
     /// Adds a single [`action`](Action) to the queue.
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
-
-    /// Adds a collection of actions to the queue that are executed sequentially, i.e. one by one.
-    fn add_sequence(
-        &mut self,
-        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
-    ) -> &mut Self;
-
-    /// Adds a collection of actions to the queue that are executed in parallel, i.e. all at once.
-    fn add_parallel(
-        &mut self,
-        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
-    ) -> &mut Self;
-
-    /// Adds a collection of _linked_ actions to the queue that are executed sequentially.
-    /// Linked actions have the property that if any of them are [`canceled`](ModifyActions::cancel),
-    /// then the remaining actions in the collection are ignored.
-    fn add_linked(
-        &mut self,
-        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
-    ) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no action currently running.

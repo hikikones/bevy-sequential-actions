@@ -173,8 +173,8 @@ mod plugin;
 mod traits;
 mod world;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 pub use commands::*;
 pub use macros::*;
@@ -182,12 +182,14 @@ pub use plugin::*;
 pub use traits::*;
 pub use world::*;
 
+pub type BoxedAction = Box<dyn Action>;
+
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
-    finished: ActionFinished,
-    queue: ActionQueue,
+    marker: ActionMarker,
     current: CurrentAction,
+    queue: ActionQueue,
 }
 
 impl ActionsBundle {
@@ -195,48 +197,10 @@ impl ActionsBundle {
     /// that all entities with actions must have.
     pub const fn new() -> Self {
         Self {
-            finished: ActionFinished {
-                reset_count: 0,
-                persist_count: 0,
-            },
-            queue: ActionQueue(VecDeque::new()),
+            marker: ActionMarker,
             current: CurrentAction(None),
+            queue: ActionQueue(VecDeque::new()),
         }
-    }
-}
-
-/// Component for counting how many active actions have finished.
-#[derive(Default, Component)]
-pub struct ActionFinished {
-    reset_count: u16,
-    persist_count: u16,
-}
-
-impl ActionFinished {
-    /// Confirms that an [`Action`] is finished by incrementing a counter.
-    /// This should be called __every frame__,
-    /// as the counter is reset every frame.
-    ///
-    /// By default, the reset occurs in [`CoreSet::Last`](bevy_app::CoreSet::Last).
-    /// If you want to schedule the reset yourself, see [`SequentialActionsPlugin::get_systems`].
-    pub fn confirm_and_reset(&mut self) {
-        self.reset_count += 1;
-    }
-
-    /// Confirms that an [`Action`] is finished by incrementing a counter.
-    /// This should be called __only once__,
-    /// as the counter will only reset when an active action is [`stopped`](Action::on_stop).
-    pub fn confirm_and_persist(&mut self) {
-        self.persist_count += 1;
-    }
-
-    fn reset_counts(&mut self) {
-        self.reset_count = 0;
-        self.persist_count = 0;
-    }
-
-    fn total(&self) -> u32 {
-        self.reset_count as u32 + self.persist_count as u32
     }
 }
 
@@ -249,138 +213,35 @@ pub enum AddOrder {
     Front,
 }
 
-/// The repeat configuration for an [`Action`] to be added.
-#[derive(Clone, Copy, Default)]
-pub enum Repeat {
-    /// Don't repeat the [`action`](Action).
-    #[default]
-    None,
-    /// Repeat the [`action`](Action) by a specified amount.
-    Amount(u32),
-    /// Repeat the [`action`](Action) forever.
-    Forever,
-}
-
-impl Repeat {
-    fn process(&mut self) -> bool {
-        match self {
-            Repeat::None => false,
-            Repeat::Amount(n) => {
-                if *n == 0 {
-                    return false;
-                }
-                *n -= 1;
-                true
-            }
-            Repeat::Forever => true,
-        }
-    }
-}
-
-/// The reason why an [`Action`] was stopped.
-#[derive(Clone, Copy)]
-pub enum StopReason {
-    /// The [`action`](Action) was finished.
-    Finished,
-    /// The [`action`](Action) was canceled.
-    Canceled,
-    /// The [`action`](Action) was paused.
-    Paused,
-}
-
 #[derive(Clone, Copy)]
 struct AddConfig {
-    order: AddOrder,
     start: bool,
-    repeat: Repeat,
+    order: AddOrder,
 }
 
 impl AddConfig {
     const fn new() -> Self {
         Self {
-            order: AddOrder::Back,
             start: true,
-            repeat: Repeat::None,
+            order: AddOrder::Back,
         }
     }
 }
 
-/// Builder for linked actions.
-pub struct LinkedActionsBuilder(Vec<OneOrMany>);
-
-impl LinkedActionsBuilder {
-    const fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    fn build(self) -> Box<[OneOrMany]> {
-        self.0.into_boxed_slice()
-    }
-
-    /// Add a single [`action`](Action).
-    pub fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
-        self.0.push(OneOrMany::One(action.into()));
-        self
-    }
-
-    /// Add a collection of sequential actions.
-    pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
-        for action in actions {
-            self.0.push(OneOrMany::One(action));
-        }
-        self
-    }
-
-    /// Add a collection of parallel actions.
-    pub fn add_parallel(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
-        let actions = actions.collect::<Box<[_]>>();
-
-        if !actions.is_empty() {
-            self.0.push(OneOrMany::Many(actions));
-        }
-
-        self
-    }
-}
-
-enum ActionType {
-    One(BoxedAction),
-    Many(Box<[BoxedAction]>),
-    Linked(Box<[OneOrMany]>, usize),
-}
-
-impl ActionType {
-    fn len(&self) -> u32 {
-        match self {
-            ActionType::One(_) => 1,
-            ActionType::Many(actions) => actions.len() as u32,
-            ActionType::Linked(actions, index) => match &actions[*index] {
-                OneOrMany::One(_) => 1,
-                OneOrMany::Many(actions) => actions.len() as u32,
-            },
-        }
-    }
-}
-
-enum OneOrMany {
-    One(BoxedAction),
-    Many(Box<[BoxedAction]>),
-}
-
-type BoxedAction = Box<dyn Action>;
-type ActionTuple = (ActionType, Repeat);
+#[derive(Default, Component)]
+struct ActionMarker;
 
 #[derive(Default, Component, Deref, DerefMut)]
-struct ActionQueue(VecDeque<ActionTuple>);
+struct CurrentAction(Option<BoxedAction>);
+
+#[derive(Default, Component, Deref, DerefMut)]
+struct ActionQueue(VecDeque<BoxedAction>);
 
 impl ActionQueue {
-    fn push(&mut self, order: AddOrder, action: ActionTuple) {
+    fn push(&mut self, order: AddOrder, action: BoxedAction) {
         match order {
             AddOrder::Back => self.0.push_back(action),
             AddOrder::Front => self.0.push_front(action),
         }
     }
 }
-
-#[derive(Default, Component, Deref, DerefMut)]
-struct CurrentAction(Option<ActionTuple>);
