@@ -249,6 +249,7 @@ trait WorldActionsExt {
     fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple>;
     fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple>;
     fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
+    fn push_deferred_action(&mut self, command: impl Command);
     fn apply_deferred_actions(&mut self);
     fn has_current_action(&self, agent: Entity) -> bool;
 }
@@ -369,6 +370,10 @@ impl WorldActionsExt for World {
         self.get_mut::<ActionQueue>(agent).unwrap()
     }
 
+    fn push_deferred_action(&mut self, command: impl Command) {
+        self.resource_mut::<DeferredActions>().push(command);
+    }
+
     fn apply_deferred_actions(&mut self) {
         println!("Apply deferred actions");
         let mut actions = std::mem::take(&mut self.resource_mut::<DeferredActions>().0);
@@ -388,7 +393,7 @@ impl WorldActionsExt for World {
 // Deferred actions
 //
 
-#[derive(Default, Resource)]
+#[derive(Default, Resource, Deref, DerefMut)]
 pub(super) struct DeferredActions(CommandQueue);
 
 pub trait DeferredActionsProxy<'a> {
@@ -442,12 +447,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
         let config = self.config;
         let action = action.into();
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.add_action(agent, config, action);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.add_action(agent, config, action);
+        });
 
         self
     }
@@ -459,12 +461,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
         let agent = self.agent;
         let config = self.config;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.add_actions(agent, config, actions);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.add_actions(agent, config, actions);
+        });
 
         self
     }
@@ -476,12 +475,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
         let agent = self.agent;
         let config = self.config;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.add_parallel_actions(agent, config, actions);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.add_parallel_actions(agent, config, actions);
+        });
 
         self
     }
@@ -493,12 +489,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
         let agent = self.agent;
         let config = self.config;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.add_linked_actions(agent, config, f);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.add_linked_actions(agent, config, f);
+        });
 
         self
     }
@@ -506,12 +499,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
     fn execute(&mut self) -> &mut Self {
         let agent = self.agent;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.execute_actions(agent);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.execute_actions(agent);
+        });
 
         self
     }
@@ -519,12 +509,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
     fn next(&mut self) -> &mut Self {
         let agent = self.agent;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.next_action(agent);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.next_action(agent);
+        });
 
         self
     }
@@ -532,12 +519,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
     fn cancel(&mut self) -> &mut Self {
         let agent = self.agent;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.cancel_action(agent);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.cancel_action(agent);
+        });
 
         self
     }
@@ -545,12 +529,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
     fn pause(&mut self) -> &mut Self {
         let agent = self.agent;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.pause_action(agent);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.pause_action(agent);
+        });
 
         self
     }
@@ -558,12 +539,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
     fn skip(&mut self) -> &mut Self {
         let agent = self.agent;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.skip_action(agent);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.skip_action(agent);
+        });
 
         self
     }
@@ -571,12 +549,9 @@ impl ModifyActions for DeferredWorldActions<'_> {
     fn clear(&mut self) -> &mut Self {
         let agent = self.agent;
 
-        self.world
-            .resource_mut::<DeferredActions>()
-            .0
-            .push(move |world: &mut World| {
-                world.clear_actions(agent);
-            });
+        self.world.push_deferred_action(move |world: &mut World| {
+            world.clear_actions(agent);
+        });
 
         self
     }

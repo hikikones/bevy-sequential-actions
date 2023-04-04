@@ -162,11 +162,9 @@ impl<S: States> Action for SetStateAction<S> {
 ```
 */
 
-use std::{
-    collections::VecDeque,
-    ops::{Deref, DerefMut},
-};
+use std::collections::VecDeque;
 
+use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 
 // mod action_commands;
@@ -374,7 +372,7 @@ enum OneOrMany {
 type BoxedAction = Box<dyn Action>;
 type ActionTuple = (ActionType, Repeat);
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Deref, DerefMut)]
 struct ActionQueue(VecDeque<ActionTuple>);
 
 impl ActionQueue {
@@ -386,33 +384,5 @@ impl ActionQueue {
     }
 }
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Deref, DerefMut)]
 struct CurrentAction(Option<ActionTuple>);
-
-impl Deref for ActionQueue {
-    type Target = VecDeque<ActionTuple>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Deref for CurrentAction {
-    type Target = Option<ActionTuple>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ActionQueue {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl DerefMut for CurrentAction {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
