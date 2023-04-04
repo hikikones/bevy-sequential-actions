@@ -55,6 +55,22 @@ impl Plugin for SequentialActionsPlugin {
     }
 }
 
+fn check_actions(action_q: Query<(Entity, &CurrentAction)>, world: &World, mut commands: Commands) {
+    for (agent, current_action) in action_q.iter() {
+        if let Some(action) = &current_action.0 {
+            if action.is_finished(agent, world) {
+                //todo
+            }
+        }
+    }
+}
+
+// fn check_actions(action_q: Query<(Entity, &ActionWrapper, &ActionAgent)>, mut commands: Commands) {
+//     for (entity, action, agent) in action_q.iter() {
+//         if
+//     }
+// }
+
 // TODO
 
 // fn check_actions(

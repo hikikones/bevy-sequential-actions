@@ -57,12 +57,12 @@ impl ModifyActions for AgentActions<'_> {
     }
 
     fn cancel(&mut self) -> &mut Self {
-        self.world.cancel_action(self.agent);
+        self.world.stop_action(self.agent, StopReason::Canceled);
         self
     }
 
     fn pause(&mut self) -> &mut Self {
-        self.world.pause_action(self.agent);
+        self.world.stop_action(self.agent, StopReason::Paused);
         self
     }
 
@@ -168,7 +168,7 @@ impl ModifyActions for DeferredAgentActions<'_> {
         let agent = self.agent;
 
         self.world.push_deferred_action(move |world: &mut World| {
-            world.cancel_action(agent);
+            world.stop_action(agent, StopReason::Canceled);
         });
 
         self
@@ -178,7 +178,7 @@ impl ModifyActions for DeferredAgentActions<'_> {
         let agent = self.agent;
 
         self.world.push_deferred_action(move |world: &mut World| {
-            world.pause_action(agent);
+            world.stop_action(agent, StopReason::Paused);
         });
 
         self
@@ -215,9 +215,10 @@ pub(super) trait WorldActionsExt {
     );
     fn execute_actions(&mut self, agent: Entity);
     fn next_action(&mut self, agent: Entity);
-    fn finish_action(&mut self, agent: Entity);
-    fn cancel_action(&mut self, agent: Entity);
-    fn pause_action(&mut self, agent: Entity);
+    fn stop_action(&mut self, agent: Entity, reason: StopReason);
+    // fn finish_action(&mut self, agent: Entity);
+    // fn cancel_action(&mut self, agent: Entity);
+    // fn pause_action(&mut self, agent: Entity);
     fn skip_action(&mut self, agent: Entity);
     fn clear_actions(&mut self, agent: Entity);
 }
@@ -266,31 +267,48 @@ impl WorldActionsExt for World {
     }
 
     fn next_action(&mut self, agent: Entity) {
-        self.cancel_action(agent);
+        self.stop_action(agent, StopReason::Canceled);
         self.start_next_action(agent);
     }
 
-    fn finish_action(&mut self, agent: Entity) {
+    fn stop_action(&mut self, agent: Entity, reason: StopReason) {
         if let Some(mut action) = self.take_current_action(agent) {
-            action.on_finish(agent, self);
-            action.on_remove(agent, self);
-        }
+            action.on_stop(agent, self, reason);
 
-        self.start_next_action(agent);
-    }
-
-    fn cancel_action(&mut self, agent: Entity) {
-        if let Some(mut action) = self.take_current_action(agent) {
-            action.on_cancel(agent, self);
-            action.on_remove(agent, self);
-        }
-    }
-
-    fn pause_action(&mut self, agent: Entity) {
-        if let Some(mut action) = self.take_current_action(agent) {
-            action.on_pause(agent, self);
+            match reason {
+                StopReason::Finished => {
+                    action.on_remove(agent, self);
+                    self.start_next_action(agent);
+                }
+                StopReason::Canceled => {
+                    action.on_remove(agent, self);
+                }
+                StopReason::Paused => {}
+            }
         }
     }
+
+    // fn finish_action(&mut self, agent: Entity) {
+    //     if let Some(mut action) = self.take_current_action(agent) {
+    //         action.on_finish(agent, self);
+    //         action.on_remove(agent, self);
+    //     }
+
+    //     self.start_next_action(agent);
+    // }
+
+    // fn cancel_action(&mut self, agent: Entity) {
+    //     if let Some(mut action) = self.take_current_action(agent) {
+    //         action.on_cancel(agent, self);
+    //         action.on_remove(agent, self);
+    //     }
+    // }
+
+    // fn pause_action(&mut self, agent: Entity) {
+    //     if let Some(mut action) = self.take_current_action(agent) {
+    //         action.on_pause(agent, self);
+    //     }
+    // }
 
     fn skip_action(&mut self, agent: Entity) {
         if let Some(action) = self.pop_next_action(agent) {
@@ -299,7 +317,7 @@ impl WorldActionsExt for World {
     }
 
     fn clear_actions(&mut self, agent: Entity) {
-        self.cancel_action(agent);
+        self.stop_action(agent, StopReason::Canceled);
 
         let actions = std::mem::take(&mut self.action_queue(agent).0);
         for action in actions {

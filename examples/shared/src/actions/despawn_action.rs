@@ -11,7 +11,11 @@ impl Action for DespawnAction {
         });
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_finish(&mut self, _agent: Entity, _world: &mut World) {}
+
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        todo!()
+    }
 }
 
 pub struct RemoveActionsBundleAction;
@@ -24,5 +28,9 @@ impl Action for RemoveActionsBundleAction {
         });
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_finish(&mut self, _agent: Entity, _world: &mut World) {}
+
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        todo!()
+    }
 }

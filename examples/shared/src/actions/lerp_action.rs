@@ -86,7 +86,7 @@ where
         self.entity = Some(world.spawn(lerp_bundle).id());
     }
 
-    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_finish(&mut self, _agent: Entity, world: &mut World) {
         let entity = self.entity.unwrap();
 
         if let StopReason::Paused = reason {
@@ -94,6 +94,10 @@ where
         }
 
         world.despawn(entity);
+    }
+
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        todo!()
     }
 }
 

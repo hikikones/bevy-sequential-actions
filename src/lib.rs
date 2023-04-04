@@ -182,6 +182,7 @@ pub use plugin::*;
 pub use traits::*;
 pub use world::*;
 
+/// A boxed action.
 pub type BoxedAction = Box<dyn Action>;
 
 /// The component bundle that all entities with actions must have.
@@ -211,6 +212,17 @@ pub enum AddOrder {
     Back,
     /// An [`action`](Action) is added to the front of the queue.
     Front,
+}
+
+/// The reason why an [`Action`] was stopped.
+#[derive(Clone, Copy)]
+pub enum StopReason {
+    /// The [`action`](Action) was finished.
+    Finished,
+    /// The [`action`](Action) was canceled.
+    Canceled,
+    /// The [`action`](Action) was paused.
+    Paused,
 }
 
 #[derive(Clone, Copy)]
@@ -245,3 +257,15 @@ impl ActionQueue {
         }
     }
 }
+
+// #[derive(Component)]
+// struct ActionAgent(Entity);
+
+// #[derive(Component, Deref)]
+// struct ActionWrapper(BoxedAction);
+
+// #[derive(Bundle)]
+// struct ActionBundle {
+//     agent: ActionAgent,
+//     action: ActionWrapper,
+// }

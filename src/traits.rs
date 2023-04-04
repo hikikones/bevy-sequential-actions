@@ -5,13 +5,14 @@ pub trait Action: Send + Sync + 'static {
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
     fn on_start(&mut self, agent: Entity, world: &mut World);
-    fn on_finish(&mut self, agent: Entity, world: &mut World);
-    fn on_cancel(&mut self, agent: Entity, world: &mut World) {
-        self.on_finish(agent, world);
-    }
-    fn on_pause(&mut self, agent: Entity, world: &mut World) {
-        self.on_finish(agent, world);
-    }
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
+    // fn on_finish(&mut self, agent: Entity, world: &mut World);
+    // fn on_cancel(&mut self, agent: Entity, world: &mut World) {
+    //     self.on_finish(agent, world);
+    // }
+    // fn on_pause(&mut self, agent: Entity, world: &mut World) {
+    //     self.on_finish(agent, world);
+    // }
     fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}
 }
 
@@ -36,7 +37,7 @@ where
         (self)(agent, world);
     }
 
-    fn on_finish(&mut self, _agent: Entity, _world: &mut World) {}
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 /// Proxy method for modifying actions.
