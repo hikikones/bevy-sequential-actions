@@ -10,6 +10,9 @@ struct Ecs {
 
 impl Ecs {
     fn new() -> Self {
+        let mut world = World::new();
+        world.init_resource::<DeferredActions>();
+
         let mut update_schedule = Schedule::default();
         update_schedule.add_system(countdown);
 
@@ -17,7 +20,7 @@ impl Ecs {
         check_actions_schedule.add_systems(SequentialActionsPlugin::get_systems());
 
         Self {
-            world: World::new(),
+            world,
             update_schedule,
             check_actions_schedule,
         }
@@ -100,7 +103,7 @@ struct Canceled;
 struct Paused;
 
 impl Action for CountdownAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         self.entity = Some(
             world
                 .spawn((
@@ -755,8 +758,8 @@ fn despawn() {
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
-        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
-            commands.add(move |w: &mut World| {
+        .add(|agent, world: &mut World| {
+            world.deferred_actions(agent).custom(move |w: &mut World| {
                 w.despawn(agent);
             });
         })
@@ -775,8 +778,8 @@ fn remove_bundle() {
 
     ecs.actions(e)
         .add(CountdownAction::new(0))
-        .add(|agent, _world: &mut World, commands: &mut ActionCommands| {
-            commands.add(move |w: &mut World| {
+        .add(|agent, world: &mut World| {
+            world.deferred_actions(agent).custom(move |w: &mut World| {
                 w.entity_mut(agent).remove::<ActionsBundle>();
             });
         })
@@ -795,7 +798,7 @@ fn order() {
     #[derive(Default)]
     struct Order<T: Default + Component>(PhantomData<T>);
     impl<T: Default + Component> Action for Order<T> {
-        fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+        fn on_start(&mut self, agent: Entity, world: &mut World) {
             world.entity_mut(agent).insert(T::default());
         }
         fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
@@ -1052,12 +1055,11 @@ fn finished_exceeds_active_panic() {
     let mut ecs = Ecs::new();
     let e = ecs.spawn_agent();
 
-    ecs.actions(e)
-        .add(|agent, world: &mut World, _commands: &mut ActionCommands| {
-            let mut finished = world.get_mut::<ActionFinished>(agent).unwrap();
-            finished.confirm_and_persist();
-            finished.confirm_and_reset();
-        });
+    ecs.actions(e).add(|agent, world: &mut World| {
+        let mut finished = world.get_mut::<ActionFinished>(agent).unwrap();
+        finished.confirm_and_persist();
+        finished.confirm_and_reset();
+    });
 
     ecs.run();
 }
