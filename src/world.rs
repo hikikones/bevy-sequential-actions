@@ -249,6 +249,7 @@ trait WorldActionsExt {
     fn take_current_action(&mut self, agent: Entity) -> Option<ActionTuple>;
     fn pop_next_action(&mut self, agent: Entity) -> Option<ActionTuple>;
     fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
+    fn apply_deferred_actions(&mut self);
     fn has_current_action(&self, agent: Entity) -> bool;
 }
 
@@ -326,6 +327,8 @@ impl WorldActionsExt for World {
                     }
                 }
             }
+
+            self.apply_deferred_actions();
         }
     }
 
@@ -345,6 +348,8 @@ impl WorldActionsExt for World {
             }
 
             self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));
+
+            self.apply_deferred_actions();
         }
     }
 
@@ -358,6 +363,12 @@ impl WorldActionsExt for World {
 
     fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue> {
         self.get_mut::<ActionQueue>(agent).unwrap()
+    }
+
+    fn apply_deferred_actions(&mut self) {
+        self.resource_scope(|world, mut actions: Mut<DeferredActions>| {
+            actions.0.apply(world);
+        });
     }
 
     fn has_current_action(&self, agent: Entity) -> bool {
