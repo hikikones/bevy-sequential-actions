@@ -37,7 +37,7 @@ impl<F> Action for WaitAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         let duration = self.current.take().unwrap_or(self.duration.value());
         self.entity = Some(
             world

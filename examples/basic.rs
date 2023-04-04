@@ -67,17 +67,17 @@ fn setup(mut commands: Commands) {
     commands
         .actions(agent)
         // Single closure for only the on_start method
-        .add(
-            |agent: Entity, _world: &mut World, commands: &mut ActionCommands| {
-                // on_start
-                commands.actions(agent).next();
-            },
-        )
+        .add(|agent: Entity, _world: &mut World| {
+            // on_start
+            // TODO
+            // commands.actions(agent).next();
+        })
         // Tuple closure for both the on_start and on_stop methods
         .add((
-            |agent: Entity, _world: &mut World, commands: &mut ActionCommands| {
+            |agent: Entity, _world: &mut World| {
                 // on_start
-                commands.actions(agent).next();
+                // TODO
+                // commands.actions(agent).next();
             },
             |_agent: Entity, _world: &mut World, _reason: StopReason| {
                 // on_stop
@@ -94,7 +94,7 @@ fn setup(mut commands: Commands) {
 struct MyCustomAction;
 
 impl Action for MyCustomAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         // This action adds a bunch of other actions to the front.
         // Since this is all that it does, we call next() at the end.
 
@@ -102,35 +102,36 @@ impl Action for MyCustomAction {
             .query_filtered::<Entity, With<CameraMain>>()
             .single(world);
 
-        commands
-            .actions(agent)
-            .start(false)
-            .order(AddOrder::Front)
-            .add_sequence(actions![
-                LerpAction::new(LerpConfig {
-                    target: camera,
-                    lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
-                    duration: 1.0,
-                }),
-                LerpAction::new(LerpConfig {
-                    target: agent,
-                    lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
-                    duration: 1.0,
-                }),
-                WaitAction::new(1.0),
-                LerpAction::new(LerpConfig {
-                    target: camera,
-                    lerp_type: LerpType::Position(CAMERA_OFFSET),
-                    duration: 1.0,
-                }),
-                WaitAction::new(0.5),
-                LerpAction::new(LerpConfig {
-                    target: agent,
-                    lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
-                    duration: 1.0,
-                }),
-            ])
-            .next();
+        // TODO
+        // commands
+        //     .actions(agent)
+        //     .start(false)
+        //     .order(AddOrder::Front)
+        //     .add_sequence(actions![
+        //         LerpAction::new(LerpConfig {
+        //             target: camera,
+        //             lerp_type: LerpType::Position(CAMERA_OFFSET * 0.5),
+        //             duration: 1.0,
+        //         }),
+        //         LerpAction::new(LerpConfig {
+        //             target: agent,
+        //             lerp_type: LerpType::Rotation(Quat::from_look(Vec3::Z, Vec3::Y)),
+        //             duration: 1.0,
+        //         }),
+        //         WaitAction::new(1.0),
+        //         LerpAction::new(LerpConfig {
+        //             target: camera,
+        //             lerp_type: LerpType::Position(CAMERA_OFFSET),
+        //             duration: 1.0,
+        //         }),
+        //         WaitAction::new(0.5),
+        //         LerpAction::new(LerpConfig {
+        //             target: agent,
+        //             lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::Z, Vec3::Y)),
+        //             duration: 1.0,
+        //         }),
+        //     ])
+        //     .next();
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -139,16 +140,17 @@ impl Action for MyCustomAction {
 struct FancyAction;
 
 impl Action for FancyAction {
-    fn on_start(&mut self, agent: Entity, _world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, _world: &mut World) {
         // This action runs a system that adds another wait action.
         // When modifying actions using world inside the Action trait,
         // it is important that the modifications happens after the on_start method.
 
         // Add a custom command for deferred world mutation.
-        commands.add(move |world: &mut World| {
-            world.run_system(my_system);
-            world.actions(agent).next();
-        });
+        // TODO
+        // commands.add(move |world: &mut World| {
+        //     world.run_system(my_system);
+        //     world.actions(agent).next();
+        // });
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

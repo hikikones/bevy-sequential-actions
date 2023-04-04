@@ -35,7 +35,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
                 lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::X, Vec3::Y)),
                 duration: Random::new(2.0, 6.0),
             }),
-            |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
+            |agent: Entity, world: &mut World| {
                 println!("on_start");
                 world
                     .get_mut::<ActionFinished>(agent)
@@ -60,7 +60,7 @@ fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
                 duration: Random::new(2.0, 6.0),
             }),
             (
-                |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
+                |agent: Entity, world: &mut World| {
                     println!("on_start and... ");
                     world
                         .get_mut::<ActionFinished>(agent)

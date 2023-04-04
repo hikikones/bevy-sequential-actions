@@ -329,24 +329,20 @@ impl WorldActionsExt for World {
 
     fn start_next_action(&mut self, agent: Entity) {
         if let Some((mut next_action, repeat)) = self.pop_next_action(agent) {
-            let mut commands = ActionCommands::new();
-
             match &mut next_action {
-                ActionType::One(action) => action.on_start(agent, self, &mut commands),
+                ActionType::One(action) => action.on_start(agent, self),
                 ActionType::Many(actions) => actions
                     .iter_mut()
-                    .for_each(|action| action.on_start(agent, self, &mut commands)),
+                    .for_each(|action| action.on_start(agent, self)),
                 ActionType::Linked(actions, index) => match &mut actions[*index] {
-                    OneOrMany::One(action) => action.on_start(agent, self, &mut commands),
+                    OneOrMany::One(action) => action.on_start(agent, self),
                     OneOrMany::Many(actions) => actions
                         .iter_mut()
-                        .for_each(|action| action.on_start(agent, self, &mut commands)),
+                        .for_each(|action| action.on_start(agent, self)),
                 },
             }
 
             self.get_mut::<CurrentAction>(agent).unwrap().0 = Some((next_action, repeat));
-
-            commands.apply(self);
         }
     }
 

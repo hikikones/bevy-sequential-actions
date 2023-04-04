@@ -57,7 +57,7 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         let rotate_bundle = self.bundle.take().unwrap_or_else(|| {
             let target = match &self.config.target {
                 RotateType::Look(dir) => Quat::from_look(dir.value(), Vec3::Y),

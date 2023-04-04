@@ -52,7 +52,7 @@ impl<F> Action for LerpAction<F>
 where
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         let lerp_bundle = self.bundle.take().unwrap_or_else(|| {
             let lerp_type = match self.config.lerp_type {
                 LerpType::Position(target) => {

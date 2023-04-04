@@ -50,7 +50,7 @@ where
     V: IntoValue<Vec3>,
     F: IntoValue<f32>,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         let move_bundle = self.bundle.take().unwrap_or(MoveBundle {
             target: Target(self.config.target.value()),
             speed: Speed(self.config.speed.value()),

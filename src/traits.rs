@@ -3,7 +3,7 @@ use crate::*;
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
     /// The method that is called when an action is started.
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands);
+    fn on_start(&mut self, agent: Entity, world: &mut World);
 
     /// The method that is called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
@@ -20,10 +20,10 @@ where
 
 impl<Start> Action for Start
 where
-    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Start: FnMut(Entity, &mut World) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        (self)(agent, world, commands);
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
+        (self)(agent, world);
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -31,11 +31,11 @@ where
 
 impl<Start, Stop> Action for (Start, Stop)
 where
-    Start: FnMut(Entity, &mut World, &mut ActionCommands) + Send + Sync + 'static,
+    Start: FnMut(Entity, &mut World) + Send + Sync + 'static,
     Stop: FnMut(Entity, &mut World, StopReason) + Send + Sync + 'static,
 {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        (self.0)(agent, world, commands);
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
+        (self.0)(agent, world);
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
