@@ -157,5 +157,5 @@ fn my_system(agent_q: Query<Entity, With<Agent>>, mut commands: Commands) {
     commands
         .actions(agent)
         .order(AddOrder::Front)
-        .add(WaitAction::new(4.0));
+        .add(WaitAction::new(1.0));
 }
