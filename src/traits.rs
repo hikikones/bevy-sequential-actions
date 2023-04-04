@@ -2,6 +2,7 @@ use crate::*;
 
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool;
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
     fn on_start(&mut self, agent: Entity, world: &mut World);
     fn on_finish(&mut self, agent: Entity, world: &mut World);
@@ -27,6 +28,10 @@ impl<OnStart> Action for OnStart
 where
     OnStart: FnMut(Entity, &mut World) + Send + Sync + 'static,
 {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
     fn on_start(&mut self, agent: Entity, world: &mut World) {
         (self)(agent, world);
     }
