@@ -223,7 +223,9 @@ pub(super) trait WorldActionsExt {
 }
 
 impl WorldActionsExt for World {
-    fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction) {
+    fn add_action(&mut self, agent: Entity, config: AddConfig, mut action: BoxedAction) {
+        action.on_add(agent, self);
+
         self.action_queue(agent).push(config.order, action);
 
         if config.start && !self.has_current_action(agent) {
@@ -237,17 +239,17 @@ impl WorldActionsExt for World {
         config: AddConfig,
         actions: impl DoubleEndedIterator<Item = BoxedAction>,
     ) {
-        let mut queue = self.action_queue(agent);
-
         match config.order {
             AddOrder::Back => {
-                for action in actions {
-                    queue.push_back(action);
+                for mut action in actions {
+                    action.on_add(agent, self);
+                    self.action_queue(agent).push_back(action);
                 }
             }
             AddOrder::Front => {
-                for action in actions.rev() {
-                    queue.push_front(action);
+                for mut action in actions.rev() {
+                    action.on_add(agent, self);
+                    self.action_queue(agent).push_front(action);
                 }
             }
         }
