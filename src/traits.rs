@@ -7,6 +7,9 @@ pub trait Action: Send + Sync + 'static {
 
     /// The method that is called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
+
+    fn on_add(&mut self, agent: Entity, world: &mut World) {}
+    fn on_remove(&mut self, agent: Entity, world: &mut World) {}
 }
 
 impl<T> From<T> for BoxedAction
