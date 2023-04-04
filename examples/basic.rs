@@ -143,8 +143,10 @@ impl Action for FancyAction {
         // it is important that the modifications happens after the on_start method.
 
         // Add a custom command for deferred world mutation.
-        world.run_system(my_system);
-        world.deferred_actions(agent).next();
+        world.deferred_actions(agent).custom(move |w: &mut World| {
+            w.run_system(my_system);
+            w.actions(agent).next();
+        });
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -154,7 +156,6 @@ fn my_system(agent_q: Query<Entity, With<Agent>>, mut commands: Commands) {
     let agent = agent_q.single();
     commands
         .actions(agent)
-        .start(false)
         .order(AddOrder::Front)
-        .add(WaitAction::new(1.0));
+        .add(WaitAction::new(4.0));
 }
