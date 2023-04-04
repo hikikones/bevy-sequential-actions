@@ -123,8 +123,9 @@ pub struct DeferredAgentActions<'w> {
 
 impl<'w> DeferredAgentActions<'w> {
     /// Adds a custom [`Command`].
-    pub fn custom(&mut self, command: impl Command) {
-        self.world.resource_mut::<DeferredActions>().0.push(command);
+    pub fn custom(&mut self, command: impl Command) -> &mut Self {
+        self.world.push_deferred_action(command);
+        self
     }
 }
 
