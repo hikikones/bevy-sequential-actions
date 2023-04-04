@@ -283,7 +283,9 @@ impl WorldActionsExt for World {
                 StopReason::Canceled => {
                     action.on_remove(agent, self);
                 }
-                StopReason::Paused => {}
+                StopReason::Paused => {
+                    self.action_queue(agent).push_front(action);
+                }
             }
         }
     }
