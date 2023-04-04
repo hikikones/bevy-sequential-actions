@@ -371,9 +371,11 @@ impl WorldActionsExt for World {
 
     fn apply_deferred_actions(&mut self) {
         println!("Apply deferred actions");
-        self.resource_scope(|world, mut actions: Mut<DeferredActions>| {
-            actions.0.apply(world);
-        });
+        let mut actions = std::mem::take(&mut self.resource_mut::<DeferredActions>().0);
+        actions.apply(self);
+        // self.resource_scope(|world, mut actions: Mut<DeferredActions>| {
+        //     actions.0.apply(world);
+        // });
         println!("Done");
     }
 

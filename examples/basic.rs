@@ -158,6 +158,7 @@ fn my_system(agent_q: Query<Entity, With<Agent>>, mut commands: Commands) {
     let agent = agent_q.single();
     commands
         .actions(agent)
+        .start(false)
         .order(AddOrder::Front)
         .add(WaitAction::new(1.0));
 }
