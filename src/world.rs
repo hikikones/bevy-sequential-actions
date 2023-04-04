@@ -256,6 +256,8 @@ trait WorldActionsExt {
 impl WorldActionsExt for World {
     fn stop_current_action(&mut self, agent: Entity, reason: StopReason) {
         if let Some((mut current_action, mut repeat)) = self.take_current_action(agent) {
+            println!("STOP");
+
             self.get_mut::<ActionFinished>(agent)
                 .unwrap()
                 .bypass_change_detection()
@@ -334,6 +336,8 @@ impl WorldActionsExt for World {
 
     fn start_next_action(&mut self, agent: Entity) {
         if let Some((mut next_action, repeat)) = self.pop_next_action(agent) {
+            println!("START");
+
             match &mut next_action {
                 ActionType::One(action) => action.on_start(agent, self),
                 ActionType::Many(actions) => actions
@@ -366,9 +370,11 @@ impl WorldActionsExt for World {
     }
 
     fn apply_deferred_actions(&mut self) {
+        println!("Apply deferred actions");
         self.resource_scope(|world, mut actions: Mut<DeferredActions>| {
             actions.0.apply(world);
         });
+        println!("Done");
     }
 
     fn has_current_action(&self, agent: Entity) -> bool {
