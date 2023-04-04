@@ -2,13 +2,15 @@ use crate::*;
 
 /// The trait that all actions must implement.
 pub trait Action: Send + Sync + 'static {
-    /// The method that is called when an action is started.
-    fn on_start(&mut self, agent: Entity, world: &mut World);
-
-    /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, agent: Entity, world: &mut World);
-
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
+    fn on_start(&mut self, agent: Entity, world: &mut World);
+    fn on_finish(&mut self, agent: Entity, world: &mut World);
+    fn on_cancel(&mut self, agent: Entity, world: &mut World) {
+        self.on_finish(agent, world);
+    }
+    fn on_pause(&mut self, agent: Entity, world: &mut World) {
+        self.on_finish(agent, world);
+    }
     fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}
 }
 
@@ -21,15 +23,15 @@ where
     }
 }
 
-impl<Start> Action for Start
+impl<OnStart> Action for OnStart
 where
-    Start: FnMut(Entity, &mut World) + Send + Sync + 'static,
+    OnStart: FnMut(Entity, &mut World) + Send + Sync + 'static,
 {
     fn on_start(&mut self, agent: Entity, world: &mut World) {
         (self)(agent, world);
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World) {}
+    fn on_finish(&mut self, _agent: Entity, _world: &mut World) {}
 }
 
 /// Proxy method for modifying actions.
