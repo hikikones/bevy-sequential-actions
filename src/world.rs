@@ -1,4 +1,4 @@
-use bevy_ecs::system::CommandQueue;
+use bevy_ecs::system::{Command, CommandQueue};
 
 use crate::*;
 
@@ -401,7 +401,7 @@ impl<'w> DeferredActionsProxy<'w> for World {
     type Modifier = DeferredWorldActions<'w>;
 
     fn deferred_actions(&'w mut self, agent: Entity) -> Self::Modifier {
-        DeferredWorldActions {
+        Self::Modifier {
             agent,
             config: AddConfig::new(),
             world: self,
@@ -413,6 +413,12 @@ pub struct DeferredWorldActions<'w> {
     agent: Entity,
     config: AddConfig,
     world: &'w mut World,
+}
+
+impl<'w> DeferredWorldActions<'w> {
+    pub fn custom(&mut self, command: impl Command) {
+        self.world.resource_mut::<DeferredActions>().0.push(command);
+    }
 }
 
 impl ModifyActions for DeferredWorldActions<'_> {
