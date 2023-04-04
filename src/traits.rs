@@ -9,7 +9,7 @@ pub trait Action: Send + Sync + 'static {
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
-    fn on_remove(&mut self, agent: Entity, world: &mut World) {}
+    fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}
 }
 
 impl<T> From<T> for BoxedAction
