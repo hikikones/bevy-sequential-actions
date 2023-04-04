@@ -66,6 +66,12 @@ pub trait ModifyActions {
     /// Adds a single [`action`](Action) to the queue.
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
 
+    /// Adds a collection of actions to the queue that are executed sequentially, i.e. one by one.
+    fn add_many(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self;
+
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no action currently running.
     fn execute(&mut self) -> &mut Self;
