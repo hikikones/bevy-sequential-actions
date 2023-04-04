@@ -2,6 +2,10 @@
 
 ## Version 0.8.0-dev
 
+- [Replace `ActionCommands` with `deferred_actions` method][79]
+
+[79]: https://github.com/hikikones/bevy-sequential-actions/pull/79
+
 ## Version 0.7.0
 
 - [Update to Bevy 0.10][73]
