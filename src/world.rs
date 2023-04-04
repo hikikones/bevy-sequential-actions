@@ -1,3 +1,5 @@
+use bevy_ecs::system::CommandQueue;
+
 use crate::*;
 
 impl<'a> ActionsProxy<'a> for World {
@@ -360,5 +362,197 @@ impl WorldActionsExt for World {
 
     fn has_current_action(&self, agent: Entity) -> bool {
         self.get::<CurrentAction>(agent).unwrap().is_some()
+    }
+}
+
+//
+// Deferred actions
+//
+
+#[derive(Default, Resource)]
+pub(super) struct DeferredActions(CommandQueue);
+
+pub trait DeferredActionsProxy<'a> {
+    type Modifier: ModifyActions;
+
+    fn deferred_actions(&'a mut self, agent: Entity) -> Self::Modifier;
+}
+
+impl<'w> DeferredActionsProxy<'w> for World {
+    type Modifier = DeferredWorldActions<'w>;
+
+    fn deferred_actions(&'w mut self, agent: Entity) -> Self::Modifier {
+        DeferredWorldActions {
+            agent,
+            config: AddConfig::new(),
+            world: self,
+        }
+    }
+}
+
+pub struct DeferredWorldActions<'w> {
+    agent: Entity,
+    config: AddConfig,
+    world: &'w mut World,
+}
+
+impl ModifyActions for DeferredWorldActions<'_> {
+    fn start(&mut self, start: bool) -> &mut Self {
+        self.config.start = start;
+        self
+    }
+
+    fn order(&mut self, order: AddOrder) -> &mut Self {
+        self.config.order = order;
+        self
+    }
+
+    fn repeat(&mut self, repeat: Repeat) -> &mut Self {
+        self.config.repeat = repeat;
+        self
+    }
+
+    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+        let action = action.into();
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.add_action(agent, config, action);
+            });
+
+        self
+    }
+
+    fn add_sequence(
+        &mut self,
+        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.add_actions(agent, config, actions);
+            });
+
+        self
+    }
+
+    fn add_parallel(
+        &mut self,
+        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.add_parallel_actions(agent, config, actions);
+            });
+
+        self
+    }
+
+    fn add_linked(
+        &mut self,
+        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
+    ) -> &mut Self {
+        let agent = self.agent;
+        let config = self.config;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.add_linked_actions(agent, config, f);
+            });
+
+        self
+    }
+
+    fn execute(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.execute_actions(agent);
+            });
+
+        self
+    }
+
+    fn next(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.next_action(agent);
+            });
+
+        self
+    }
+
+    fn cancel(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.cancel_action(agent);
+            });
+
+        self
+    }
+
+    fn pause(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.pause_action(agent);
+            });
+
+        self
+    }
+
+    fn skip(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.skip_action(agent);
+            });
+
+        self
+    }
+
+    fn clear(&mut self) -> &mut Self {
+        let agent = self.agent;
+
+        self.world
+            .resource_mut::<DeferredActions>()
+            .0
+            .push(move |world: &mut World| {
+                world.clear_actions(agent);
+            });
+
+        self
     }
 }

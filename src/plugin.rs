@@ -46,7 +46,8 @@ impl SequentialActionsPlugin {
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
+        app.init_resource::<DeferredActions>()
+            .add_systems(Self::get_systems().in_base_set(CoreSet::Last));
     }
 }
 
