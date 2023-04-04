@@ -88,7 +88,7 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         // Take current duration (if paused), or use full duration
         let duration = self.current.take().unwrap_or(self.duration);
 
@@ -124,12 +124,12 @@ fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Ti
 
 #### Warning
 
-One thing to keep in mind is that you should not modify actions using [`World`] inside the [`Action`] trait.
+One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
 We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
 Since an action is detached from an `agent` when the trait methods are called,
 the logic for advancing the action queue will not work properly.
 
-This is why [`ActionCommands`] was created, so you can modify actions inside the [`Action`] trait in a deferred way.
+Use the [`deferred_actions`](DeferredActionsProxy::deferred_actions) method for deferred world mutation.
 
 ```rust,no_run
 # use bevy::{ecs::schedule::States, prelude::*};
@@ -138,7 +138,7 @@ This is why [`ActionCommands`] was created, so you can modify actions inside the
 pub struct SetStateAction<S: States>(S);
 
 impl<S: States> Action for SetStateAction<S> {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         // Set state
         world.resource_mut::<NextState<S>>().set(self.0.clone());
 
@@ -146,10 +146,10 @@ impl<S: States> Action for SetStateAction<S> {
         world.actions(agent).next();
 
         // Good. The action queue will advance a bit later.
-        commands.actions(agent).next();
+        world.deferred_actions(agent).next();
 
         // Also good. Does the same as above.
-        commands.add(move |w: &mut World| {
+        world.deferred_actions(agent).custom(move |w: &mut World| {
             w.actions(agent).next();
         });
 

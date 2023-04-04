@@ -43,7 +43,7 @@ where
     }
 }
 
-/// Proxy method for modifying actions. Returns a type that implements [`ModifyActions`].
+/// Proxy method for modifying actions.
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
     type Modifier: ModifyActions;
@@ -52,9 +52,12 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 
+/// Proxy method for modifying actions in a deferred way.
 pub trait DeferredActionsProxy<'a> {
+    /// The type returned for modifying actions.
     type Modifier: ModifyActions;
 
+    /// Returns a type for modifying actions in a deferred way for specified `agent`.
     fn deferred_actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 

@@ -114,6 +114,7 @@ impl<'w> DeferredActionsProxy<'w> for World {
     }
 }
 
+/// Modify actions using [`World`] in a deferred way.
 pub struct DeferredAgentActions<'w> {
     agent: Entity,
     config: AddConfig,
@@ -121,6 +122,7 @@ pub struct DeferredAgentActions<'w> {
 }
 
 impl<'w> DeferredAgentActions<'w> {
+    /// Adds a custom [`Command`].
     pub fn custom(&mut self, command: impl Command) {
         self.world.resource_mut::<DeferredActions>().0.push(command);
     }

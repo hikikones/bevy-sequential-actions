@@ -11,7 +11,7 @@
 /// let actions: std::array::IntoIter<Box<dyn Action>, 3> = actions![
 ///         action_a,
 ///         action_b,
-///         |agent: Entity, world: &mut World, commands: &mut ActionCommands| {
+///         |agent: Entity, world: &mut World| {
 ///             // on_start
 ///         },
 ///     ];
