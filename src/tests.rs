@@ -17,7 +17,8 @@ impl Ecs {
         update_schedule.add_system(countdown);
 
         let mut check_actions_schedule = Schedule::default();
-        check_actions_schedule.add_systems(SequentialActionsPlugin::<DefaultMarker>::get_systems());
+        check_actions_schedule
+            .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems());
 
         Self {
             world,

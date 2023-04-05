@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use bevy_app::{App, CoreSchedule, CoreSet, IntoSystemAppConfig, IntoSystemAppConfigs, Plugin};
-use bevy_ecs::schedule::{ScheduleLabel, SystemConfigs};
+use bevy_app::{App, CoreSet, Plugin};
+use bevy_ecs::schedule::SystemConfigs;
 
 use crate::*;
 
@@ -9,7 +9,8 @@ use crate::*;
 ///
 /// This plugin adds the necessary systems for advancing the action queue for each `agent`.
 /// By default, the systems will be added to [`CoreSet::Last`].
-/// If you want to schedule the systems yourself, see [`get_systems`](Self::get_systems).
+///
+/// If you want to customize the scheduling, use the [`custom`](Self::custom) constructor.
 ///
 /// ```rust,no_run
 /// # use bevy_ecs::prelude::*;
@@ -22,22 +23,17 @@ use crate::*;
 ///         .run();
 /// }
 /// ```
-pub struct SequentialActionsPlugin<T: Marker = DefaultMarker> {
+pub struct SequentialActionsPlugin<T: AgentMarker = DefaultAgentMarker> {
     custom: Box<dyn Fn(&mut App) + Send + Sync>,
     _marker: PhantomData<T>,
 }
 
-pub trait Marker: Default + Component {}
+/// Trait alias for marker components used in [`SequentialActionsPlugin`].
+pub trait AgentMarker: Default + Component {}
 
-impl<T> Marker for T where T: Default + Component {}
+impl<T> AgentMarker for T where T: Default + Component {}
 
-#[derive(Default, Component)]
-pub struct DefaultMarker;
-
-// TODO: Rework custom scheduling.
-// Cannot use get_systems() currently as the DeferredActions resource is now required.
-
-impl Default for SequentialActionsPlugin<DefaultMarker> {
+impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
     fn default() -> Self {
         Self::custom(|app: &mut App| {
             app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
@@ -45,15 +41,46 @@ impl Default for SequentialActionsPlugin<DefaultMarker> {
     }
 }
 
-// impl<T: Marker> Default for SequentialActionsPlugin<T> {
-//     fn default() -> Self {
-//         Self::custom(|app: &mut App| {
-//             app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
-//         })
-//     }
-// }
-
-impl<T: Marker> SequentialActionsPlugin<T> {
+impl<T: AgentMarker> SequentialActionsPlugin<T> {
+    /// Creates a new [`Plugin`] with a closure for custom scheduling.
+    /// To get the systems used by this plugin, use [`get_systems`](Self::get_systems).
+    ///
+    /// ```rust,no_run
+    /// # use bevy_ecs::{prelude::*, schedule::ScheduleLabel};
+    /// # use bevy_app::prelude::*;
+    /// use bevy_sequential_actions::*;
+    ///
+    /// fn main() {
+    ///     App::new()
+    ///         .add_schedule(CustomSchedule, Schedule::new())
+    ///         .add_plugin(SequentialActionsPlugin::<CustomMarker>::custom(
+    ///             |app: &mut App| {
+    ///                 app.add_systems(
+    ///                     SequentialActionsPlugin::<CustomMarker>::get_systems()
+    ///                         .in_schedule(CustomSchedule),
+    ///                 );
+    ///             },
+    ///         ))
+    ///         .add_startup_system(setup)
+    ///         .add_system(run_custom_schedule)
+    ///         .run();
+    /// }
+    ///
+    /// #[derive(Debug, Clone, PartialEq, Eq, Hash, ScheduleLabel)]
+    /// struct CustomSchedule;
+    ///
+    /// #[derive(Default, Component)]
+    /// struct CustomMarker;
+    ///
+    /// fn run_custom_schedule(world: &mut World) {
+    ///     world.run_schedule(CustomSchedule);
+    /// }
+    ///
+    /// fn setup(mut commands: Commands) {
+    ///     let agent = commands.spawn(ActionsBundle::<CustomMarker>::new()).id();
+    ///     // ...
+    /// }
+    /// ```
     pub fn custom(f: impl Fn(&mut App) + Send + Sync + 'static) -> Self {
         Self {
             custom: Box::new(f),
@@ -61,19 +88,20 @@ impl<T: Marker> SequentialActionsPlugin<T> {
         }
     }
 
+    /// Returns the systems used by this plugin.
     pub fn get_systems() -> SystemConfigs {
         (check_actions::<T>,).into_configs()
     }
 }
 
-impl<T: Marker> Plugin for SequentialActionsPlugin<T> {
+impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
         app.init_resource::<DeferredActions>();
         (self.custom)(app);
     }
 }
 
-fn check_actions<T: Marker>(
+fn check_actions<T: AgentMarker>(
     action_q: Query<(Entity, &CurrentAction), With<T>>,
     world: &World,
     mut commands: Commands,

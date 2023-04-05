@@ -193,19 +193,19 @@ pub type BoxedAction = Box<dyn Action>;
 
 /// The component bundle that all entities with actions must have.
 #[derive(Bundle)]
-pub struct ActionsBundle<T: Marker = DefaultMarker> {
+pub struct ActionsBundle<T: AgentMarker = DefaultAgentMarker> {
     current: CurrentAction,
     queue: ActionQueue,
     marker: T,
 }
 
-impl Default for ActionsBundle<DefaultMarker> {
+impl Default for ActionsBundle<DefaultAgentMarker> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: Marker> ActionsBundle<T> {
+impl<T: AgentMarker> ActionsBundle<T> {
     /// Creates a new [`Bundle`] that contains the necessary components
     /// that all entities with actions must have.
     pub fn new() -> Self {
@@ -216,6 +216,11 @@ impl<T: Marker> ActionsBundle<T> {
         }
     }
 }
+
+/// The default marker component used in [`SequentialActionsPlugin`]
+/// and for entities with [`ActionsBundle`].
+#[derive(Default, Component)]
+pub struct DefaultAgentMarker;
 
 /// The queue order for an [`Action`] to be added.
 #[derive(Debug, Clone, Copy)]
