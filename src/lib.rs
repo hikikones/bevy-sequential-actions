@@ -192,21 +192,27 @@ pub use world::*;
 pub type BoxedAction = Box<dyn Action>;
 
 /// The component bundle that all entities with actions must have.
-#[derive(Default, Bundle)]
-pub struct ActionsBundle {
-    marker: ActionMarker,
+#[derive(Bundle)]
+pub struct ActionsBundle<T: Marker = DefaultMarker> {
     current: CurrentAction,
     queue: ActionQueue,
+    marker: T,
 }
 
-impl ActionsBundle {
+impl Default for ActionsBundle<DefaultMarker> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T: Marker> ActionsBundle<T> {
     /// Creates a new [`Bundle`] that contains the necessary components
     /// that all entities with actions must have.
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
-            marker: ActionMarker,
             current: CurrentAction(None),
             queue: ActionQueue(VecDeque::new()),
+            marker: T::default(),
         }
     }
 }

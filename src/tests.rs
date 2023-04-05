@@ -17,7 +17,7 @@ impl Ecs {
         update_schedule.add_system(countdown);
 
         let mut check_actions_schedule = Schedule::default();
-        check_actions_schedule.add_systems(SequentialActionsPlugin::get_systems());
+        check_actions_schedule.add_systems(SequentialActionsPlugin::<DefaultMarker>::get_systems());
 
         Self {
             world,
@@ -40,7 +40,7 @@ impl Ecs {
     }
 
     fn spawn_agent(&mut self) -> Entity {
-        self.world.spawn(ActionsBundle::new()).id()
+        self.world.spawn(ActionsBundle::default()).id()
     }
 
     fn actions(&mut self, agent: Entity) -> AgentActions {

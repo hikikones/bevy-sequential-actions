@@ -6,14 +6,14 @@ use bevy_sequential_actions::*;
 fn main() {
     App::new()
         .add_plugin(ScheduleRunnerPlugin)
-        .add_plugin(SequentialActionsPlugin)
+        .add_plugin(SequentialActionsPlugin::default())
         .add_startup_system(setup)
         .add_system(countdown)
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    let agent = commands.spawn(ActionsBundle::default()).id();
     commands
         .actions(agent)
         // Add a single action

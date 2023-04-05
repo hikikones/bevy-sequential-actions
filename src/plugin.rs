@@ -1,5 +1,7 @@
-use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::schedule::SystemConfigs;
+use std::marker::PhantomData;
+
+use bevy_app::{App, CoreSchedule, CoreSet, IntoSystemAppConfig, IntoSystemAppConfigs, Plugin};
+use bevy_ecs::schedule::{ScheduleLabel, SystemConfigs};
 
 use crate::*;
 
@@ -16,43 +18,66 @@ use crate::*;
 ///
 /// fn main() {
 ///     App::new()
-///         .add_plugin(SequentialActionsPlugin)
+///         .add_plugin(SequentialActionsPlugin::default())
 ///         .run();
 /// }
 /// ```
-pub struct SequentialActionsPlugin;
+pub struct SequentialActionsPlugin<T: Marker = DefaultMarker> {
+    custom: Box<dyn Fn(&mut App) + Send + Sync>,
+    _marker: PhantomData<T>,
+}
+
+pub trait Marker: Default + Clone + Copy + Component {}
+
+impl<T> Marker for T where T: Default + Clone + Copy + Component {}
+
+#[derive(Default, Clone, Copy, Component)]
+pub struct DefaultMarker;
 
 // TODO: Rework custom scheduling.
 // Cannot use get_systems() currently as the DeferredActions resource is now required.
 
-impl SequentialActionsPlugin {
-    /// Returns the systems used by this plugin.
-    /// Useful if you want to schedule the systems yourself.
-    ///
-    /// ```rust,no_run
-    /// use bevy_ecs::prelude::*;
-    /// use bevy_app::prelude::*;
-    /// use bevy_sequential_actions::*;
-    ///
-    /// fn main() {
-    ///     App::new()
-    ///         .add_systems(SequentialActionsPlugin::get_systems().in_base_set(CoreSet::Last))
-    ///         .run();
-    /// }
-    /// ```
+impl Default for SequentialActionsPlugin<DefaultMarker> {
+    fn default() -> Self {
+        Self::custom(|app: &mut App| {
+            app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
+        })
+    }
+}
+
+// impl<T: Marker> Default for SequentialActionsPlugin<T> {
+//     fn default() -> Self {
+//         Self::custom(|app: &mut App| {
+//             app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
+//         })
+//     }
+// }
+
+impl<T: Marker> SequentialActionsPlugin<T> {
+    pub fn custom(f: impl Fn(&mut App) + Send + Sync + 'static) -> Self {
+        Self {
+            custom: Box::new(f),
+            _marker: PhantomData,
+        }
+    }
+
     pub fn get_systems() -> SystemConfigs {
-        (check_actions,).into_configs()
+        (check_actions::<T>,).into_configs()
     }
 }
 
-impl Plugin for SequentialActionsPlugin {
+impl<T: Marker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.init_resource::<DeferredActions>()
-            .add_systems(Self::get_systems().in_base_set(CoreSet::Last));
+        app.init_resource::<DeferredActions>();
+        (self.custom)(app);
     }
 }
 
-fn check_actions(action_q: Query<(Entity, &CurrentAction)>, world: &World, mut commands: Commands) {
+fn check_actions<T: Marker>(
+    action_q: Query<(Entity, &CurrentAction), With<T>>,
+    world: &World,
+    mut commands: Commands,
+) {
     for (agent, current_action) in action_q.iter() {
         if let Some(action) = &current_action.0 {
             if action.is_finished(agent, world) {
