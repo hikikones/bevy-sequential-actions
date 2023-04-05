@@ -12,9 +12,9 @@ fn main() {
         )))
         .add_schedule(CustomSchedule, Schedule::new())
         .add_plugin(ScheduleRunnerPlugin)
-        // Default plugin checks actions every frame
+        // Add default plugin for default schedule
         .add_plugin(SequentialActionsPlugin::default())
-        // Use a marker component for custom scheduling
+        // Add custom plugin with marker component
         .add_plugin(SequentialActionsPlugin::<CustomMarker>::custom(
             |app: &mut App| {
                 app.add_systems(
