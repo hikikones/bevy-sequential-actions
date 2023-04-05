@@ -4,6 +4,8 @@ A [Bevy](https://bevyengine.org) library that aims to execute a queue of various
 This generally means that one action runs at a time, and when it is done,
 the next action will start and so on until the queue is empty.
 
+https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-a326-f34e055a1b40.mp4
+
 ## Getting Started
 
 #### Plugin
