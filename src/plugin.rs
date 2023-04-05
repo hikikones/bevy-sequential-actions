@@ -27,11 +27,11 @@ pub struct SequentialActionsPlugin<T: Marker = DefaultMarker> {
     _marker: PhantomData<T>,
 }
 
-pub trait Marker: Default + Clone + Copy + Component {}
+pub trait Marker: Default + Component {}
 
-impl<T> Marker for T where T: Default + Clone + Copy + Component {}
+impl<T> Marker for T where T: Default + Component {}
 
-#[derive(Default, Clone, Copy, Component)]
+#[derive(Default, Component)]
 pub struct DefaultMarker;
 
 // TODO: Rework custom scheduling.
