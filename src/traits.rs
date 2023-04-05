@@ -1,6 +1,7 @@
 use crate::*;
 
 /// The trait that all actions must implement.
+#[allow(unused_variables)]
 pub trait Action: Send + Sync + 'static {
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
