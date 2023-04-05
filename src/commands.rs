@@ -80,7 +80,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.stop_action(agent, StopReason::Canceled);
+            world.stop_current_action(agent, StopReason::Canceled);
         });
 
         self
@@ -90,7 +90,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.stop_action(agent, StopReason::Paused);
+            world.stop_current_action(agent, StopReason::Paused);
         });
 
         self
@@ -100,7 +100,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.skip_action(agent);
+            world.skip_next_action(agent);
         });
 
         self

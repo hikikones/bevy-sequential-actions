@@ -57,7 +57,7 @@ fn check_actions(action_q: Query<(Entity, &CurrentAction)>, world: &World, mut c
         if let Some(action) = &current_action.0 {
             if action.is_finished(agent, world) {
                 commands.add(move |world: &mut World| {
-                    world.stop_action(agent, StopReason::Finished);
+                    world.stop_current_action(agent, StopReason::Finished);
                 });
             }
         }
