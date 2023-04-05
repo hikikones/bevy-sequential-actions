@@ -17,7 +17,7 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugin(SequentialActionsPlugin)
+        .add_plugin(SequentialActionsPlugin::default())
         .run();
 }
 ```
@@ -31,7 +31,7 @@ See the `ModifyActions` trait for available methods.
 
 ```rust,no_run
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    let agent = commands.spawn(ActionsBundle::default()).id();
     commands
         .actions(agent)
         .add(action_a)
