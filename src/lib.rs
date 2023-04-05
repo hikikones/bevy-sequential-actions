@@ -104,7 +104,7 @@ impl Action for CountdownAction {
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        // Take the count component from the agent
+        // Take the countdown component from the agent
         let countdown = world.entity_mut(agent).take::<Countdown>();
 
         // Store current count when paused
