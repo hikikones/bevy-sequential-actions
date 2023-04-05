@@ -43,7 +43,7 @@ See the [`ModifyActions`] trait for available methods.
 #   fn on_start(&mut self, _a: Entity, _w: &mut World) {}
 #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
 # }
-
+#
 fn setup(mut commands: Commands) {
 #   let action_a = EmptyAction;
 #   let action_b = EmptyAction;
@@ -67,19 +67,16 @@ fn setup(mut commands: Commands) {
 
 #### Implementing an Action
 
-The [`Action`] trait contains two methods:
+The [`Action`] trait contains 3 required methods:
 
+* The [`is_finished`](Action::is_finished) method to determine if an action is finished.
 * The [`on_start`](Action::on_start) method which is called when an action is started.
 * The [`on_stop`](Action::on_stop) method which is called when an action is stopped.
 
-In order for the action queue to advance, every action has to somehow signal when they are finished.
-There are two ways of doing this:
+In addition, there are 2 optional methods:
 
-* Using the [`ActionFinished`] component on an `agent`.
-  By default, a system at the end of the frame will advance the queue if all active actions are finished.
-  This is the typical approach as it composes well with other actions running in parallel.
-* Calling the [`next`](ModifyActions::next) method on an `agent`.
-  This simply advances the queue, and is useful for short one-at-a-time actions.
+* The [`on_add`](Action::on_add) method which is called when an action is added to the queue.
+* The [`on_remove`](Action::on_remove) method which is called when an action is removed from the queue.
 
 A simple countdown action follows.
 
@@ -95,7 +92,7 @@ pub struct CountdownAction {
 impl Action for CountdownAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if countdown has reached zero
-        world.get::<Count>(agent).unwrap().0 <= 0
+        world.get::<Countdown>(agent).unwrap().0 <= 0
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
@@ -103,24 +100,24 @@ impl Action for CountdownAction {
         let count = self.current.take().unwrap_or(self.count);
 
         // Run the countdown system on the agent
-        world.entity_mut(agent).insert(Count(count));
+        world.entity_mut(agent).insert(Countdown(count));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         // Take the count component from the agent
-        let count = world.entity_mut(agent).take::<Count>();
+        let countdown = world.entity_mut(agent).take::<Countdown>();
 
         // Store current count when paused
         if let StopReason::Paused = reason {
-            self.current = Some(count.unwrap().0);
+            self.current = Some(countdown.unwrap().0);
         }
     }
 }
 
 #[derive(Component)]
-struct Count(i32);
+struct Countdown(i32);
 
-fn wait_system(mut countdown_q: Query<&mut Count>) {
+fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
     for mut countdown in &mut countdown_q {
         countdown.0 -= 1;
     }
@@ -134,7 +131,8 @@ We cannot borrow a mutable action from an `agent` while also passing a mutable w
 Since an action is detached from an `agent` when the trait methods are called,
 the logic for advancing the action queue will not work properly.
 
-Use the [`deferred_actions`](DeferredActionsProxy::deferred_actions) method for deferred world mutation.
+Use the [`deferred_actions`](DeferredActionsProxy::deferred_actions) method
+when modifying actions inside the trait.
 
 ```rust,no_run
 # use bevy_ecs::{schedule::States, prelude::*};
@@ -157,6 +155,11 @@ impl<S: States> Action for SetStateAction<S> {
         world.deferred_actions(agent).custom(move |w: &mut World| {
             w.actions(agent).next();
         });
+
+        // Note that calling next() is not required in this case,
+        // but useful when you want to advance the action queue more quickly.
+        // Simply returning true in is_finished is enough.
+        // By default, the action queue will then advance at the end of the frame.
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
