@@ -150,6 +150,7 @@ Each example can be run with `cargo run --example <example>`.
 | `basic` | Shows the basic usage of the library by adding some actions and then quitting the app. |
 | `repeat` | Shows how to add actions that repeat `n` times and forever. |
 | `parallel` | Shows how to add a collection of actions that run in parallel. |
+| `custom` | Shows how to use the plugin with two different schedules. |
 
 ## Compatibility
 

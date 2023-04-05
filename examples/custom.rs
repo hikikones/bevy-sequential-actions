@@ -50,9 +50,9 @@ fn setup(mut commands: Commands) {
         .add(PrintForeverAction("Update"));
 
     // Use custom marker for custom schedule
-    let agent_frame = commands.spawn(ActionsBundle::<CustomMarker>::new()).id();
+    let agent_custom = commands.spawn(ActionsBundle::<CustomMarker>::new()).id();
     commands
-        .actions(agent_frame)
+        .actions(agent_custom)
         .add(PrintForeverAction("\nCustom\n"));
 }
 
