@@ -21,7 +21,7 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugin(SequentialActionsPlugin)
+        .add_plugin(SequentialActionsPlugin::default())
         .run();
 }
 ```
@@ -50,7 +50,7 @@ fn setup(mut commands: Commands) {
 #   let action_c = EmptyAction;
 #   let action_d = EmptyAction;
 #
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    let agent = commands.spawn(ActionsBundle::default()).id();
     commands
         .actions(agent)
         .add(action_a)
