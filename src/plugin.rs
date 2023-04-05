@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 use bevy_app::{App, CoreSet, Plugin};
 use bevy_ecs::schedule::SystemConfigs;
 
@@ -43,8 +41,7 @@ impl SequentialActionsPlugin {
     /// }
     /// ```
     pub fn get_systems() -> SystemConfigs {
-        todo!()
-        // (check_actions,).into_configs()
+        (check_actions,).into_configs()
     }
 }
 
@@ -59,7 +56,9 @@ fn check_actions(action_q: Query<(Entity, &CurrentAction)>, world: &World, mut c
     for (agent, current_action) in action_q.iter() {
         if let Some(action) = &current_action.0 {
             if action.is_finished(agent, world) {
-                //todo
+                commands.add(move |world: &mut World| {
+                    world.stop_action(agent, StopReason::Finished);
+                });
             }
         }
     }

@@ -206,7 +206,7 @@ impl ActionsBundle {
 }
 
 /// The queue order for an [`Action`] to be added.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum AddOrder {
     /// An [`action`](Action) is added to the back of the queue.
     Back,
@@ -215,7 +215,7 @@ pub enum AddOrder {
 }
 
 /// The reason why an [`Action`] was stopped.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum StopReason {
     /// The [`action`](Action) was finished.
     Finished,
