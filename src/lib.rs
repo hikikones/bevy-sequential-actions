@@ -185,7 +185,7 @@ pub use plugin::*;
 pub use traits::*;
 pub use world::*;
 
-/// A boxed action.
+/// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
 /// The component bundle that all entities with actions must have.
@@ -251,24 +251,3 @@ struct CurrentAction(Option<BoxedAction>);
 
 #[derive(Default, Component, Deref, DerefMut)]
 struct ActionQueue(VecDeque<BoxedAction>);
-
-impl ActionQueue {
-    fn push(&mut self, order: AddOrder, action: BoxedAction) {
-        match order {
-            AddOrder::Back => self.0.push_back(action),
-            AddOrder::Front => self.0.push_front(action),
-        }
-    }
-}
-
-// #[derive(Component)]
-// struct ActionAgent(Entity);
-
-// #[derive(Component, Deref)]
-// struct ActionWrapper(BoxedAction);
-
-// #[derive(Bundle)]
-// struct ActionBundle {
-//     agent: ActionAgent,
-//     action: ActionWrapper,
-// }

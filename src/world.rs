@@ -224,7 +224,10 @@ impl WorldActionsExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, mut action: BoxedAction) {
         action.on_add(agent, self);
 
-        self.action_queue(agent).push(config.order, action);
+        match config.order {
+            AddOrder::Back => self.action_queue(agent).push_back(action),
+            AddOrder::Front => self.action_queue(agent).push_front(action),
+        }
 
         if config.start && !self.has_current_action(agent) {
             self.start_next_action(agent);
