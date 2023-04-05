@@ -3,17 +3,20 @@ use crate::*;
 /// The trait that all actions must implement.
 #[allow(unused_variables)]
 pub trait Action: Send + Sync + 'static {
+    /// Advances the action queue when returning `true`.
+    /// By default, this happens in [`CoreSet::Last`](bevy_app::CoreSet::Last).
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
+
+    /// Called when an action is added to the queue.
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
+
+    /// Called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World);
+
+    /// Called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
-    // fn on_finish(&mut self, agent: Entity, world: &mut World);
-    // fn on_cancel(&mut self, agent: Entity, world: &mut World) {
-    //     self.on_finish(agent, world);
-    // }
-    // fn on_pause(&mut self, agent: Entity, world: &mut World) {
-    //     self.on_finish(agent, world);
-    // }
+
+    /// Called when an action is removed from the queue.
     fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}
 }
 

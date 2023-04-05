@@ -1,12 +1,18 @@
 /// Helper macro for creating a collection of boxed actions.
 ///
 /// ```rust,no_run
-/// # use bevy::prelude::*;
+/// # use bevy_ecs::prelude::*;
 /// # use bevy_sequential_actions::*;
-/// # use shared::actions::QuitAction;
 /// #
-/// # let action_a = QuitAction;
-/// # let action_b = QuitAction;
+/// # struct EmptyAction;
+/// # impl Action for EmptyAction {
+/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+/// #   fn on_start(&mut self, _a: Entity, _w: &mut World) {}
+/// #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
+/// # }
+/// #
+/// # let action_a = EmptyAction;
+/// # let action_b = EmptyAction;
 /// #
 /// let actions: std::array::IntoIter<Box<dyn Action>, 3> = actions![
 ///         action_a,

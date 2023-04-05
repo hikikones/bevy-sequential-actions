@@ -216,9 +216,6 @@ pub(super) trait WorldActionsExt {
     fn execute_actions(&mut self, agent: Entity);
     fn next_action(&mut self, agent: Entity);
     fn stop_action(&mut self, agent: Entity, reason: StopReason);
-    // fn finish_action(&mut self, agent: Entity);
-    // fn cancel_action(&mut self, agent: Entity);
-    // fn pause_action(&mut self, agent: Entity);
     fn skip_action(&mut self, agent: Entity);
     fn clear_actions(&mut self, agent: Entity);
 }
@@ -289,28 +286,6 @@ impl WorldActionsExt for World {
             }
         }
     }
-
-    // fn finish_action(&mut self, agent: Entity) {
-    //     if let Some(mut action) = self.take_current_action(agent) {
-    //         action.on_finish(agent, self);
-    //         action.on_remove(agent, self);
-    //     }
-
-    //     self.start_next_action(agent);
-    // }
-
-    // fn cancel_action(&mut self, agent: Entity) {
-    //     if let Some(mut action) = self.take_current_action(agent) {
-    //         action.on_cancel(agent, self);
-    //         action.on_remove(agent, self);
-    //     }
-    // }
-
-    // fn pause_action(&mut self, agent: Entity) {
-    //     if let Some(mut action) = self.take_current_action(agent) {
-    //         action.on_pause(agent, self);
-    //     }
-    // }
 
     fn skip_action(&mut self, agent: Entity) {
         if let Some(action) = self.pop_next_action(agent) {

@@ -10,12 +10,12 @@ use crate::*;
 /// If you want to schedule the systems yourself, see [`get_systems`](Self::get_systems).
 ///
 /// ```rust,no_run
-/// use bevy::prelude::*;
+/// # use bevy_ecs::prelude::*;
+/// # use bevy_app::prelude::*;
 /// use bevy_sequential_actions::*;
 ///
 /// fn main() {
 ///     App::new()
-///         .add_plugins(DefaultPlugins)
 ///         .add_plugin(SequentialActionsPlugin)
 ///         .run();
 /// }
@@ -30,12 +30,12 @@ impl SequentialActionsPlugin {
     /// Useful if you want to schedule the systems yourself.
     ///
     /// ```rust,no_run
-    /// use bevy::prelude::*;
+    /// use bevy_ecs::prelude::*;
+    /// use bevy_app::prelude::*;
     /// use bevy_sequential_actions::*;
     ///
     /// fn main() {
     ///     App::new()
-    ///         .add_plugins(DefaultPlugins)
     ///         .add_systems(SequentialActionsPlugin::get_systems().in_base_set(CoreSet::Last))
     ///         .run();
     /// }
@@ -63,41 +63,3 @@ fn check_actions(action_q: Query<(Entity, &CurrentAction)>, world: &World, mut c
         }
     }
 }
-
-// fn check_actions(action_q: Query<(Entity, &ActionWrapper, &ActionAgent)>, mut commands: Commands) {
-//     for (entity, action, agent) in action_q.iter() {
-//         if
-//     }
-// }
-
-// TODO
-
-// fn check_actions(
-//     mut action_q: Query<(Entity, &CurrentAction, &mut ActionFinished), Changed<ActionFinished>>,
-//     mut commands: Commands,
-// ) {
-//     for (agent, current_action, mut finished) in action_q.iter_mut() {
-//         if let Some((current_action, _)) = &current_action.0 {
-//             let finished_count = finished.total();
-//             let active_count = current_action.len();
-
-//             match finished_count.cmp(&active_count) {
-//                 Ordering::Less => {
-//                     finished.reset_count = 0;
-//                 }
-//                 Ordering::Equal => {
-//                     commands.add(move |world: &mut World| {
-//                         world.finish_action(agent);
-//                     });
-//                 }
-//                 Ordering::Greater => {
-//                     panic!(
-//                         "Finished actions exceeds active. \
-//                         Entity {agent:?} has {active_count} active action(s), \
-//                         but a total of {finished_count} action(s) have been confirmed finished."
-//                     );
-//                 }
-//             }
-//         }
-//     }
-// }

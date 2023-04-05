@@ -15,12 +15,12 @@ the next action will start and so on until the queue is empty.
 In order for everything to work, the [`SequentialActionsPlugin`] must be added to your [`App`](bevy_app::App).
 
 ```rust,no_run
-use bevy::prelude::*;
+# use bevy_ecs::prelude::*;
+# use bevy_app::prelude::*;
 use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
         .add_plugin(SequentialActionsPlugin)
         .run();
 }
@@ -34,25 +34,30 @@ An entity with actions is referred to as an `agent`.
 See the [`ModifyActions`] trait for available methods.
 
 ```rust,no_run
-# use bevy::prelude::*;
+# use bevy_ecs::prelude::*;
 # use bevy_sequential_actions::*;
-# use shared::actions::QuitAction;
 #
+# struct EmptyAction;
+# impl Action for EmptyAction {
+#   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+#   fn on_start(&mut self, _a: Entity, _w: &mut World) {}
+#   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
+# }
+
 fn setup(mut commands: Commands) {
-#   let action_a = QuitAction;
-#   let action_b = QuitAction;
-#   let action_c = QuitAction;
-#   let action_d = QuitAction;
+#   let action_a = EmptyAction;
+#   let action_b = EmptyAction;
+#   let action_c = EmptyAction;
+#   let action_d = EmptyAction;
 #
     let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         .actions(agent)
         .add(action_a)
-        .add_parallel(actions![
+        .add_many(actions![
             action_b,
             action_c
         ])
-        .repeat(Repeat::Forever)
         .order(AddOrder::Back)
         .add(action_d)
         // ...
@@ -76,48 +81,48 @@ There are two ways of doing this:
 * Calling the [`next`](ModifyActions::next) method on an `agent`.
   This simply advances the queue, and is useful for short one-at-a-time actions.
 
-A simple wait action follows.
+A simple countdown action follows.
 
 ```rust,no_run
-# use bevy::prelude::*;
+# use bevy_ecs::prelude::*;
 # use bevy_sequential_actions::*;
 #
-pub struct WaitAction {
-    duration: f32, // Seconds
-    current: Option<f32>, // None
+pub struct CountdownAction {
+    count: i32,
+    current: Option<i32>,
 }
 
-impl Action for WaitAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
-        // Take current duration (if paused), or use full duration
-        let duration = self.current.take().unwrap_or(self.duration);
+impl Action for CountdownAction {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        // Determine if countdown has reached zero
+        world.get::<Count>(agent).unwrap().0 <= 0
+    }
 
-        // Run the wait system on the agent
-        world.entity_mut(agent).insert(Wait(duration));
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
+        // Take current count (if paused), or use full count
+        let count = self.current.take().unwrap_or(self.count);
+
+        // Run the countdown system on the agent
+        world.entity_mut(agent).insert(Count(count));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        // Remove the wait component from the agent
-        let wait = world.entity_mut(agent).take::<Wait>();
+        // Take the count component from the agent
+        let count = world.entity_mut(agent).take::<Count>();
 
-        // Store current duration when paused
+        // Store current count when paused
         if let StopReason::Paused = reason {
-            self.current = Some(wait.unwrap().0);
+            self.current = Some(count.unwrap().0);
         }
     }
 }
 
 #[derive(Component)]
-struct Wait(f32);
+struct Count(i32);
 
-fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
-    for (mut wait, mut finished) in wait_q.iter_mut() {
-        wait.0 -= time.delta_seconds();
-
-        // Confirm finished state every frame
-        if wait.0 <= 0.0 {
-            finished.confirm_and_reset();
-        }
+fn wait_system(mut countdown_q: Query<&mut Count>) {
+    for mut countdown in &mut countdown_q {
+        countdown.0 -= 1;
     }
 }
 ```
@@ -132,7 +137,7 @@ the logic for advancing the action queue will not work properly.
 Use the [`deferred_actions`](DeferredActionsProxy::deferred_actions) method for deferred world mutation.
 
 ```rust,no_run
-# use bevy::{ecs::schedule::States, prelude::*};
+# use bevy_ecs::{schedule::States, prelude::*};
 # use bevy_sequential_actions::*;
 #
 pub struct SetStateAction<S: States>(S);
@@ -152,12 +157,10 @@ impl<S: States> Action for SetStateAction<S> {
         world.deferred_actions(agent).custom(move |w: &mut World| {
             w.actions(agent).next();
         });
-
-        // Also good. By default, the action queue will advance at the end of the frame.
-        world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn is_finished(&self, agent: Entity, world: &World) -> bool { true }
 }
 ```
 */
