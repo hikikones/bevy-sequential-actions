@@ -257,9 +257,6 @@ impl AddConfig {
     }
 }
 
-#[derive(Default, Component)]
-struct ActionMarker;
-
 #[derive(Default, Component, Deref, DerefMut)]
 struct CurrentAction(Option<BoxedAction>);
 
