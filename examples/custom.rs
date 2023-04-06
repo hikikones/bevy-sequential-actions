@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy_app::{prelude::*, ScheduleRunnerPlugin, ScheduleRunnerSettings};
+use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin, ScheduleRunnerSettings};
 use bevy_ecs::{prelude::*, schedule::ScheduleLabel};
 
 use bevy_sequential_actions::*;
@@ -40,20 +40,24 @@ fn run_custom_schedule(world: &mut World, mut frame_count: Local<u32>) {
     if *frame_count % 10 == 0 {
         world.run_schedule(CustomSchedule);
     }
+
+    if *frame_count == 30 {
+        world.send_event(AppExit);
+    }
 }
 
 fn setup(mut commands: Commands) {
     // Use default bundle for default schedule
-    let agent_update = commands.spawn(ActionsBundle::default()).id();
+    let agent_default = commands.spawn(ActionsBundle::default()).id();
     commands
-        .actions(agent_update)
-        .add(PrintForeverAction("Update"));
+        .actions(agent_default)
+        .add(PrintForeverAction("Default: every frame in CoreSet::Last"));
 
     // Use custom marker for custom schedule
     let agent_custom = commands.spawn(ActionsBundle::<CustomMarker>::new()).id();
-    commands
-        .actions(agent_custom)
-        .add(PrintForeverAction("\nCustom\n"));
+    commands.actions(agent_custom).add(PrintForeverAction(
+        "\nCustom: every 10th frame in CoreSet::Update\n",
+    ));
 }
 
 struct PrintForeverAction(&'static str);
