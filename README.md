@@ -148,7 +148,7 @@ Each example can be run with `cargo run --example <example>`.
 | Example | Description |
 | ------- | ----------- |
 | `basic` | Shows the basic usage of the library. |
-| `repeat` | Shows how to create repeatable actions. |
+| `repeat` | Shows how to create actions that repeat. |
 | `parallel` | Shows how to create actions that run in parallel. |
 | `custom` | Shows how to use the plugin with two different schedules. |
 
