@@ -15,7 +15,7 @@ fn main() {
         // Add default plugin for default schedule
         .add_plugin(SequentialActionsPlugin::default())
         // Add custom plugin with marker component
-        .add_plugin(SequentialActionsPlugin::<CustomMarker>::custom(
+        .add_plugin(SequentialActionsPlugin::<CustomMarker>::new(
             |app: &mut App| {
                 app.add_systems(
                     SequentialActionsPlugin::<CustomMarker>::get_systems()

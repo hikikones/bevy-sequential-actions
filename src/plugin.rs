@@ -10,7 +10,7 @@ use crate::*;
 /// This plugin adds the necessary systems for advancing the action queue for each `agent`.
 /// By default, the systems will be added to [`CoreSet::Last`].
 ///
-/// If you want to customize the scheduling, use the [`custom`](Self::custom) constructor.
+/// If you want to customize the scheduling, see [`new`](Self::new).
 ///
 /// ```rust,no_run
 /// # use bevy_ecs::prelude::*;
@@ -24,7 +24,7 @@ use crate::*;
 /// }
 /// ```
 pub struct SequentialActionsPlugin<T: AgentMarker = DefaultAgentMarker> {
-    custom: Box<dyn Fn(&mut App) + Send + Sync>,
+    builder: Box<dyn Fn(&mut App) + Send + Sync>,
     _marker: PhantomData<T>,
 }
 
@@ -35,7 +35,7 @@ impl<T> AgentMarker for T where T: Default + Component {}
 
 impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
     fn default() -> Self {
-        Self::custom(|app: &mut App| {
+        Self::new(|app: &mut App| {
             app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
         })
     }
@@ -53,7 +53,7 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     /// fn main() {
     ///     App::new()
     ///         .add_schedule(CustomSchedule, Schedule::new())
-    ///         .add_plugin(SequentialActionsPlugin::<CustomMarker>::custom(
+    ///         .add_plugin(SequentialActionsPlugin::<CustomMarker>::new(
     ///             |app: &mut App| {
     ///                 app.add_systems(
     ///                     SequentialActionsPlugin::<CustomMarker>::get_systems()
@@ -81,9 +81,9 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     ///     // ...
     /// }
     /// ```
-    pub fn custom(f: impl Fn(&mut App) + Send + Sync + 'static) -> Self {
+    pub fn new(f: impl Fn(&mut App) + Send + Sync + 'static) -> Self {
         Self {
-            custom: Box::new(f),
+            builder: Box::new(f),
             _marker: PhantomData,
         }
     }
@@ -97,7 +97,7 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
 impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
         app.init_resource::<DeferredActions>();
-        (self.custom)(app);
+        (self.builder)(app);
     }
 }
 
