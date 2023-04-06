@@ -217,11 +217,14 @@ impl<T: AgentMarker> ActionsBundle<T> {
     }
 }
 
-impl<T: AgentMarker> From<Vec<BoxedAction>> for ActionsBundle<T> {
-    fn from(actions: Vec<BoxedAction>) -> Self {
+impl<I, T: AgentMarker> From<I> for ActionsBundle<T>
+where
+    I: IntoIterator<Item = BoxedAction>,
+{
+    fn from(iter: I) -> Self {
         Self {
             current: CurrentAction(None),
-            queue: ActionQueue(VecDeque::from(actions)),
+            queue: ActionQueue(VecDeque::from_iter(iter)),
             marker: T::default(),
         }
     }
