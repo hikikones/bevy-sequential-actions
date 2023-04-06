@@ -217,6 +217,16 @@ impl<T: AgentMarker> ActionsBundle<T> {
     }
 }
 
+impl<T: AgentMarker> From<Vec<BoxedAction>> for ActionsBundle<T> {
+    fn from(actions: Vec<BoxedAction>) -> Self {
+        Self {
+            current: CurrentAction(None),
+            queue: ActionQueue(VecDeque::from(actions)),
+            marker: T::default(),
+        }
+    }
+}
+
 /// The default marker component used in [`SequentialActionsPlugin`]
 /// and for entities with [`ActionsBundle`].
 #[derive(Default, Component)]
