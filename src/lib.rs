@@ -269,9 +269,11 @@ impl AddConfig {
     }
 }
 
+/// The current action for an `agent`.
 #[derive(Default, Component)]
 pub struct CurrentAction(Option<BoxedAction>);
 
+/// The action queue for an `agent`.
 #[derive(Default, Component)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
