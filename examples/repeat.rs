@@ -1,4 +1,4 @@
-use bevy_app::{prelude::*, ScheduleRunnerPlugin};
+use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
 use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
@@ -43,6 +43,9 @@ impl Action for RepeatAction {
 
     fn on_remove(mut self: Box<Self>, agent: Entity, world: &mut World) {
         if self.repeat_count == 0 {
+            if world.get::<ActionQueue>(agent).unwrap().is_empty() {
+                world.send_event(AppExit);
+            }
             return;
         }
 
