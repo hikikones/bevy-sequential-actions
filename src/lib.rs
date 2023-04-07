@@ -271,7 +271,7 @@ impl AddConfig {
 }
 
 #[derive(Default, Component, Deref, DerefMut)]
-struct CurrentAction(Option<BoxedAction>);
+pub struct CurrentAction(Option<BoxedAction>);
 
 #[derive(Default, Component, Deref, DerefMut)]
-struct ActionQueue(VecDeque<BoxedAction>);
+pub struct ActionQueue(VecDeque<BoxedAction>);
