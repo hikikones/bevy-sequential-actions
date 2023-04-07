@@ -150,7 +150,7 @@ Each example can be run with `cargo run --example <example>`.
 | `basic` | Shows the basic usage of the library. |
 | `repeat` | Shows how to create an action that repeats. |
 | `parallel` | Shows how to create actions that run in parallel. |
-| `custom` | Shows how to use the plugin with two different schedules. |
+| `schedule` | Shows how to add and use the plugin with two different schedules. |
 
 ## Compatibility
 

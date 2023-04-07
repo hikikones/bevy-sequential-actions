@@ -49,14 +49,14 @@ fn run_custom_schedule(world: &mut World, mut frame_count: Local<u32>) {
 fn setup(mut commands: Commands) {
     // Use default bundle for default schedule
     let agent_default = commands.spawn(ActionsBundle::default()).id();
-    commands
-        .actions(agent_default)
-        .add(PrintForeverAction("Default: every frame in CoreSet::Last"));
+    commands.actions(agent_default).add(PrintForeverAction(
+        "Default: is_finished is called every frame in CoreSet::Last",
+    ));
 
     // Use custom marker for custom schedule
     let agent_custom = commands.spawn(ActionsBundle::<CustomMarker>::new()).id();
     commands.actions(agent_custom).add(PrintForeverAction(
-        "\nCustom: every 10th frame in CoreSet::Update\n",
+        "\nCustom: is_finished is called every 10th frame in CoreSet::Update\n",
     ));
 }
 
