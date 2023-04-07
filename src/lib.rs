@@ -58,7 +58,7 @@ fn setup(mut commands: Commands) {
             action_b,
             action_c
         ])
-        .order(AddOrder::Back)
+        .order(AddOrder::Front)
         .add(action_d)
         // ...
 #       ;
