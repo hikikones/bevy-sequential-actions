@@ -193,9 +193,9 @@ pub type BoxedAction = Box<dyn Action>;
 /// The component bundle that all entities with actions must have.
 #[derive(Bundle)]
 pub struct ActionsBundle<T: AgentMarker = DefaultAgentMarker> {
+    marker: T,
     current: CurrentAction,
     queue: ActionQueue,
-    marker: T,
 }
 
 impl Default for ActionsBundle<DefaultAgentMarker> {
@@ -209,9 +209,9 @@ impl<T: AgentMarker> ActionsBundle<T> {
     /// that all entities with actions must have.
     pub fn new() -> Self {
         Self {
+            marker: T::default(),
             current: CurrentAction(None),
             queue: ActionQueue(VecDeque::new()),
-            marker: T::default(),
         }
     }
 }
@@ -222,9 +222,9 @@ where
 {
     fn from(iter: I) -> Self {
         Self {
+            marker: T::default(),
             current: CurrentAction(None),
             queue: ActionQueue(VecDeque::from_iter(iter)),
-            marker: T::default(),
         }
     }
 }
@@ -233,6 +233,30 @@ where
 /// and for entities with [`ActionsBundle`].
 #[derive(Default, Component)]
 pub struct DefaultAgentMarker;
+
+/// The current action for an `agent`.
+#[derive(Component)]
+pub struct CurrentAction(Option<BoxedAction>);
+
+impl Deref for CurrentAction {
+    type Target = Option<BoxedAction>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// The action queue for an `agent`.
+#[derive(Component)]
+pub struct ActionQueue(VecDeque<BoxedAction>);
+
+impl Deref for ActionQueue {
+    type Target = VecDeque<BoxedAction>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// The queue order for an [`Action`] to be added.
 #[derive(Debug, Clone, Copy)]
@@ -266,29 +290,5 @@ impl AddConfig {
             start: true,
             order: AddOrder::Back,
         }
-    }
-}
-
-/// The current action for an `agent`.
-#[derive(Default, Component)]
-pub struct CurrentAction(Option<BoxedAction>);
-
-/// The action queue for an `agent`.
-#[derive(Default, Component)]
-pub struct ActionQueue(VecDeque<BoxedAction>);
-
-impl Deref for CurrentAction {
-    type Target = Option<BoxedAction>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Deref for ActionQueue {
-    type Target = VecDeque<BoxedAction>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
