@@ -266,20 +266,20 @@ impl Deref for ActionQueue {
 /// The queue order for an [`Action`] to be added.
 #[derive(Debug, Clone, Copy)]
 pub enum AddOrder {
-    /// An [`action`](Action) is added to the back of the queue.
+    /// An action is added to the back of the queue.
     Back,
-    /// An [`action`](Action) is added to the front of the queue.
+    /// An action is added to the front of the queue.
     Front,
 }
 
 /// The reason why an [`Action`] was stopped.
 #[derive(Debug, Clone, Copy)]
 pub enum StopReason {
-    /// The [`action`](Action) was finished.
+    /// The action was finished.
     Finished,
-    /// The [`action`](Action) was canceled.
+    /// The action was canceled.
     Canceled,
-    /// The [`action`](Action) was paused.
+    /// The action was paused.
     Paused,
 }
 
