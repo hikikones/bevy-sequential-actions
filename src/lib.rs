@@ -234,6 +234,7 @@ where
 pub struct DefaultAgentMarker;
 
 /// The current action for an `agent`.
+/// Part of [`ActionsBundle`].
 ///
 /// Read-only access is provided by [`Deref`];
 #[derive(Component)]
@@ -248,6 +249,7 @@ impl Deref for CurrentAction {
 }
 
 /// The action queue for an `agent`.
+/// Part of [`ActionsBundle`].
 ///
 /// Read-only access is provided by [`Deref`];
 #[derive(Component)]
