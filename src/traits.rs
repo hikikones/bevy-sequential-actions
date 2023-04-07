@@ -4,7 +4,8 @@ use crate::*;
 #[allow(unused_variables)]
 pub trait Action: Send + Sync + 'static {
     /// Advances the action queue when returning `true`.
-    /// By default, this happens in [`CoreSet::Last`](bevy_app::CoreSet::Last).
+    ///
+    /// By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
     /// Called when an action is added to the queue.
