@@ -14,4 +14,3 @@ readme = "README.md"
 [dependencies]
 bevy_ecs = "0.10"
 bevy_app = "0.10"
-bevy_derive = "0.10"

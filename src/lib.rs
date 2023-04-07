@@ -168,9 +168,8 @@ impl<S: States> Action for SetStateAction<S> {
 ```
 */
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, ops::Deref};
 
-use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 
 mod commands;
@@ -270,8 +269,24 @@ impl AddConfig {
     }
 }
 
-#[derive(Default, Component, Deref, DerefMut)]
+#[derive(Default, Component)]
 pub struct CurrentAction(Option<BoxedAction>);
 
-#[derive(Default, Component, Deref, DerefMut)]
+#[derive(Default, Component)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
+
+impl Deref for CurrentAction {
+    type Target = Option<BoxedAction>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Deref for ActionQueue {
+    type Target = VecDeque<BoxedAction>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
