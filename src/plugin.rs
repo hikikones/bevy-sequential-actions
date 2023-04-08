@@ -107,7 +107,7 @@ fn check_actions<T: AgentMarker>(
     mut commands: Commands,
 ) {
     for (agent, current_action) in action_q.iter() {
-        if let Some(action) = &current_action.0 {
+        if let Some(action) = current_action.as_ref() {
             if action.is_finished(agent, world) {
                 commands.add(move |world: &mut World| {
                     world.stop_current_action(agent, StopReason::Finished);

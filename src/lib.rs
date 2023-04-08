@@ -168,8 +168,9 @@ impl<S: States> Action for SetStateAction<S> {
 ```
 */
 
-use std::{collections::VecDeque, ops::Deref};
+use std::collections::VecDeque;
 
+use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 
 mod commands;
@@ -236,32 +237,16 @@ pub struct DefaultAgentMarker;
 /// The current action for an `agent`.
 /// Part of [`ActionsBundle`].
 ///
-/// Read-only access is provided by [`Deref`].
-#[derive(Component)]
+/// Note that you are not supposed to use this directly.
+#[derive(Component, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
-
-impl Deref for CurrentAction {
-    type Target = Option<BoxedAction>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 /// The action queue for an `agent`.
 /// Part of [`ActionsBundle`].
 ///
-/// Read-only access is provided by [`Deref`].
-#[derive(Component)]
+/// Note that you are not supposed to use this directly.
+#[derive(Component, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
-
-impl Deref for ActionQueue {
-    type Target = VecDeque<BoxedAction>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 /// The queue order for an [`Action`] to be added.
 #[derive(Debug, Clone, Copy)]

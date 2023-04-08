@@ -79,7 +79,7 @@ impl ModifyActions for AgentActions<'_> {
     }
 }
 
-#[derive(Default, Resource)]
+#[derive(Default, Resource, Deref, DerefMut)]
 pub(super) struct DeferredActions(CommandQueue);
 
 impl<'w> DeferredActionsProxy<'w> for World {
@@ -227,8 +227,8 @@ impl WorldActionsExt for World {
         action.on_add(agent, self);
 
         match config.order {
-            AddOrder::Back => self.action_queue(agent).0.push_back(action),
-            AddOrder::Front => self.action_queue(agent).0.push_front(action),
+            AddOrder::Back => self.action_queue(agent).push_back(action),
+            AddOrder::Front => self.action_queue(agent).push_front(action),
         }
 
         if config.start && !self.has_current_action(agent) {
@@ -246,13 +246,13 @@ impl WorldActionsExt for World {
             AddOrder::Back => {
                 for mut action in actions {
                     action.on_add(agent, self);
-                    self.action_queue(agent).0.push_back(action);
+                    self.action_queue(agent).push_back(action);
                 }
             }
             AddOrder::Front => {
                 for mut action in actions.rev() {
                     action.on_add(agent, self);
-                    self.action_queue(agent).0.push_front(action);
+                    self.action_queue(agent).push_front(action);
                 }
             }
         }
@@ -286,7 +286,7 @@ impl WorldActionsExt for World {
                     action.on_remove(agent, self);
                 }
                 StopReason::Paused => {
-                    self.action_queue(agent).0.push_front(action);
+                    self.action_queue(agent).push_front(action);
                 }
             }
         }
@@ -329,11 +329,11 @@ impl WorldHelperExt for World {
     }
 
     fn take_current_action(&mut self, agent: Entity) -> Option<BoxedAction> {
-        self.get_mut::<CurrentAction>(agent).unwrap().0.take()
+        self.get_mut::<CurrentAction>(agent).unwrap().take()
     }
 
     fn pop_next_action(&mut self, agent: Entity) -> Option<BoxedAction> {
-        self.action_queue(agent).0.pop_front()
+        self.action_queue(agent).pop_front()
     }
 
     fn current_action(&mut self, agent: Entity) -> Mut<CurrentAction> {
@@ -345,7 +345,7 @@ impl WorldHelperExt for World {
     }
 
     fn push_deferred_action(&mut self, command: impl Command) {
-        self.resource_mut::<DeferredActions>().0.push(command);
+        self.resource_mut::<DeferredActions>().push(command);
     }
 
     fn apply_deferred_actions(&mut self) {
