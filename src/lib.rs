@@ -221,11 +221,11 @@ impl<I, T: AgentMarker> From<I> for ActionsBundle<T>
 where
     I: IntoIterator<Item = BoxedAction>,
 {
-    fn from(iter: I) -> Self {
+    fn from(actions: I) -> Self {
         Self {
             marker: T::default(),
             current: CurrentAction(None),
-            queue: ActionQueue(VecDeque::from_iter(iter)),
+            queue: ActionQueue(VecDeque::from_iter(actions)),
         }
     }
 }
@@ -249,9 +249,10 @@ pub struct CurrentAction(Option<BoxedAction>);
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
 /// The queue order for an [`Action`] to be added.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum AddOrder {
     /// An action is added to the back of the queue.
+    #[default]
     Back,
     /// An action is added to the front of the queue.
     Front,
