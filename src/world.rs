@@ -301,8 +301,7 @@ impl WorldActionsExt for World {
     fn clear_actions(&mut self, agent: Entity) {
         self.stop_current_action(agent, StopReason::Canceled);
 
-        let actions = std::mem::take(&mut self.action_queue(agent).0);
-        for action in actions {
+        for action in self.action_queue(agent).drain(..).collect::<Vec<_>>() {
             action.on_remove(agent, self);
         }
     }
