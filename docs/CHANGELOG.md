@@ -2,10 +2,12 @@
 
 ## Version 0.8.0-dev
 
+- [Expose `ActionQueue` and `CurrentAction`][82]
 - [Add generic marker component to plugin and bundle][81]
 - [Rework actions to be both more composable and simpler][80]
 - [Replace `ActionCommands` with `deferred_actions` method][79]
 
+[82]: https://github.com/hikikones/bevy-sequential-actions/pull/82
 [81]: https://github.com/hikikones/bevy-sequential-actions/pull/81
 [80]: https://github.com/hikikones/bevy-sequential-actions/pull/80
 [79]: https://github.com/hikikones/bevy-sequential-actions/pull/79
