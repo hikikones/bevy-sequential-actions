@@ -23,30 +23,50 @@ criterion_group!(benches, my_bench);
 criterion_main!(benches);
 
 fn my_bench(c: &mut Criterion) {
-    let mut app = App::new();
-    app.add_plugin(SequentialActionsPlugin::default())
-        .add_startup_system(setup)
-        .add_system(countdown);
+    // let mut app = App::new();
+    // app.add_plugin(SequentialActionsPlugin::default())
+    //     .add_startup_system(setup)
+    //     .add_system(countdown);
 
     // for i in 0..1000 {
     //     let agent = app.world.spawn(ActionsBundle::default()).id();
     //     app.world.actions(agent).add(CountdownAction::new(i));
     // }
 
-    let mut group = c.benchmark_group("many_countdowns");
-    group.significance_level(0.1).sample_size(1000);
-    group.bench_function("update", |b| b.iter(|| black_box(app.update())));
-    group.finish();
+    // let mut group = c.benchmark_group("many_countdowns");
+    // group.significance_level(0.1).sample_size(1000);
+    // group.bench_function("update", |b| b.iter(|| black_box(app.update())));
+    // group.finish();
 
-    // c.bench_function("countdown", |b| b.iter(|| black_box(app.update())));
+    c.bench_function("many_countdowns", |b| {
+        b.iter(|| black_box(many_countdowns()))
+    });
 }
 
-fn setup(mut commands: Commands) {
-    for i in 0..1000 {
-        let agent = commands.spawn(ActionsBundle::default()).id();
-        commands.actions(agent).add(CountdownAction::new(i));
+fn many_countdowns() {
+    const MAX: i32 = 100;
+
+    let mut app = App::new();
+    app.add_plugin(SequentialActionsPlugin::default())
+        .add_startup_system(|mut commands: Commands| {
+            for i in 0..MAX {
+                let agent = commands.spawn(ActionsBundle::default()).id();
+                commands.actions(agent).add(CountdownAction::new(i));
+            }
+        })
+        .add_system(countdown);
+
+    for _ in 0..MAX {
+        app.update();
     }
 }
+
+// fn setup(mut commands: Commands) {
+//     for i in 0..1000 {
+//         let agent = commands.spawn(ActionsBundle::default()).id();
+//         commands.actions(agent).add(CountdownAction::new(i));
+//     }
+// }
 
 struct CountdownAction {
     count: i32,
