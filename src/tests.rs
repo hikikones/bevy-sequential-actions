@@ -1,43 +1,18 @@
 use std::marker::PhantomData;
 
+use bevy_app::App;
+
 use crate::*;
 
-struct Ecs {
-    world: World,
-    update_schedule: Schedule,
-    check_actions_schedule: Schedule,
-}
+#[derive(Deref, DerefMut)]
+struct TestApp(App);
 
-impl Ecs {
+impl TestApp {
     fn new() -> Self {
-        let mut world = World::new();
-        world.init_resource::<DeferredActions>();
+        let mut app = App::new();
+        app.add_plugin(SequentialActionsPlugin::default());
 
-        let mut update_schedule = Schedule::default();
-        update_schedule.add_system(countdown);
-
-        let mut check_actions_schedule = Schedule::default();
-        check_actions_schedule
-            .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems());
-
-        Self {
-            world,
-            update_schedule,
-            check_actions_schedule,
-        }
-    }
-
-    fn run(&mut self) {
-        self.update_schedule.run(&mut self.world);
-        self.check_actions_schedule.run(&mut self.world);
-    }
-
-    fn _run_update_only(&mut self) {
-        self.update_schedule.run(&mut self.world);
-    }
-
-    fn _run_check_actions_only(&mut self) {
-        self.check_actions_schedule.run(&mut self.world);
+        Self(app)
     }
 
     fn spawn_agent(&mut self) -> Entity {
@@ -57,69 +32,25 @@ impl Ecs {
     }
 }
 
-struct CountdownAction {
-    count: i32,
-    entity: Option<Entity>,
-    current: Option<i32>,
-}
+struct TestAction(Option<Entity>);
 
-impl CountdownAction {
-    fn new(count: i32) -> Self {
-        Self {
-            count,
-            entity: None,
-            current: None,
-        }
-    }
-}
-
-impl Action for CountdownAction {
-    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
-        world.get::<Countdown>(self.entity.unwrap()).unwrap().0 <= 0
-    }
-
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
-        self.entity = Some(
-            world
-                .spawn((
-                    Countdown(self.current.take().unwrap_or(self.count)),
-                    Agent(agent),
-                ))
-                .id(),
-        );
-        world.entity_mut(agent).insert(Active);
-    }
-
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        world.entity_mut(agent).remove::<Active>();
-
-        let entity = self.entity.take().unwrap();
-
-        match reason {
-            StopReason::Finished => {
-                world.entity_mut(agent).insert(Finished);
-            }
-            StopReason::Canceled => {
-                world.entity_mut(agent).insert(Canceled);
-            }
-            StopReason::Paused => {
-                world.entity_mut(agent).insert(Paused);
-                self.current = Some(world.get::<Countdown>(entity).unwrap().0);
-            }
-        }
-
-        world.despawn(entity);
+impl TestAction {
+    const fn new() -> Self {
+        Self(None)
     }
 }
 
 #[derive(Component)]
-struct Countdown(i32);
+struct TestMarker;
 
 #[derive(Component)]
-struct Agent(Entity);
+struct Added;
 
 #[derive(Component)]
-struct Active;
+struct Started;
+
+#[derive(Component)]
+struct Stopped;
 
 #[derive(Component)]
 struct Finished;
@@ -130,280 +61,258 @@ struct Canceled;
 #[derive(Component)]
 struct Paused;
 
-fn countdown(mut countdown_q: Query<&mut Countdown>) {
-    for mut countdown in countdown_q.iter_mut() {
-        countdown.0 -= 1;
+#[derive(Component)]
+struct Removed;
+
+impl Action for TestAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, world: &mut World) {
+        world.entity_mut(self.0.unwrap()).insert(Started);
+    }
+
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+        let mut e = world.entity_mut(self.0.unwrap());
+        e.insert(Stopped);
+
+        match reason {
+            StopReason::Finished => e.insert(Finished),
+            StopReason::Canceled => e.insert(Canceled),
+            StopReason::Paused => e.insert(Paused),
+        };
+    }
+
+    fn on_add(&mut self, _agent: Entity, world: &mut World) {
+        self.0 = world.spawn((TestMarker, Added)).id().into();
+    }
+
+    fn on_remove(self: Box<Self>, _agent: Entity, world: &mut World) {
+        world.entity_mut(self.0.unwrap()).insert(Removed);
     }
 }
 
 #[test]
 fn add() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a: Entity = app.spawn_agent();
+    app.actions(a).start(false).add(TestAction::new());
 
-    ecs.actions(e).add(CountdownAction::new(0));
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).len() == 1);
 
-    assert!(ecs.current_action(e).is_some());
-    assert!(ecs.action_queue(e).len() == 0);
+    app.actions(a).start(true).add(TestAction::new());
 
-    ecs.actions(e).add(CountdownAction::new(0));
-
-    assert!(ecs.action_queue(e).len() == 1);
-
-    ecs.actions(e).add(CountdownAction::new(0));
-
-    assert!(ecs.action_queue(e).len() == 2);
+    assert!(app.current_action(a).is_some());
+    assert!(app.action_queue(a).len() == 1);
 }
 
 #[test]
-#[should_panic]
-fn add_panic() {
-    let mut ecs = Ecs::new();
-    let e = ecs.world.spawn_empty().id();
-    ecs.actions(e).add(CountdownAction::new(0));
-}
+fn add_many() {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+    app.actions(a)
+        .start(false)
+        .add_many(actions![TestAction::new(), TestAction::new()]);
 
-#[test]
-fn add_many_sequential() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).len() == 2);
 
-    ecs.actions(e).add_many(actions![
-        CountdownAction::new(0),
-        CountdownAction::new(0),
-        CountdownAction::new(0),
-    ]);
+    app.actions(a)
+        .start(true)
+        .add_many(actions![TestAction::new(), TestAction::new()]);
 
-    assert!(ecs.current_action(e).is_some());
-    assert!(ecs.action_queue(e).len() == 2);
-}
+    assert!(app.current_action(a).is_some());
+    assert!(app.action_queue(a).len() == 3);
 
-#[test]
-fn add_many_empty() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    app.actions(a).add_many(actions![]);
 
-    ecs.actions(e).add_many(actions![]);
-
-    assert!(ecs.current_action(e).is_none());
+    assert!(app.current_action(a).is_some());
+    assert!(app.action_queue(a).len() == 3);
 }
 
 #[test]
 fn next() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    ecs.actions(e).add(CountdownAction::new(0));
+    app.actions(a).add(TestAction::new());
 
-    assert!(ecs.world.entity(e).contains::<Active>());
-    assert!(!ecs.world.entity(e).contains::<Canceled>());
+    let e = app
+        .world
+        .query_filtered::<Entity, With<TestMarker>>()
+        .single(&app.world);
 
-    ecs.actions(e).next();
+    assert_eq!(app.world.entity(e).contains::<Started>(), true);
+    assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
 
-    assert!(!ecs.world.entity(e).contains::<Active>());
-    assert!(ecs.world.entity(e).contains::<Canceled>());
-}
+    app.actions(a).next();
 
-#[test]
-#[should_panic]
-fn next_panic() {
-    let mut ecs = Ecs::new();
-    let e = ecs.world.spawn_empty().id();
-    ecs.actions(e).next();
+    assert_eq!(app.world.entity(e).contains::<Started>(), true);
+    assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
 }
 
 #[test]
 fn finish() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    ecs.actions(e).add(CountdownAction::new(0));
+    app.actions(a).add(TestAction::new());
+    app.update();
 
-    assert!(ecs.world.entity(e).contains::<Active>());
-    assert!(!ecs.world.entity(e).contains::<Finished>());
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).is_empty());
 
-    ecs.run();
+    let e = app
+        .world
+        .query_filtered::<Entity, With<TestMarker>>()
+        .single(&app.world);
 
-    assert!(!ecs.world.entity(e).contains::<Active>());
-    assert!(ecs.world.entity(e).contains::<Finished>());
+    assert_eq!(app.world.entity(e).contains::<Finished>(), true);
+    assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
+    assert_eq!(app.world.entity(e).contains::<Paused>(), false);
 }
 
 #[test]
 fn cancel() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    ecs.actions(e).add(CountdownAction::new(0));
+    app.actions(a).add(TestAction::new()).cancel();
 
-    assert!(ecs.world.entity(e).contains::<Active>());
-    assert!(!ecs.world.entity(e).contains::<Canceled>());
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).is_empty());
 
-    ecs.actions(e).cancel();
+    let e = app
+        .world
+        .query_filtered::<Entity, With<TestMarker>>()
+        .single(&app.world);
 
-    assert!(!ecs.world.entity(e).contains::<Active>());
-    assert!(ecs.world.entity(e).contains::<Canceled>());
-}
-
-#[test]
-fn cancel_none() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
-
-    ecs.actions(e)
-        .add(CountdownAction::new(0))
-        .add(CountdownAction::new(0));
-
-    assert!(ecs.current_action(e).is_some());
-
-    ecs.actions(e).cancel();
-
-    assert!(ecs.current_action(e).is_none());
+    assert_eq!(app.world.entity(e).contains::<Finished>(), false);
+    assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
+    assert_eq!(app.world.entity(e).contains::<Paused>(), false);
 }
 
 #[test]
 fn pause() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    ecs.actions(e).add(CountdownAction::new(0));
+    app.actions(a).add(TestAction::new()).pause();
 
-    assert!(ecs.world.entity(e).contains::<Active>());
-    assert!(!ecs.world.entity(e).contains::<Paused>());
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).len() == 1);
 
-    ecs.actions(e).pause();
+    let e = app
+        .world
+        .query_filtered::<Entity, With<TestMarker>>()
+        .single(&app.world);
 
-    assert!(!ecs.world.entity(e).contains::<Active>());
-    assert!(ecs.world.entity(e).contains::<Paused>());
-}
-
-#[test]
-fn pause_none() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
-
-    ecs.actions(e)
-        .add(CountdownAction::new(0))
-        .add(CountdownAction::new(0));
-
-    assert!(ecs.current_action(e).is_some());
-
-    ecs.actions(e).pause();
-
-    assert!(ecs.current_action(e).is_none());
-}
-
-#[test]
-#[should_panic]
-fn pause_panic() {
-    let mut ecs = Ecs::new();
-    let e = ecs.world.spawn_empty().id();
-    ecs.actions(e).pause();
+    assert_eq!(app.world.entity(e).contains::<Finished>(), false);
+    assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
+    assert_eq!(app.world.entity(e).contains::<Paused>(), true);
 }
 
 #[test]
 fn skip() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    ecs.actions(e).start(false).add_many(actions![
-        CountdownAction::new(0),
-        CountdownAction::new(0),
-        CountdownAction::new(0),
-    ]);
+    app.actions(a).start(false).add(TestAction::new()).skip();
 
-    assert!(ecs.action_queue(e).len() == 3);
+    assert!(app.action_queue(a).is_empty());
 
-    ecs.actions(e).skip();
+    let e = app
+        .world
+        .query_filtered::<Entity, With<TestMarker>>()
+        .single(&app.world);
 
-    assert!(ecs.action_queue(e).len() == 2);
-
-    ecs.actions(e).skip();
-
-    assert!(ecs.action_queue(e).len() == 1);
-
-    ecs.actions(e).skip();
-
-    assert!(ecs.action_queue(e).len() == 0);
+    assert_eq!(app.world.entity(e).contains::<Added>(), true);
+    assert_eq!(app.world.entity(e).contains::<Started>(), false);
+    assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Removed>(), true);
 }
 
 #[test]
 fn clear() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    ecs.actions(e)
-        .add(CountdownAction::new(0))
-        .add(CountdownAction::new(0))
-        .add(CountdownAction::new(0))
+    app.actions(a)
+        .add_many(actions![TestAction::new(), TestAction::new()])
         .clear();
 
-    assert!(ecs.current_action(e).is_none());
-    assert!(ecs.action_queue(e).len() == 0);
-    assert!(ecs.world.entity(e).contains::<Canceled>());
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).is_empty());
+    assert_eq!(
+        app.world
+            .query_filtered::<Entity, With<Canceled>>()
+            .iter(&app.world)
+            .len(),
+        1
+    );
+    assert_eq!(
+        app.world
+            .query_filtered::<Entity, With<Removed>>()
+            .iter(&app.world)
+            .len(),
+        2
+    );
 }
 
 #[test]
-#[should_panic]
-fn clear_panic() {
-    let mut ecs = Ecs::new();
-    let e = ecs.world.spawn_empty().id();
-    ecs.actions(e).clear();
-}
+fn lifecycle() {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-#[test]
-fn despawn() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    app.actions(a).start(false).add(TestAction::new());
 
-    ecs.actions(e)
-        .add(CountdownAction::new(0))
-        .add(|agent, world: &mut World| {
-            world.deferred_actions(agent).custom(move |w: &mut World| {
-                w.despawn(agent);
-            });
-        })
-        .add(CountdownAction::new(0));
+    let e = app
+        .world
+        .query_filtered::<Entity, With<TestMarker>>()
+        .single(&app.world);
 
-    ecs.run();
-    ecs.run();
+    assert_eq!(app.world.entity(e).contains::<Added>(), true);
+    assert_eq!(app.world.entity(e).contains::<Started>(), false);
+    assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Removed>(), false);
 
-    assert!(ecs.world.get_entity(e).is_none());
-}
+    app.actions(a).execute();
 
-#[test]
-fn remove_bundle() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    assert_eq!(app.world.entity(e).contains::<Added>(), true);
+    assert_eq!(app.world.entity(e).contains::<Started>(), true);
+    assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Removed>(), false);
 
-    ecs.actions(e)
-        .add(CountdownAction::new(0))
-        .add(|agent, world: &mut World| {
-            world.deferred_actions(agent).custom(move |w: &mut World| {
-                w.entity_mut(agent).remove::<ActionsBundle>();
-            });
-        })
-        .add(CountdownAction::new(0));
+    app.actions(a).pause();
 
-    ecs.run();
-    ecs.run();
+    assert_eq!(app.world.entity(e).contains::<Added>(), true);
+    assert_eq!(app.world.entity(e).contains::<Started>(), true);
+    assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
+    assert_eq!(app.world.entity(e).contains::<Removed>(), false);
 
-    assert!(!ecs.world.entity(e).contains::<ActionQueue>());
-    assert!(!ecs.world.entity(e).contains::<CurrentAction>());
+    app.actions(a).clear();
+
+    assert_eq!(app.world.entity(e).contains::<Added>(), true);
+    assert_eq!(app.world.entity(e).contains::<Started>(), true);
+    assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
+    assert_eq!(app.world.entity(e).contains::<Removed>(), true);
 }
 
 #[test]
 fn order() {
     #[derive(Default)]
-    struct Order<T: Default + Component>(PhantomData<T>);
-    impl<T: Default + Component> Action for Order<T> {
+    struct MarkerAction<M: Default + Component>(PhantomData<M>);
+    impl<M: Default + Component> Action for MarkerAction<M> {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
             true
         }
         fn on_start(&mut self, agent: Entity, world: &mut World) {
-            world.entity_mut(agent).insert(T::default());
+            world.entity_mut(agent).insert(M::default());
         }
         fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(agent).remove::<T>();
+            world.entity_mut(agent).remove::<M>();
         }
     }
 
@@ -414,98 +323,58 @@ fn order() {
     #[derive(Default, Component)]
     struct C;
 
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    // A, B, C
-    ecs.actions(e).add_many(actions![
-        Order::<A>::default(),
-        Order::<B>::default(),
-        Order::<C>::default(),
+    // Back
+    app.actions(a).add_many(actions![
+        MarkerAction::<A>::default(),
+        MarkerAction::<B>::default(),
+        MarkerAction::<C>::default(),
     ]);
 
-    assert!(ecs.world.entity(e).contains::<A>());
+    assert_eq!(app.world.entity(a).contains::<A>(), true);
+    assert_eq!(app.world.entity(a).contains::<B>(), false);
+    assert_eq!(app.world.entity(a).contains::<C>(), false);
 
-    ecs.actions(e).next();
+    app.update();
 
-    assert!(ecs.world.entity(e).contains::<B>());
+    assert_eq!(app.world.entity(a).contains::<A>(), false);
+    assert_eq!(app.world.entity(a).contains::<B>(), true);
+    assert_eq!(app.world.entity(a).contains::<C>(), false);
 
-    ecs.actions(e).next();
+    app.update();
 
-    assert!(ecs.world.entity(e).contains::<C>());
+    assert_eq!(app.world.entity(a).contains::<A>(), false);
+    assert_eq!(app.world.entity(a).contains::<B>(), false);
+    assert_eq!(app.world.entity(a).contains::<C>(), true);
 
-    // A, B, C
-    ecs.actions(e)
+    // Front
+    app.actions(a)
         .clear()
         .start(false)
+        .add(TestAction::new())
         .order(AddOrder::Front)
         .add_many(actions![
-            Order::<A>::default(),
-            Order::<B>::default(),
-            Order::<C>::default(),
+            MarkerAction::<A>::default(),
+            MarkerAction::<B>::default(),
+            MarkerAction::<C>::default(),
         ])
-        .next();
+        .execute();
 
-    assert!(ecs.world.entity(e).contains::<A>());
+    assert_eq!(app.world.entity(a).contains::<A>(), true);
+    assert_eq!(app.world.entity(a).contains::<B>(), false);
+    assert_eq!(app.world.entity(a).contains::<C>(), false);
 
-    ecs.actions(e).next();
+    app.update();
 
-    assert!(ecs.world.entity(e).contains::<B>());
+    assert_eq!(app.world.entity(a).contains::<A>(), false);
+    assert_eq!(app.world.entity(a).contains::<B>(), true);
+    assert_eq!(app.world.entity(a).contains::<C>(), false);
 
-    ecs.actions(e).next();
+    app.update();
 
-    assert!(ecs.world.entity(e).contains::<C>());
-
-    // C, B, A
-    ecs.actions(e)
-        .clear()
-        .start(false)
-        .order(AddOrder::Front)
-        .add_many(actions![
-            Order::<C>::default(),
-            Order::<B>::default(),
-            Order::<A>::default(),
-        ])
-        .next();
-
-    assert!(ecs.world.entity(e).contains::<C>());
-
-    ecs.actions(e).next();
-
-    assert!(ecs.world.entity(e).contains::<B>());
-
-    ecs.actions(e).next();
-
-    assert!(ecs.world.entity(e).contains::<A>());
-}
-
-#[test]
-fn pause_resume() {
-    let mut ecs = Ecs::new();
-    let e = ecs.spawn_agent();
-
-    fn countdown_value(w: &mut World) -> i32 {
-        w.query::<&Countdown>().single(w).0
-    }
-
-    ecs.actions(e).add(CountdownAction::new(100));
-
-    ecs.run();
-
-    assert!(countdown_value(&mut ecs.world) == 99);
-
-    ecs.actions(e)
-        .pause()
-        .order(AddOrder::Front)
-        .add(CountdownAction::new(2));
-
-    assert!(countdown_value(&mut ecs.world) == 2);
-
-    ecs.run();
-
-    assert!(countdown_value(&mut ecs.world) == 1);
-
-    ecs.run();
-
-    assert!(countdown_value(&mut ecs.world) == 99);
+    assert_eq!(app.world.entity(a).contains::<A>(), false);
+    assert_eq!(app.world.entity(a).contains::<B>(), false);
+    assert_eq!(app.world.entity(a).contains::<C>(), true);
 }
