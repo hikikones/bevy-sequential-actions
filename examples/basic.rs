@@ -36,6 +36,7 @@ struct DemoAction;
 impl Action for DemoAction {
     // Required method
     fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        println!("is_finished: called once after on_start, and then every frame in CoreSet::Last");
         true
     }
 
