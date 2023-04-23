@@ -13,16 +13,16 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::default()).id();
-    commands
-        .actions(agent)
-        .add(RepeatAction {
+    commands.actions(agent).add_many(actions![
+        RepeatAction {
             print_message: "hello",
             repeat_count: 3,
-        })
-        .add(RepeatAction {
+        },
+        RepeatAction {
             print_message: "world",
             repeat_count: 1,
-        });
+        }
+    ]);
 }
 
 struct RepeatAction {
