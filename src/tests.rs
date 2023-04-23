@@ -75,10 +75,10 @@ impl Action for CountdownAction {
             }
             StopReason::Canceled => {
                 e.insert(Canceled);
-                self.current = countdown.unwrap().0.into();
             }
             StopReason::Paused => {
                 e.insert(Paused);
+                self.current = countdown.unwrap().0.into();
             }
         };
     }
@@ -444,4 +444,33 @@ fn order() {
     assert_eq!(app.world.entity(a).contains::<A>(), false);
     assert_eq!(app.world.entity(a).contains::<B>(), false);
     assert_eq!(app.world.entity(a).contains::<C>(), true);
+}
+
+#[test]
+fn pause_resume() {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    fn countdown_value(app: &mut TestApp) -> i32 {
+        app.world.query::<&Countdown>().single(&app.world).0
+    }
+
+    app.actions(a).add(CountdownAction::new(10));
+
+    assert_eq!(countdown_value(&mut app), 10);
+
+    app.update();
+
+    assert_eq!(countdown_value(&mut app), 9);
+
+    app.actions(a)
+        .pause()
+        .order(AddOrder::Front)
+        .add(CountdownAction::new(1));
+
+    assert_eq!(countdown_value(&mut app), 1);
+
+    app.update();
+
+    assert_eq!(countdown_value(&mut app), 9);
 }
