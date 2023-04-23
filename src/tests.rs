@@ -474,3 +474,32 @@ fn pause_resume() {
 
     assert_eq!(countdown_value(&mut app), 9);
 }
+
+#[test]
+fn despawn() {
+    struct DespawnAction;
+    impl Action for DespawnAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, agent: Entity, world: &mut World) {
+            world.despawn(agent);
+        }
+
+        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    }
+
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    app.actions(a).add_many(actions![
+        CountdownAction::new(1),
+        DespawnAction,
+        CountdownAction::new(0),
+    ]);
+
+    app.update();
+
+    assert!(app.world.get_entity(a).is_none());
+}

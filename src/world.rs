@@ -198,7 +198,9 @@ impl WorldHelperExt for World {
                 return;
             }
 
-            self.current_action(agent).0 = Some(action);
+            if let Some(mut current) = self.get_mut::<CurrentAction>(agent) {
+                current.0 = Some(action);
+            }
         }
     }
 
