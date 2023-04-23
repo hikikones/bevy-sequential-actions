@@ -96,7 +96,6 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
 
 impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.init_resource::<DeferredActions>();
         (self.builder)(app);
     }
 }
