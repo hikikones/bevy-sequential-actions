@@ -8,14 +8,14 @@ pub trait Action: Send + Sync + 'static {
     /// By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
-    /// Called when an action is added to the queue.
-    fn on_add(&mut self, agent: Entity, world: &mut World) {}
-
     /// Called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World);
 
     /// Called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
+
+    /// Called when an action is added to the queue.
+    fn on_add(&mut self, agent: Entity, world: &mut World) {}
 
     /// Called when an action is removed from the queue.
     fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}

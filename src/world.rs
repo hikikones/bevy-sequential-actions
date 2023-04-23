@@ -322,6 +322,14 @@ impl WorldHelperExt for World {
     fn start_next_action(&mut self, agent: Entity) {
         if let Some(mut action) = self.pop_next_action(agent) {
             action.on_start(agent, self);
+
+            if action.is_finished(agent, self) {
+                action.on_stop(agent, self, StopReason::Finished);
+                action.on_remove(agent, self);
+                self.start_next_action(agent);
+                return;
+            }
+
             self.current_action(agent).0 = Some(action);
             self.apply_deferred_actions();
         }
