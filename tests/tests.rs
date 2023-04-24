@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
-use bevy_app::App;
+use bevy_app::prelude::*;
+use bevy_derive::{Deref, DerefMut};
+use bevy_ecs::prelude::*;
 
-use crate::*;
+use bevy_sequential_actions::*;
 
 #[derive(Deref, DerefMut)]
 struct TestApp(App);

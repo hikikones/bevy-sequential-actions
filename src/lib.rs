@@ -149,9 +149,6 @@ mod plugin;
 mod traits;
 mod world;
 
-#[cfg(test)]
-mod tests;
-
 pub use commands::*;
 pub use macros::*;
 pub use plugin::*;

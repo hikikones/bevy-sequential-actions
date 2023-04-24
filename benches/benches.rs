@@ -8,8 +8,8 @@ criterion_group!(benches, many_countdowns);
 criterion_main!(benches);
 
 fn many_countdowns(c: &mut Criterion) {
-    c.bench_function("many_countdowns", |b| {
-        b.iter(|| black_box(run_many_countdowns()));
+    c.bench_function("many_countdowns", |bencher| {
+        bencher.iter(|| black_box(run_many_countdowns()));
     });
 }
 
