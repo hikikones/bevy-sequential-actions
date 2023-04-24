@@ -4,46 +4,16 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use bevy_sequential_actions::*;
 
-// fn fibonacci(n: u64) -> u64 {
-//     match n {
-//         0 => 1,
-//         1 => 1,
-//         n => fibonacci(n - 1) + fibonacci(n - 2),
-//     }
-// }
-
-// fn criterion_benchmark(c: &mut Criterion) {
-//     c.bench_function("fib 20", |b| b.iter(|| fibonacci(black_box(20))));
-// }
-
-// criterion_group!(benches, criterion_benchmark);
-// criterion_main!(benches);
-
-criterion_group!(benches, my_bench);
+criterion_group!(benches, many_countdowns);
 criterion_main!(benches);
 
-fn my_bench(c: &mut Criterion) {
-    // let mut app = App::new();
-    // app.add_plugin(SequentialActionsPlugin::default())
-    //     .add_startup_system(setup)
-    //     .add_system(countdown);
-
-    // for i in 0..1000 {
-    //     let agent = app.world.spawn(ActionsBundle::default()).id();
-    //     app.world.actions(agent).add(CountdownAction::new(i));
-    // }
-
-    // let mut group = c.benchmark_group("many_countdowns");
-    // group.significance_level(0.1).sample_size(1000);
-    // group.bench_function("update", |b| b.iter(|| black_box(app.update())));
-    // group.finish();
-
+fn many_countdowns(c: &mut Criterion) {
     c.bench_function("many_countdowns", |b| {
-        b.iter(|| black_box(many_countdowns()))
+        b.iter(|| black_box(run_many_countdowns()));
     });
 }
 
-fn many_countdowns() {
+fn run_many_countdowns() {
     const MAX: i32 = 100;
 
     let mut app = App::new();
@@ -60,13 +30,6 @@ fn many_countdowns() {
         app.update();
     }
 }
-
-// fn setup(mut commands: Commands) {
-//     for i in 0..1000 {
-//         let agent = commands.spawn(ActionsBundle::default()).id();
-//         commands.actions(agent).add(CountdownAction::new(i));
-//     }
-// }
 
 struct CountdownAction {
     count: i32,
