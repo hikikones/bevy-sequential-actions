@@ -14,15 +14,10 @@ fn main() {
         .add_plugin(ScheduleRunnerPlugin)
         // Add default plugin for default schedule
         .add_plugin(SequentialActionsPlugin::default())
-        // Add plugin with marker component for custom schedule
-        .add_plugin(SequentialActionsPlugin::<CustomMarker>::new(
-            |app: &mut App| {
-                app.add_systems(
-                    SequentialActionsPlugin::<CustomMarker>::get_systems()
-                        .in_schedule(CustomSchedule),
-                );
-            },
-        ))
+        // Schedule manually with marker component for custom schedule
+        .add_systems(
+            SequentialActionsPlugin::<CustomMarker>::get_systems().in_schedule(CustomSchedule),
+        )
         .add_startup_system(setup)
         .add_system(run_custom_schedule)
         .run();

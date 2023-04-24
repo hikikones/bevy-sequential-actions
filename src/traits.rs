@@ -97,3 +97,8 @@ pub trait ModifyActions {
     /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(&mut self) -> &mut Self;
 }
+
+/// Trait alias for marker components for agents.
+pub trait AgentMarker: Default + Component {}
+
+impl<T> AgentMarker for T where T: Default + Component {}

@@ -230,7 +230,7 @@ where
     }
 }
 
-/// The default marker component used in [`SequentialActionsPlugin`] and [`ActionsBundle`].
+/// The default marker component for agents.
 #[derive(Default, Component)]
 pub struct DefaultAgentMarker;
 
