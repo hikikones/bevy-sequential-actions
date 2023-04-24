@@ -50,14 +50,24 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     ///     .run();
     /// # }
     /// ```
-    pub fn get_systems() -> SystemConfigs {
-        (check_actions::<T>,).into_configs()
+    pub fn get_systems(exec: CheckActionsExec) -> SystemConfigs {
+        match exec {
+            CheckActionsExec::Seq => (check_actions::<T>,).into_configs(),
+            CheckActionsExec::Parallel => (check_actions_par::<T>,).into_configs(),
+        }
     }
+}
+
+#[derive(Default)]
+pub enum CheckActionsExec {
+    #[default]
+    Seq,
+    Parallel,
 }
 
 impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
+        app.add_systems(Self::get_systems(CheckActionsExec::Seq).in_base_set(CoreSet::Last));
     }
 }
 
@@ -75,4 +85,22 @@ fn check_actions<T: AgentMarker>(
             }
         }
     }
+}
+
+fn check_actions_par<T: AgentMarker>(
+    action_q: Query<(Entity, &CurrentAction), With<T>>,
+    world: &World,
+    par_commands: ParallelCommands,
+) {
+    action_q.par_iter().for_each(|(agent, current_action)| {
+        if let Some(action) = current_action.as_ref() {
+            if action.is_finished(agent, world) {
+                par_commands.command_scope(|mut commands: Commands| {
+                    commands.add(move |world: &mut World| {
+                        world.stop_current_action(agent, StopReason::Finished);
+                    });
+                });
+            }
+        }
+    });
 }
