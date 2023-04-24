@@ -16,14 +16,14 @@ fn many_agents(c: &mut Criterion) {
     // group.sampling_mode(SamplingMode::Flat);
     // group.sample_size(10);
 
-    for max in [10, 100, 1000, 10000, 100000] {
-        let mut bench = black_box(Benchmark::new(max, CheckActionsExec::Seq));
-        group.bench_function(format!("{max}"), |b| {
+    for agents in [10, 100, 1000, 10_000, 100_000, 1_000_000] {
+        let mut bench = black_box(Benchmark::new(agents, false));
+        group.bench_function(format!("{agents}"), |b| {
             b.iter(|| bench.run());
         });
 
-        let mut bench = black_box(Benchmark::new(max, CheckActionsExec::Parallel));
-        group.bench_function(format!("{max} (parallel)"), |b| {
+        let mut bench = black_box(Benchmark::new(agents, true));
+        group.bench_function(format!("{agents} (parallel)"), |b| {
             b.iter(|| bench.run());
         });
 
@@ -82,16 +82,23 @@ struct Benchmark {
     world: World,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, ScheduleLabel)]
+struct Update;
+
 impl Benchmark {
-    fn new(max: i32, exec: CheckActionsExec) -> Self {
+    fn new(agents: i32, parallel: bool) -> Self {
         let mut schedule = Schedule::new();
-        schedule.add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems(
-            exec,
-        ));
+
+        if parallel {
+            schedule
+                .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_parallel_systems());
+        } else {
+            schedule.add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems());
+        }
 
         let mut world = World::new();
 
-        for _ in 0..max {
+        for _ in 0..agents {
             let agent = world.spawn(ActionsBundle::default()).id();
             world.actions(agent).add(BenchAction);
         }
@@ -103,9 +110,6 @@ impl Benchmark {
         self.schedule.run(&mut self.world);
     }
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ScheduleLabel)]
-struct Update;
 
 struct BenchAction;
 
@@ -145,23 +149,23 @@ impl Action for BenchAction {
 //     }
 // }
 
-fn run_many_countdowns(max: i32, exec: CheckActionsExec) {
-    let mut app = App::new();
-    app.add_startup_system(move |mut commands: Commands| {
-        for i in 0..max {
-            let agent = commands.spawn(ActionsBundle::default()).id();
-            commands.actions(agent).add(CountdownAction::new(i));
-        }
-    })
-    .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems(
-        exec,
-    ))
-    .add_system(countdown);
+// fn run_many_countdowns(max: i32, exec: ActionQueueCommandsType) {
+//     let mut app = App::new();
+//     app.add_startup_system(move |mut commands: Commands| {
+//         for i in 0..max {
+//             let agent = commands.spawn(ActionsBundle::default()).id();
+//             commands.actions(agent).add(CountdownAction::new(i));
+//         }
+//     })
+//     .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems(
+//         exec,
+//     ))
+//     .add_system(countdown);
 
-    for _ in 0..max.min(10) {
-        app.update();
-    }
-}
+//     for _ in 0..max.min(10) {
+//         app.update();
+//     }
+// }
 
 struct CountdownAction {
     count: i32,

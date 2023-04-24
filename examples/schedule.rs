@@ -16,8 +16,7 @@ fn main() {
         .add_plugin(SequentialActionsPlugin::default())
         // Schedule manually with marker component for custom schedule
         .add_systems(
-            SequentialActionsPlugin::<CustomMarker>::get_systems(CheckActionsExec::Seq)
-                .in_schedule(CustomSchedule),
+            SequentialActionsPlugin::<CustomMarker>::get_systems().in_schedule(CustomSchedule),
         )
         .add_startup_system(setup)
         .add_system(run_custom_schedule)

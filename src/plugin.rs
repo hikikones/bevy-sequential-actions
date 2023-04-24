@@ -31,8 +31,8 @@ impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
 }
 
 impl<T: AgentMarker> SequentialActionsPlugin<T> {
-    /// Returns the systems used by this plugin.
-    /// Useful if you want to schedule the systems yourself.
+    /// Returns the systems used by this plugin for advancing the action queue for each `agent`.
+    /// Finished actions are queued using [`Commands`].
     ///
     /// # Example
     ///
@@ -50,24 +50,38 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     ///     .run();
     /// # }
     /// ```
-    pub fn get_systems(exec: CheckActionsExec) -> SystemConfigs {
-        match exec {
-            CheckActionsExec::Seq => (check_actions::<T>,).into_configs(),
-            CheckActionsExec::Parallel => (check_actions_par::<T>,).into_configs(),
-        }
+    pub fn get_systems() -> SystemConfigs {
+        (check_actions::<T>,).into_configs()
     }
-}
 
-#[derive(Default)]
-pub enum CheckActionsExec {
-    #[default]
-    Seq,
-    Parallel,
+    /// Returns the systems used by this plugin for advancing the action queue for each `agent`.
+    /// Finished actions are queued using [`ParallelCommands`].
+    /// Use this when you have lots of agents such as tens of thousands or more.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use bevy_ecs::prelude::*;
+    /// # use bevy_app::prelude::*;
+    /// # use bevy_sequential_actions::*;
+    /// #
+    /// # fn main() {
+    /// App::new()
+    ///     .add_systems(
+    ///         SequentialActionsPlugin::<DefaultAgentMarker>::get_parallel_systems()
+    ///             .in_base_set(CoreSet::Last)
+    ///     )
+    ///     .run();
+    /// # }
+    /// ```
+    pub fn get_parallel_systems() -> SystemConfigs {
+        (check_actions_par::<T>,).into_configs()
+    }
 }
 
 impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.add_systems(Self::get_systems(CheckActionsExec::Seq).in_base_set(CoreSet::Last));
+        app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
     }
 }
 
