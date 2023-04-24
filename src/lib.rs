@@ -129,7 +129,7 @@ fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
 One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
 We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
 Since an action is detached from an `agent` when the trait methods are called,
-the logic for modifying and advancing the action queue will likely not work properly.
+the logic for modifying and advancing the action queue is likely to not work properly.
 
 See the examples for proper usage.
 In general, there are two rules when modifying actions inside the action trait:
@@ -201,6 +201,7 @@ where
 }
 
 /// The default marker component for agents.
+/// Part of [`ActionsBundle::default`].
 #[derive(Default, Component)]
 pub struct DefaultAgentMarker;
 

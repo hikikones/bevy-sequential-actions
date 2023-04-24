@@ -30,6 +30,7 @@ impl Action for DespawnAction {
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
         println!("Despawn!");
+        world.actions(agent).clear();
         world.despawn(agent);
         world.send_event(AppExit);
     }

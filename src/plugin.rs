@@ -34,16 +34,21 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     /// Returns the systems used by this plugin.
     /// Useful if you want to schedule the systems yourself.
     ///
+    /// # Example
+    ///
     /// ```rust,no_run
     /// # use bevy_ecs::prelude::*;
     /// # use bevy_app::prelude::*;
-    /// use bevy_sequential_actions::*;
-    ///
-    /// fn main() {
-    ///     App::new()
-    ///         .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems().in_base_set(CoreSet::Last))
-    ///         .run();
-    /// }
+    /// # use bevy_sequential_actions::*;
+    /// #
+    /// # fn main() {
+    /// App::new()
+    ///     .add_systems(
+    ///         SequentialActionsPlugin::<DefaultAgentMarker>::get_systems()
+    ///             .in_base_set(CoreSet::Last)
+    ///     )
+    ///     .run();
+    /// # }
     /// ```
     pub fn get_systems() -> SystemConfigs {
         (check_actions::<T>,).into_configs()
