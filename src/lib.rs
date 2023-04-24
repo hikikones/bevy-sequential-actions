@@ -129,43 +129,13 @@ fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
 One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
 We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
 Since an action is detached from an `agent` when the trait methods are called,
-the logic for advancing the action queue will not work properly.
+the logic for modifying and advancing the action queue will likely not work properly.
 
-Use the [`deferred_actions`](DeferredActionsProxy::deferred_actions) method
-when modifying actions inside the trait.
+See the examples for proper usage.
+In general, there are two rules when modifying actions inside the action trait:
 
-```rust,no_run
-# use bevy_ecs::{schedule::States, prelude::*};
-# use bevy_sequential_actions::*;
-#
-pub struct SetStateAction<S: States>(S);
-
-impl<S: States> Action for SetStateAction<S> {
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
-        // Set state
-        world.resource_mut::<NextState<S>>().set(self.0.clone());
-
-        // Bad. The action queue will advance immediately.
-        world.actions(agent).next();
-
-        // Good. The action queue will advance a bit later.
-        world.deferred_actions(agent).next();
-
-        // Also good. Does the same as above.
-        world.deferred_actions(agent).custom(move |w: &mut World| {
-            w.actions(agent).next();
-        });
-
-        // Note that calling next() is not required in this case,
-        // but useful when you want to advance the action queue more quickly.
-        // Simply returning true in is_finished is enough.
-        // By default, the action queue will then advance at the end of the frame.
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-    fn is_finished(&self, agent: Entity, world: &World) -> bool { true }
-}
-```
+* When adding new actions, the [`start`](ModifyActions::start) property should be set to `false`.
+* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be called.
 */
 
 use std::collections::VecDeque;
