@@ -14,13 +14,9 @@ fn main() {
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::default()).id();
     commands.actions(agent).add_many(actions![
-        |_agent, _world: &mut World| {
-            println!("First action");
-        },
+        PrintAction("First action"),
         DespawnAction,
-        |_agent, _world: &mut World| {
-            println!("This action is never run");
-        },
+        PrintAction("This action should not run"),
     ]);
 }
 
@@ -36,6 +32,20 @@ impl Action for DespawnAction {
         println!("Despawn!");
         world.despawn(agent);
         world.send_event(AppExit);
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
+struct PrintAction(&'static str);
+
+impl Action for PrintAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
+        println!("{}", self.0);
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
