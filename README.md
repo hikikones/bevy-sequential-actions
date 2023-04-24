@@ -108,7 +108,6 @@ We cannot borrow a mutable action from an `agent` while also passing a mutable w
 Since an action is detached from an `agent` when the trait methods are called,
 the logic for modifying and advancing the action queue is likely to not work properly.
 
-See the examples for proper usage.
 In general, there are two rules when modifying actions inside the action trait:
 
 * When adding new actions, the `start` property should be set to `false`.
