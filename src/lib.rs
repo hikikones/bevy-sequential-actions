@@ -127,14 +127,15 @@ fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
 #### Warning
 
 One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
-We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
-Since an action is detached from an `agent` when the trait methods are called,
-the logic for modifying and advancing the action queue is likely to not work properly.
+In order to pass a mutable reference to world when calling the trait methods,
+the action has to be temporarily removed from an `agent`.
+This means that depending on what you do,
+the logic for advancing the action queue might not work properly.
 
 In general, there are two rules when modifying actions inside the action trait:
 
 * When adding new actions, the [`start`](ModifyActions::start) property should be set to `false`.
-* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be called.
+* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be used.
 */
 
 use std::collections::VecDeque;
