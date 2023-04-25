@@ -2,7 +2,18 @@
 
 ## Version 0.8.0-dev
 
-<!-- TODO -->
+- [Rework actions to be both more composable and simpler][83]
+    - Adds three new methods to the `Action` trait: `is_finished`, `on_add` and `on_remove`.
+    - Adds generic marker type to both `SequentialActionsPlugin` and `ActionsBundle`.
+    - Removes `ActionCommands` struct for modifying actions inside the action trait.
+    - Removes `ActionFinished` component.
+    - Removes `Repeat` configuration.
+    - Removes parallel and linked actions.
+    - Removes tuple closure for anonymous actions with both `on_start` and `on_stop`.
+    - Renames `add_sequential` to `add_many`.
+    - Exposes the `ActionQueue` and `CurrentAction` components.
+
+[83]: https://github.com/hikikones/bevy-sequential-actions/pull/83
 
 ## Version 0.7.0
 
