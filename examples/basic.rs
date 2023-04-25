@@ -91,10 +91,10 @@ impl CountdownAction {
 
 impl Action for CountdownAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        let countdown = world.get::<Countdown>(agent).unwrap();
-        println!("Countdown: {}", countdown.0);
+        let current_count = world.get::<Countdown>(agent).unwrap().0;
+        println!("Countdown: {}", current_count);
 
-        countdown.0 <= 0
+        current_count <= 0
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
@@ -111,7 +111,7 @@ impl Action for CountdownAction {
 
         // Store current duration when paused
         if let StopReason::Paused = reason {
-            self.current = Some(countdown.unwrap().0);
+            self.current = countdown.unwrap().0.into();
         }
     }
 }

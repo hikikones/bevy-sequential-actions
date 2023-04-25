@@ -12,7 +12,7 @@ https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-
 
 In order for everything to work, the `SequentialActionsPlugin` must be added to your `App`.
 
-```rust,no_run
+```rust
 use bevy_sequential_actions::*;
 
 fn main() {
@@ -29,7 +29,7 @@ and can be added to any `Entity` that contains the `ActionsBundle`.
 An entity with actions is referred to as an `agent`.
 See the `ModifyActions` trait for available methods.
 
-```rust,no_run
+```rust
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::default()).id();
     commands

@@ -22,7 +22,7 @@ use crate::*;
 ///         .run();
 /// }
 /// ```
-pub struct SequentialActionsPlugin<M: AgentMarker = DefaultAgentMarker>(PhantomData<M>);
+pub struct SequentialActionsPlugin<T: AgentMarker = DefaultAgentMarker>(PhantomData<T>);
 
 impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
     fn default() -> Self {
