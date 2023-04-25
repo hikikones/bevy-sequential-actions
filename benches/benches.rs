@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::*, schedule::ScheduleLabel};
+use bevy_ecs::prelude::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use bevy_sequential_actions::*;
@@ -28,9 +28,6 @@ struct Benchmark {
     schedule: Schedule,
     world: World,
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, ScheduleLabel)]
-struct Update;
 
 impl Benchmark {
     fn new(agents: i32, parallel: bool) -> Self {
