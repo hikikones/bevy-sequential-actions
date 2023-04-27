@@ -32,7 +32,10 @@ impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
 
 impl<T: AgentMarker> SequentialActionsPlugin<T> {
     /// Returns the systems used by this plugin for advancing the action queue for each `agent`.
-    /// Finished actions are queued using [`Commands`].
+    ///
+    /// Advancing the action queue is done using [`Commands`].
+    /// If you have lots of agents, consider [`get_parallel_systems`](Self::get_parallel_systems),
+    /// which uses [`ParallelCommands`].
     ///
     /// # Example
     ///
@@ -55,7 +58,8 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     }
 
     /// Returns the systems used by this plugin for advancing the action queue for each `agent`.
-    /// Finished actions are queued using [`ParallelCommands`].
+    ///
+    /// Advancing the action queue is done using [`ParallelCommands`].
     /// Use this when you have lots of agents such as tens of thousands or more.
     ///
     /// # Example
