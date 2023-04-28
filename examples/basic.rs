@@ -56,8 +56,13 @@ impl Action for DemoAction {
     }
 
     // Optional method (empty by default)
-    fn on_remove(self: Box<Self>, _agent: Entity, _world: &mut World) {
+    fn on_remove(&mut self, _agent: Entity, _world: &mut World) {
         println!("on_remove: called when an action is removed from the queue");
+    }
+
+    // Optional method (empty by default)
+    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World) {
+        println!("on_drop: TODO");
     }
 }
 
@@ -92,7 +97,7 @@ impl CountdownAction {
 impl Action for CountdownAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         let current_count = world.get::<Countdown>(agent).unwrap().0;
-        println!("Countdown: {}", current_count);
+        println!("Countdown: {current_count}");
 
         current_count <= 0
     }

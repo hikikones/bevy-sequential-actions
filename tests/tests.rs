@@ -35,13 +35,13 @@ impl TestApp {
     }
 }
 
-struct CountdownAction {
+struct TestCountdownAction {
     count: i32,
     entity: Option<Entity>,
     current: Option<i32>,
 }
 
-impl CountdownAction {
+impl TestCountdownAction {
     const fn new(count: i32) -> Self {
         Self {
             count,
@@ -51,7 +51,7 @@ impl CountdownAction {
     }
 }
 
-impl Action for CountdownAction {
+impl Action for TestCountdownAction {
     fn is_finished(&self, _agent: Entity, world: &World) -> bool {
         world.get::<Countdown>(self.entity.unwrap()).unwrap().0 <= 0
     }
@@ -85,8 +85,12 @@ impl Action for CountdownAction {
         };
     }
 
-    fn on_remove(self: Box<Self>, _agent: Entity, world: &mut World) {
+    fn on_remove(&mut self, _agent: Entity, world: &mut World) {
         world.entity_mut(self.entity.unwrap()).insert(Removed);
+    }
+
+    fn on_drop(self: Box<Self>, _agent: Entity, world: &mut World) {
+        world.entity_mut(self.entity.unwrap()).insert(Dropped);
     }
 }
 
@@ -123,12 +127,15 @@ struct Paused;
 #[derive(Component)]
 struct Removed;
 
+#[derive(Component)]
+struct Dropped;
+
 #[test]
 fn add() {
     let mut app = TestApp::new();
     let a: Entity = app.spawn_agent();
 
-    app.actions(a).start(false).add(CountdownAction::new(0));
+    app.actions(a).start(false).add(TestCountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 1);
@@ -136,12 +143,12 @@ fn add() {
     app.actions(a)
         .clear()
         .start(true)
-        .add(CountdownAction::new(0));
+        .add(TestCountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 0);
 
-    app.actions(a).start(true).add(CountdownAction::new(1));
+    app.actions(a).start(true).add(TestCountdownAction::new(1));
 
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 0);
@@ -152,24 +159,26 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a)
-        .start(false)
-        .add_many(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+    app.actions(a).start(false).add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
+    ]);
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 2);
 
-    app.actions(a)
-        .clear()
-        .start(true)
-        .add_many(actions![CountdownAction::new(0), CountdownAction::new(0)]);
+    app.actions(a).clear().start(true).add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
+    ]);
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 0);
 
-    app.actions(a)
-        .start(true)
-        .add_many(actions![CountdownAction::new(1), CountdownAction::new(1)]);
+    app.actions(a).start(true).add_many(actions![
+        TestCountdownAction::new(1),
+        TestCountdownAction::new(1)
+    ]);
 
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 1);
@@ -185,7 +194,7 @@ fn next() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(CountdownAction::new(1));
+    app.actions(a).add(TestCountdownAction::new(1));
 
     let e = app
         .world
@@ -206,7 +215,7 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(CountdownAction::new(1));
+    app.actions(a).add(TestCountdownAction::new(1));
     app.update();
 
     assert!(app.current_action(a).is_none());
@@ -220,6 +229,7 @@ fn finish() {
     assert_eq!(app.world.entity(e).contains::<Finished>(), true);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
 }
 
 #[test]
@@ -227,7 +237,7 @@ fn cancel() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(CountdownAction::new(1)).cancel();
+    app.actions(a).add(TestCountdownAction::new(1)).cancel();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
@@ -240,6 +250,7 @@ fn cancel() {
     assert_eq!(app.world.entity(e).contains::<Finished>(), false);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
 }
 
 #[test]
@@ -247,7 +258,7 @@ fn pause() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(CountdownAction::new(1)).pause();
+    app.actions(a).add(TestCountdownAction::new(1)).pause();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 1);
@@ -260,6 +271,7 @@ fn pause() {
     assert_eq!(app.world.entity(e).contains::<Finished>(), false);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
     assert_eq!(app.world.entity(e).contains::<Paused>(), true);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
 }
 
 #[test]
@@ -269,7 +281,7 @@ fn skip() {
 
     app.actions(a)
         .start(false)
-        .add(CountdownAction::new(0))
+        .add(TestCountdownAction::new(0))
         .skip();
 
     assert!(app.action_queue(a).is_empty());
@@ -283,6 +295,7 @@ fn skip() {
     assert_eq!(app.world.entity(e).contains::<Started>(), false);
     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
     assert_eq!(app.world.entity(e).contains::<Removed>(), true);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
 }
 
 #[test]
@@ -291,7 +304,10 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![CountdownAction::new(1), CountdownAction::new(1)])
+        .add_many(actions![
+            TestCountdownAction::new(1),
+            TestCountdownAction::new(1)
+        ])
         .clear();
 
     assert!(app.current_action(a).is_none());
@@ -317,7 +333,7 @@ fn lifecycle() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add(CountdownAction::new(1));
+    app.actions(a).start(false).add(TestCountdownAction::new(1));
 
     let e = app
         .world
@@ -328,6 +344,7 @@ fn lifecycle() {
     assert_eq!(app.world.entity(e).contains::<Started>(), false);
     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
     assert_eq!(app.world.entity(e).contains::<Removed>(), false);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
 
     app.actions(a).execute();
 
@@ -335,6 +352,7 @@ fn lifecycle() {
     assert_eq!(app.world.entity(e).contains::<Started>(), true);
     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
     assert_eq!(app.world.entity(e).contains::<Removed>(), false);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
 
     app.actions(a).pause();
 
@@ -342,6 +360,7 @@ fn lifecycle() {
     assert_eq!(app.world.entity(e).contains::<Started>(), true);
     assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
     assert_eq!(app.world.entity(e).contains::<Removed>(), false);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
 
     app.actions(a).clear();
 
@@ -349,19 +368,20 @@ fn lifecycle() {
     assert_eq!(app.world.entity(e).contains::<Started>(), true);
     assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
     assert_eq!(app.world.entity(e).contains::<Removed>(), true);
+    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
 }
 
 #[test]
 fn order() {
     struct MarkerAction<M: Default + Component> {
         marker: PhantomData<M>,
-        countdown: CountdownAction,
+        countdown: TestCountdownAction,
     }
     impl<M: Default + Component> MarkerAction<M> {
         fn new() -> Self {
             Self {
                 marker: PhantomData,
-                countdown: CountdownAction::new(1),
+                countdown: TestCountdownAction::new(1),
             }
         }
     }
@@ -380,8 +400,11 @@ fn order() {
         fn on_add(&mut self, agent: Entity, world: &mut World) {
             self.countdown.on_add(agent, world);
         }
-        fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {
-            CountdownAction::on_remove(self.countdown.into(), agent, world);
+        fn on_remove(&mut self, agent: Entity, world: &mut World) {
+            self.countdown.on_remove(agent, world);
+        }
+        fn on_drop(self: Box<Self>, agent: Entity, world: &mut World) {
+            TestCountdownAction::on_drop(self.countdown.into(), agent, world);
         }
     }
 
@@ -422,7 +445,7 @@ fn order() {
     app.actions(a)
         .clear()
         .start(false)
-        .add(CountdownAction::new(0))
+        .add(TestCountdownAction::new(0))
         .order(AddOrder::Front)
         .add_many(actions![
             MarkerAction::<A>::new(),
@@ -457,7 +480,7 @@ fn pause_resume() {
         app.world.query::<&Countdown>().single(&app.world).0
     }
 
-    app.actions(a).add(CountdownAction::new(10));
+    app.actions(a).add(TestCountdownAction::new(10));
 
     assert_eq!(countdown_value(&mut app), 10);
 
@@ -468,7 +491,7 @@ fn pause_resume() {
     app.actions(a)
         .pause()
         .order(AddOrder::Front)
-        .add(CountdownAction::new(1));
+        .add(TestCountdownAction::new(1));
 
     assert_eq!(countdown_value(&mut app), 1);
 
@@ -496,9 +519,9 @@ fn despawn() {
     let a = app.spawn_agent();
 
     app.actions(a).add_many(actions![
-        CountdownAction::new(1),
+        TestCountdownAction::new(1),
         DespawnAction,
-        CountdownAction::new(0),
+        TestCountdownAction::new(0),
     ]);
 
     app.update();

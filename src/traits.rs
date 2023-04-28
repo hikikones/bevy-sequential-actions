@@ -18,7 +18,9 @@ pub trait Action: Send + Sync + 'static {
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
 
     /// Called when an action is removed from the queue.
-    fn on_remove(self: Box<Self>, agent: Entity, world: &mut World) {}
+    fn on_remove(&mut self, agent: Entity, world: &mut World) {}
+
+    fn on_drop(self: Box<Self>, agent: Entity, world: &mut World) {}
 }
 
 impl<T> From<T> for BoxedAction
