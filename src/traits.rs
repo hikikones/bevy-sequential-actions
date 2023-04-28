@@ -3,23 +3,27 @@ use crate::*;
 /// The trait that all actions must implement.
 #[allow(unused_variables)]
 pub trait Action: Send + Sync + 'static {
+    /// Determines if an action is finished or not.
     /// Advances the action queue when returning `true`.
     ///
-    /// By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
+    /// This method is called once after [`on_start`](Self::on_start),
+    /// and then, by default, every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
-    /// Called when an action is started.
+    /// The method that is called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World);
 
-    /// Called when an action is stopped.
+    /// The method that is called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
 
-    /// Called when an action is added to the queue.
+    /// The method that is called when an action is added to the queue.
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
 
-    /// Called when an action is removed from the queue.
+    /// The method that is called when an action is removed from the queue.
     fn on_remove(&mut self, agent: Entity, world: &mut World) {}
 
+    /// The last method that is called for an action.
+    /// Full ownership is given here, hence the name.
     fn on_drop(self: Box<Self>, agent: Entity, world: &mut World) {}
 }
 
