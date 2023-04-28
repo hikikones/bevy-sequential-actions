@@ -17,12 +17,12 @@ fn setup(mut commands: Commands) {
         .actions(agent)
         .add_many(actions![
             RepeatAction {
-                repeat_action: PrintAction("hello"),
-                repeat_count: 3,
+                action: PrintAction("hello"),
+                repeat: 3,
             },
             RepeatAction {
-                repeat_action: PrintAction("world"),
-                repeat_count: 1,
+                action: PrintAction("world"),
+                repeat: 1,
             },
         ])
         .add(|_agent, world: &mut World| {
@@ -45,34 +45,34 @@ impl Action for PrintAction {
 }
 
 struct RepeatAction<A: Action> {
-    repeat_action: A,
-    repeat_count: u32,
+    action: A,
+    repeat: u32,
 }
 
 impl<A: Action> Action for RepeatAction<A> {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        self.repeat_action.is_finished(agent, world)
+        self.action.is_finished(agent, world)
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
-        self.repeat_action.on_add(agent, world);
+        self.action.on_add(agent, world);
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
-        self.repeat_action.on_start(agent, world);
+        self.action.on_start(agent, world);
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        self.repeat_action.on_stop(agent, world, reason);
+        self.action.on_stop(agent, world, reason);
     }
 
     fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World) {
-        if self.repeat_count == 0 {
-            self.repeat_action.on_remove(agent, world);
+        if self.repeat == 0 {
+            self.action.on_remove(agent, world);
             return;
         }
 
-        self.repeat_count -= 1;
+        self.repeat -= 1;
         world.get_mut::<ActionQueue>(agent).unwrap().push_back(self);
     }
 }
