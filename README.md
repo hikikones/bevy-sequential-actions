@@ -126,7 +126,8 @@ Each example can be run with `cargo run --example <example>`.
 | Example | Description |
 | ------- | ----------- |
 | `basic` | Shows the basic usage of the library. |
-| `repeat` | Shows how to create an action that repeats. |
+| `pause` | Shows how to pause and resume an action using a `Paused` marker component. |
+| `repeat` | Shows how to create a generic action that can repeat any other action. |
 | `despawn` | Shows how to properly despawn an `agent`. |
 | `parallel` | Shows how to create actions that run in parallel. |
 | `schedule` | Shows how to use the plugin with two different schedules. |
