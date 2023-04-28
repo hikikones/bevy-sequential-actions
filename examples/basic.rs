@@ -104,7 +104,7 @@ impl Action for CountdownAction {
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
         // Take current (if paused), or use full count
-        let count = self.current.unwrap_or(self.count);
+        let count = self.current.take().unwrap_or(self.count);
 
         // Run the countdown system on the agent
         world.entity_mut(agent).insert(Countdown(count));

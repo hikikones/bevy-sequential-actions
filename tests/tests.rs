@@ -61,7 +61,7 @@ impl Action for TestCountdownAction {
     }
 
     fn on_start(&mut self, _agent: Entity, world: &mut World) {
-        let count = self.current.unwrap_or(self.count);
+        let count = self.current.take().unwrap_or(self.count);
         world
             .entity_mut(self.entity.unwrap())
             .insert((Started, Countdown(count)));
