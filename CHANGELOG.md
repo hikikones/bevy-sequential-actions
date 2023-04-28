@@ -3,7 +3,7 @@
 ## Version 0.8.0-dev
 
 - [Rework actions to be both more composable and simpler][83]
-    - Adds three new methods to the `Action` trait: `is_finished`, `on_add` and `on_remove`.
+    - Adds four new methods to the `Action` trait: `is_finished`, `on_add`, `on_remove` and `on_drop`.
     - Adds generic marker type to both `SequentialActionsPlugin` and `ActionsBundle`.
     - Removes `ActionCommands` struct for modifying actions inside the action trait.
     - Removes `ActionFinished` component.
