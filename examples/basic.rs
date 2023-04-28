@@ -62,7 +62,7 @@ impl Action for DemoAction {
 
     // Optional method (empty by default)
     fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World) {
-        println!("on_drop: TODO");
+        println!("on_drop: the last method to be called with full ownership");
     }
 }
 
@@ -99,11 +99,12 @@ impl Action for CountdownAction {
         let current_count = world.get::<Countdown>(agent).unwrap().0;
         println!("Countdown: {current_count}");
 
+        // Determine if countdown has reached zero
         current_count <= 0
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
-        // Take current (if paused), or use full count
+        // Take current count (if paused), or use full count
         let count = self.current.take().unwrap_or(self.count);
 
         // Run the countdown system on the agent

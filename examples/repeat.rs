@@ -49,16 +49,16 @@ impl Action for PrintRepeatAction {
         self.print_action.is_finished(agent, world)
     }
 
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        self.print_action.on_add(agent, world);
+    }
+
     fn on_start(&mut self, agent: Entity, world: &mut World) {
         self.print_action.on_start(agent, world);
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
         self.print_action.on_stop(agent, world, reason);
-    }
-
-    fn on_add(&mut self, agent: Entity, world: &mut World) {
-        self.print_action.on_add(agent, world);
     }
 
     fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World) {

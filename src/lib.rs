@@ -69,14 +69,17 @@ fn setup(mut commands: Commands) {
 
 The [`Action`] trait contains 3 required methods:
 
-* The [`is_finished`](Action::is_finished) method to determine if an action is finished.
-* The [`on_start`](Action::on_start) method which is called when an action is started.
-* The [`on_stop`](Action::on_stop) method which is called when an action is stopped.
+* [`is_finished`](Action::is_finished) to determine if an action is finished or not.
+    This method is called once after [`on_start`](Action::on_start), and then, by default,
+    every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
+* [`on_start`](Action::on_start) which is called when an action is started.
+* [`on_stop`](Action::on_stop) which is called when an action is stopped.
 
-In addition, there are 2 optional methods:
+In addition, there are 3 optional methods:
 
-* The [`on_add`](Action::on_add) method which is called when an action is added to the queue.
-* The [`on_remove`](Action::on_remove) method which is called when an action is removed from the queue.
+* [`on_add`](Action::on_add) which is called when an action is added to the queue.
+* [`on_remove`](Action::on_remove) which is called when an action is removed from the queue.
+* [`on_drop`](Action::on_drop) which is the last method to be called with full ownership.
 
 A simple countdown action follows.
 
@@ -132,9 +135,10 @@ the action has to be temporarily removed from an `agent`.
 This means that depending on what you do,
 the logic for advancing the action queue might not work properly.
 
-In general, there are two rules when modifying actions inside the action trait:
+In general, there are two rules when modifying actions for an `agent` inside the action trait:
 
 * When adding new actions, the [`start`](ModifyActions::start) property should be set to `false`.
+    Or you can mutate the [`ActionQueue`] component directly.
 * The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be used.
 */
 
