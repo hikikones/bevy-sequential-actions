@@ -30,18 +30,15 @@ struct Benchmark {
 }
 
 impl Benchmark {
-    fn new(agents: i32, parallel: bool) -> Self {
+    fn new(agents: u32, parallel: bool) -> Self {
         let mut schedule = Schedule::new();
-
-        if parallel {
-            schedule
-                .add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_parallel_systems());
+        schedule.add_systems(if parallel {
+            SequentialActionsPlugin::<DefaultAgentMarker>::get_parallel_systems()
         } else {
-            schedule.add_systems(SequentialActionsPlugin::<DefaultAgentMarker>::get_systems());
-        }
+            SequentialActionsPlugin::<DefaultAgentMarker>::get_systems()
+        });
 
         let mut world = World::new();
-
         for _ in 0..agents {
             let agent = world.spawn(ActionsBundle::default()).id();
             world.actions(agent).add(BenchAction);
