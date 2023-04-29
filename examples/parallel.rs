@@ -48,10 +48,13 @@ impl<const N: usize> Action for ParallelActions<N> {
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        self.actions
-            .iter_mut()
-            .map(|action| action.on_start(agent, world))
-            .all(|finished| finished)
+        let mut finished_bools = [false; N];
+
+        self.actions.iter_mut().enumerate().for_each(|(i, action)| {
+            finished_bools[i] = action.on_start(agent, world);
+        });
+
+        finished_bools.into_iter().all(|finished| finished)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
