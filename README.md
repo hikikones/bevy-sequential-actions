@@ -140,3 +140,12 @@ Each example can be run with `cargo run --example <example>`.
 | 0.9  | 0.6                     |
 | 0.8  | 0.3 — 0.5               |
 | 0.7  | 0.1 — 0.2               |
+
+## License
+
+`bevy-sequential-actions` is dual-licensed under either
+
+* MIT License ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
+* Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
+
+at your option.
