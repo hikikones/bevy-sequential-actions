@@ -199,9 +199,9 @@ trait WorldHelperExt {
 impl WorldHelperExt for World {
     fn start_next_action(&mut self, agent: Entity) {
         if let Some(mut action) = self.pop_next_action(agent) {
-            action.on_start(agent, self);
+            let is_finished = action.on_start(agent, self);
 
-            if action.is_finished(agent, self) {
+            if is_finished {
                 action.on_stop(agent, self, StopReason::Finished);
                 action.on_remove(agent, self);
                 action.on_drop(agent, self);

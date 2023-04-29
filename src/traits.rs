@@ -6,12 +6,14 @@ pub trait Action: Send + Sync + 'static {
     /// Determines if an action is finished or not.
     /// Advances the action queue when returning `true`.
     ///
-    /// This method is called once after [`on_start`](Self::on_start),
-    /// and then, by default, every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
+    /// By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
     /// The method that is called when an action is started.
-    fn on_start(&mut self, agent: Entity, world: &mut World);
+    ///
+    /// Returning `true` here marks the action as already finished,
+    /// and will immediately advance the action queue.
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool;
 
     /// The method that is called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
@@ -38,14 +40,14 @@ where
 
 impl<OnStart> Action for OnStart
 where
-    OnStart: FnMut(Entity, &mut World) + Send + Sync + 'static,
+    OnStart: FnMut(Entity, &mut World) -> bool + Send + Sync + 'static,
 {
     fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
         true
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
-        (self)(agent, world);
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        (self)(agent, world)
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

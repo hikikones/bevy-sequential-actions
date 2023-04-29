@@ -60,11 +60,13 @@ impl Action for TestCountdownAction {
         self.entity = world.spawn((Added, CountdownMarker)).id().into();
     }
 
-    fn on_start(&mut self, _agent: Entity, world: &mut World) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let count = self.current.take().unwrap_or(self.count);
         world
             .entity_mut(self.entity.unwrap())
             .insert((Started, Countdown(count)));
+
+        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
@@ -373,38 +375,22 @@ fn lifecycle() {
 
 #[test]
 fn order() {
-    struct MarkerAction<M: Default + Component> {
-        marker: PhantomData<M>,
-        countdown: TestCountdownAction,
-    }
+    struct MarkerAction<M: Default + Component>(PhantomData<M>);
     impl<M: Default + Component> MarkerAction<M> {
-        fn new() -> Self {
-            Self {
-                marker: PhantomData,
-                countdown: TestCountdownAction::new(1),
-            }
+        const fn new() -> Self {
+            Self(PhantomData)
         }
     }
     impl<M: Default + Component> Action for MarkerAction<M> {
-        fn is_finished(&self, agent: Entity, world: &World) -> bool {
-            self.countdown.is_finished(agent, world)
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
         }
-        fn on_start(&mut self, agent: Entity, world: &mut World) {
-            self.countdown.on_start(agent, world);
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world.entity_mut(agent).insert(M::default());
+            false
         }
         fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            self.countdown.on_stop(agent, world, _reason);
             world.entity_mut(agent).remove::<M>();
-        }
-        fn on_add(&mut self, agent: Entity, world: &mut World) {
-            self.countdown.on_add(agent, world);
-        }
-        fn on_remove(&mut self, agent: Entity, world: &mut World) {
-            self.countdown.on_remove(agent, world);
-        }
-        fn on_drop(self: Box<Self>, agent: Entity, world: &mut World) {
-            TestCountdownAction::on_drop(self.countdown.into(), agent, world);
         }
     }
 
@@ -508,8 +494,9 @@ fn despawn() {
             false
         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) {
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world.despawn(agent);
+            false
         }
 
         fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

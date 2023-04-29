@@ -40,7 +40,7 @@ See the [`ModifyActions`] trait for available methods.
 # struct EmptyAction;
 # impl Action for EmptyAction {
 #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
-#   fn on_start(&mut self, _a: Entity, _w: &mut World) {}
+#   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
 #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
 # }
 #
@@ -70,8 +70,7 @@ fn setup(mut commands: Commands) {
 The [`Action`] trait contains 3 required methods:
 
 * [`is_finished`](Action::is_finished) to determine if an action is finished or not.
-    This method is called once after [`on_start`](Action::on_start), and then, by default,
-    every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
+    By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
 * [`on_start`](Action::on_start) which is called when an action is started.
 * [`on_stop`](Action::on_stop) which is called when an action is stopped.
 
@@ -98,12 +97,15 @@ impl Action for CountdownAction {
         world.get::<Countdown>(agent).unwrap().0 <= 0
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         // Take current count (if paused), or use full count
         let count = self.current.take().unwrap_or(self.count);
 
         // Run the countdown system on the agent
         world.entity_mut(agent).insert(Countdown(count));
+
+        // Is action already finished?
+        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {

@@ -23,7 +23,10 @@ fn setup(mut commands: Commands) {
                 CountdownAction::new(10),
             ]
         },
-        |_, world: &mut World| { world.send_event(AppExit) }
+        |_, world: &mut World| -> bool {
+            world.send_event(AppExit);
+            false
+        }
     ]);
 }
 
@@ -44,10 +47,11 @@ impl<const N: usize> Action for ParallelActions<N> {
             .for_each(|action| action.on_add(agent, world));
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         self.actions
             .iter_mut()
-            .for_each(|action| action.on_start(agent, world));
+            .map(|action| action.on_start(agent, world))
+            .all(|finished| finished)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
@@ -70,8 +74,9 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
+        true
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -100,13 +105,16 @@ impl Action for CountdownAction {
         self.entity = world.spawn_empty().id();
     }
 
-    fn on_start(&mut self, _agent: Entity, world: &mut World) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let mut entity = world.entity_mut(self.entity);
+
         if entity.contains::<Paused>() {
             entity.remove::<Paused>();
         } else {
             entity.insert(Countdown(self.count));
         }
+
+        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {

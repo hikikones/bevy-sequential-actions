@@ -58,6 +58,8 @@ impl Action for BenchAction {
     fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
         false
     }
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {}
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+        false
+    }
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }

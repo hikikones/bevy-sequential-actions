@@ -64,13 +64,16 @@ impl Action for CountForeverAction {
         false
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let mut agent = world.entity_mut(agent);
+
         if agent.contains::<Paused>() {
             agent.remove::<Paused>();
         } else {
             agent.insert(Count::default());
         }
+
+        false
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {

@@ -24,15 +24,20 @@ struct DespawnAction;
 
 impl Action for DespawnAction {
     fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        // Don't advance the action queue by always returning false.
+        // Don't advance the action queue
         false
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         println!("Despawn!");
+
         world.actions(agent).clear();
         world.despawn(agent);
+
         world.send_event(AppExit);
+
+        // Don't advance the action queue
+        false
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -45,8 +50,9 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
+        true
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
