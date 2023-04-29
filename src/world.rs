@@ -36,10 +36,13 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add_many(
+    fn add_many<I>(
         &mut self,
-        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
-    ) -> &mut Self {
+        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I> + Send + Sync + 'static,
+    ) -> &mut Self
+    where
+        I: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+    {
         self.world.add_actions(self.agent, self.config, actions);
         self
     }
@@ -79,12 +82,13 @@ impl ModifyActions for AgentActions<'_> {
 
 pub(super) trait WorldActionsExt {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction);
-    fn add_actions(
+    fn add_actions<I>(
         &mut self,
         agent: Entity,
         config: AddConfig,
-        actions: impl DoubleEndedIterator<Item = BoxedAction>,
-    );
+        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I>,
+    ) where
+        I: DoubleEndedIterator<Item = BoxedAction>;
     fn execute_actions(&mut self, agent: Entity);
     fn next_action(&mut self, agent: Entity);
     fn stop_current_action(&mut self, agent: Entity, reason: StopReason);
@@ -106,12 +110,14 @@ impl WorldActionsExt for World {
         }
     }
 
-    fn add_actions(
+    fn add_actions<I>(
         &mut self,
         agent: Entity,
         config: AddConfig,
-        actions: impl DoubleEndedIterator<Item = BoxedAction>,
-    ) {
+        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I>,
+    ) where
+        I: DoubleEndedIterator<Item = BoxedAction>,
+    {
         match config.order {
             AddOrder::Back => {
                 for mut action in actions {
@@ -120,7 +126,7 @@ impl WorldActionsExt for World {
                 }
             }
             AddOrder::Front => {
-                for mut action in actions.rev() {
+                for mut action in actions.into_iter().rev() {
                     action.on_add(agent, self);
                     self.action_queue(agent).push_front(action);
                 }

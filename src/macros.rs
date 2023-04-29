@@ -1,4 +1,4 @@
-/// Helper macro for creating a collection of boxed actions.
+/// Helper macro for creating an array of boxed actions.
 ///
 /// ```rust,no_run
 /// # use bevy_ecs::prelude::*;
@@ -14,7 +14,7 @@
 /// # let action_a = EmptyAction;
 /// # let action_b = EmptyAction;
 /// #
-/// let actions: std::array::IntoIter<Box<dyn Action>, 3> = actions![
+/// let actions: [Box<dyn Action>; 3] = actions![
 ///         action_a,
 ///         action_b,
 ///         |agent: Entity, world: &mut World| {
@@ -25,6 +25,6 @@
 #[macro_export]
 macro_rules! actions {
     ( $( $action:expr ),* $(,)? ) => {
-        [ $( ::core::convert::Into::<::std::boxed::Box<dyn $crate::Action>>::into($action) ),* ].into_iter()
+        [ $( ::core::convert::Into::<::std::boxed::Box<dyn $crate::Action>>::into($action) ),* ]
     }
 }

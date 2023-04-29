@@ -62,37 +62,45 @@ pub trait ActionsProxy<'a> {
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
-    /// Specify if the next [`action`](Action) in the queue should [`start`](Action::on_start)
-    /// when new actions are added. The next action will only start if nothing is currently running.
+    /// Specify if the next [`action`](Action) in the queue should
+    /// [`start`](Action::on_start) when new actions are added.
+    /// The next action will only start if there is no current action.
+    ///
     /// Default is `true`.
     fn start(&mut self, start: bool) -> &mut Self;
 
     /// Specify the queue order for actions to be added.
+    ///
     /// Default is [`AddOrder::Back`].
     fn order(&mut self, order: AddOrder) -> &mut Self;
 
     /// Adds a single [`action`](Action) to the queue.
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
 
-    /// Adds a collection of actions to the queue that are executed sequentially, i.e. one by one.
-    fn add_many(
+    /// Adds a collection of actions to the queue.
+    fn add_many<I>(
         &mut self,
-        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
-    ) -> &mut Self;
+        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I> + Send + Sync + 'static,
+    ) -> &mut Self
+    where
+        I: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
-    /// but only if there is no action currently running.
+    /// but only if there is no current action.
     fn execute(&mut self) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
+    ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn next(&mut self) -> &mut Self;
 
-    /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`canceled`](StopReason::Canceled).
+    /// [`Stops`](Action::on_stop) the current action as [`canceled`](StopReason::Canceled).
+    ///
     /// To resume the action queue, call either [`execute`](Self::execute) or [`next`](Self::next).
     fn cancel(&mut self) -> &mut Self;
 
-    /// [`Stops`](Action::on_stop) the current [`action`](Action) as [`paused`](StopReason::Paused).
+    /// [`Stops`](Action::on_stop) the current action as [`paused`](StopReason::Paused).
+    ///
     /// To resume the action queue, call either [`execute`](Self::execute) or [`next`](Self::next).
     fn pause(&mut self) -> &mut Self;
 
@@ -100,7 +108,8 @@ pub trait ModifyActions {
     fn skip(&mut self) -> &mut Self;
 
     /// Clears the action queue.
-    /// Current [`action`](Action) is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
+    ///
+    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(&mut self) -> &mut Self;
 }
 
