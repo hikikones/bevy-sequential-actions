@@ -8,101 +8,127 @@ fn main() {
         .add_plugin(ScheduleRunnerPlugin)
         .add_plugin(SequentialActionsPlugin::default())
         .add_startup_system(setup)
+        .add_system(countdown)
         .run();
 }
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::default()).id();
     commands.actions(agent).add_many(actions![
-        A,
-        B,
-        C,
-        AB { a: A, b: B },
-        ABC { a: A, b: B, c: C },
+        ParallelActions {
+            actions: actions![
+                PrintAction("hello"),
+                CountdownAction::new(5),
+                PrintAction("world"),
+                CountdownAction::new(10),
+            ]
+        },
         |_, world: &mut World| { world.send_event(AppExit) }
     ]);
 }
 
-struct A;
-impl Action for A {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
-        println!("A");
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+struct ParallelActions<const N: usize> {
+    actions: [BoxedAction; N],
 }
 
-struct B;
-impl Action for B {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
-        println!("B");
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-}
-
-struct C;
-impl Action for C {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
-        println!("C");
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-}
-
-struct AB {
-    a: A,
-    b: B,
-}
-impl Action for AB {
+impl<const N: usize> Action for ParallelActions<N> {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        self.a.is_finished(agent, world) && self.b.is_finished(agent, world)
+        self.actions
+            .iter()
+            .all(|action| action.is_finished(agent, world))
+    }
+
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_add(agent, world));
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) {
-        self.a.on_start(agent, world);
-        self.b.on_start(agent, world);
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_start(agent, world));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        self.a.on_stop(agent, world, reason);
-        self.b.on_stop(agent, world, reason);
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_stop(agent, world, reason));
+    }
+
+    fn on_remove(&mut self, agent: Entity, world: &mut World) {
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_remove(agent, world));
     }
 }
 
-struct ABC {
-    a: A,
-    b: B,
-    c: C,
+struct PrintAction(&'static str);
+
+impl Action for PrintAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
+        println!("{}", self.0);
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
-impl Action for ABC {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        self.a.is_finished(agent, world)
-            && self.b.is_finished(agent, world)
-            && self.c.is_finished(agent, world)
+
+struct CountdownAction {
+    count: i32,
+    entity: Entity,
+}
+
+impl CountdownAction {
+    const fn new(count: i32) -> Self {
+        Self {
+            count,
+            entity: Entity::PLACEHOLDER,
+        }
+    }
+}
+
+impl Action for CountdownAction {
+    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
+        world.get::<Countdown>(self.entity).unwrap().0 <= 0
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) {
-        self.a.on_start(agent, world);
-        self.b.on_start(agent, world);
-        self.c.on_start(agent, world);
+    fn on_add(&mut self, _agent: Entity, world: &mut World) {
+        self.entity = world.spawn_empty().id();
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        self.a.on_stop(agent, world, reason);
-        self.b.on_stop(agent, world, reason);
-        self.c.on_stop(agent, world, reason);
+    fn on_start(&mut self, _agent: Entity, world: &mut World) {
+        let mut entity = world.entity_mut(self.entity);
+        if entity.contains::<Paused>() {
+            entity.remove::<Paused>();
+        } else {
+            entity.insert(Countdown(self.count));
+        }
+    }
+
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+        if let StopReason::Paused = reason {
+            world.entity_mut(self.entity).insert(Paused);
+        }
+    }
+
+    fn on_remove(&mut self, _agent: Entity, world: &mut World) {
+        world.despawn(self.entity);
+    }
+}
+
+#[derive(Component)]
+struct Countdown(i32);
+
+#[derive(Component)]
+struct Paused;
+
+fn countdown(mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>) {
+    for (entity, mut countdown) in &mut countdown_q {
+        println!("Countdown({:?}): {}", entity, countdown.0);
+        countdown.0 -= 1;
     }
 }

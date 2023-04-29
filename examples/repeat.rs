@@ -30,20 +30,6 @@ fn setup(mut commands: Commands) {
         });
 }
 
-struct PrintAction(&'static str);
-
-impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
-        println!("{}", self.0);
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-}
-
 struct RepeatAction<A: Action> {
     action: A,
     repeat: u32,
@@ -75,4 +61,18 @@ impl<A: Action> Action for RepeatAction<A> {
         self.repeat -= 1;
         world.get_mut::<ActionQueue>(agent).unwrap().push_back(self);
     }
+}
+
+struct PrintAction(&'static str);
+
+impl Action for PrintAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
+        println!("{}", self.0);
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
