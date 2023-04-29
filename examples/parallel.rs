@@ -42,31 +42,29 @@ impl<const N: usize> Action for ParallelActions<N> {
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
-        self.actions
-            .iter_mut()
-            .for_each(|action| action.on_add(agent, world));
+        for action in self.actions.iter_mut() {
+            action.on_add(agent, world);
+        }
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        let mut finished_bools = [false; N];
-
-        self.actions.iter_mut().enumerate().for_each(|(i, action)| {
-            finished_bools[i] = action.on_start(agent, world);
-        });
-
-        finished_bools.into_iter().all(|finished| finished)
+        let mut finished = [false; N];
+        for (i, action) in self.actions.iter_mut().enumerate() {
+            finished[i] = action.on_start(agent, world);
+        }
+        finished.into_iter().all(|b| b)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        self.actions
-            .iter_mut()
-            .for_each(|action| action.on_stop(agent, world, reason));
+        for action in self.actions.iter_mut() {
+            action.on_stop(agent, world, reason);
+        }
     }
 
     fn on_remove(&mut self, agent: Entity, world: &mut World) {
-        self.actions
-            .iter_mut()
-            .for_each(|action| action.on_remove(agent, world));
+        for action in self.actions.iter_mut() {
+            action.on_remove(agent, world);
+        }
     }
 }
 
