@@ -114,8 +114,8 @@ the logic for advancing the action queue might not work properly.
 
 In general, there are two rules when modifying actions for an `agent` inside the action trait:
 
-* When adding new actions, the `start` property should be set to `false`.
-    Or you can mutate the `ActionQueue` component directly.
+* When adding new actions, you should either set the `start` property to `false`,
+    or use the `ActionQueue` component directly.
 * The `execute` and `next` methods should not be used.
 
 ## Examples
