@@ -1,4 +1,12 @@
+<div align="center">
+
 # Bevy Sequential Actions
+
+[![crates.io](https://img.shields.io/crates/v/bevy-sequential-actions?style=flat-square)](https://crates.io/crates/bevy-sequential-actions)
+[![docs.rs](https://img.shields.io/docsrs/bevy-sequential-actions?style=flat-square)](https://docs.rs/bevy_sequential_actions)
+[![MIT/Apache 2.0](https://img.shields.io/crates/l/bevy-sequential-actions?style=flat-square)](https://github.com/hikikones/bevy-sequential-actions#license)
+
+</div>
 
 A [Bevy](https://bevyengine.org) library that aims to execute a queue of various actions in a sequential manner.
 This generally means that one action runs at a time, and when it is done,
