@@ -38,10 +38,10 @@ impl ModifyActions for AgentActions<'_> {
 
     fn add_many<I>(
         &mut self,
-        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I> + Send + Sync + 'static,
+        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I> + Send + 'static,
     ) -> &mut Self
     where
-        I: DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
+        I: DoubleEndedIterator<Item = BoxedAction>,
     {
         self.world.add_actions(self.agent, self.config, actions);
         self
