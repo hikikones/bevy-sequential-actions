@@ -188,11 +188,8 @@ impl<T: AgentMarker> ActionsBundle<T> {
     }
 }
 
-impl<I, T: AgentMarker> From<I> for ActionsBundle<T>
-where
-    I: IntoIterator<Item = BoxedAction>,
-{
-    fn from(actions: I) -> Self {
+impl<T: AgentMarker> FromIterator<BoxedAction> for ActionsBundle<T> {
+    fn from_iter<I: IntoIterator<Item = BoxedAction>>(actions: I) -> Self {
         Self {
             marker: T::default(),
             current: CurrentAction(None),
