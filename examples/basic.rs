@@ -44,6 +44,9 @@ impl Action for DemoAction {
     // Required method
     fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("on_start: called when an action is started");
+
+        // Returning true here marks the action as already finished,
+        // and will immediately advance the action queue.
         false
     }
 
