@@ -44,7 +44,10 @@ impl Benchmark {
             world.actions(agent).add(BenchAction);
         }
 
-        Self { schedule, world }
+        let mut bench = Self { schedule, world };
+        bench.run();
+
+        bench
     }
 
     fn run(&mut self) {

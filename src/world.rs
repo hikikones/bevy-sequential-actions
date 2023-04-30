@@ -36,13 +36,14 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add_many<I>(
+    fn add_many(
         &mut self,
-        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I> + Send + 'static,
-    ) -> &mut Self
-    where
-        I: DoubleEndedIterator<Item = BoxedAction>,
-    {
+        actions: impl IntoIterator<
+                Item = BoxedAction,
+                IntoIter = impl DoubleEndedIterator<Item = BoxedAction>,
+            > + Send
+            + 'static,
+    ) -> &mut Self {
         self.world.add_actions(self.agent, self.config, actions);
         self
     }
@@ -82,13 +83,15 @@ impl ModifyActions for AgentActions<'_> {
 
 pub(super) trait WorldActionsExt {
     fn add_action(&mut self, agent: Entity, config: AddConfig, action: BoxedAction);
-    fn add_actions<I>(
+    fn add_actions(
         &mut self,
         agent: Entity,
         config: AddConfig,
-        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I>,
-    ) where
-        I: DoubleEndedIterator<Item = BoxedAction>;
+        actions: impl IntoIterator<
+            Item = BoxedAction,
+            IntoIter = impl DoubleEndedIterator<Item = BoxedAction>,
+        >,
+    );
     fn execute_actions(&mut self, agent: Entity);
     fn next_action(&mut self, agent: Entity);
     fn stop_current_action(&mut self, agent: Entity, reason: StopReason);
@@ -110,14 +113,15 @@ impl WorldActionsExt for World {
         }
     }
 
-    fn add_actions<I>(
+    fn add_actions(
         &mut self,
         agent: Entity,
         config: AddConfig,
-        actions: impl IntoIterator<Item = BoxedAction, IntoIter = I>,
-    ) where
-        I: DoubleEndedIterator<Item = BoxedAction>,
-    {
+        actions: impl IntoIterator<
+            Item = BoxedAction,
+            IntoIter = impl DoubleEndedIterator<Item = BoxedAction>,
+        >,
+    ) {
         match config.order {
             AddOrder::Back => {
                 for mut action in actions {
