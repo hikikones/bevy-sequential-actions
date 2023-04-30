@@ -15,7 +15,7 @@ https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-
 
 </div>
 
-## :scroll: Getting Started
+## 📜 Getting Started
 
 #### Plugin
 
@@ -116,7 +116,7 @@ fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
 }
 ```
 
-#### :warning: Warning
+#### ⚠️ Warning
 
 One thing to keep in mind is when modifying actions using `World` inside the `Action` trait.
 In order to pass a mutable reference to world when calling the trait methods,
@@ -130,7 +130,7 @@ In general, there are two rules when modifying actions for an `agent` inside the
     or push to the `ActionQueue` component directly.
 * The `execute` and `next` methods should not be used.
 
-## :paperclip: Examples
+## 📎 Examples
 
 See the [examples](examples/) for more usage.
 Each example can be run with `cargo run --example <example>`.
@@ -144,7 +144,7 @@ Each example can be run with `cargo run --example <example>`.
 | `parallel` | Shows how to create actions that run in parallel. |
 | `schedule` | Shows how to use the plugin with two different schedules. |
 
-## :pushpin: Compatibility
+## 📌 Compatibility
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
@@ -153,7 +153,7 @@ Each example can be run with `cargo run --example <example>`.
 | 0.8  | 0.3 — 0.5               |
 | 0.7  | 0.1 — 0.2               |
 
-## :bookmark: License
+## 🔖 License
 
 `bevy-sequential-actions` is dual-licensed under either
 

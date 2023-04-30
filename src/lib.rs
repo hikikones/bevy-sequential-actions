@@ -137,7 +137,7 @@ fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
 }
 ```
 
-#### ⚠ Warning
+#### ⚠️ Warning
 
 One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
 In order to pass a mutable reference to world when calling the trait methods,
