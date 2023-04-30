@@ -113,6 +113,7 @@ impl Action for CountdownAction {
             entity.remove::<Paused>();
         } else {
             entity.insert(Countdown(self.count));
+            println!("Countdown({:?}): {}", self.entity, self.count);
         }
 
         self.is_finished(agent, world)
@@ -137,7 +138,7 @@ struct Paused;
 
 fn countdown(mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>) {
     for (entity, mut countdown) in &mut countdown_q {
-        println!("Countdown({:?}): {}", entity, countdown.0);
         countdown.0 -= 1;
+        println!("Countdown({:?}): {}", entity, countdown.0);
     }
 }
