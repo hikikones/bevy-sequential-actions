@@ -58,7 +58,6 @@ fn setup(mut commands: Commands) {
 The `Action` trait contains 3 required methods:
 
 * `is_finished` to determine if an action is finished or not.
-    By default, this method is called every frame in `CoreSet::Last`.
 * `on_start` which is called when an action is started.
 * `on_stop` which is called when an action is stopped.
 
@@ -78,26 +77,28 @@ pub struct CountdownAction {
 
 impl Action for CountdownAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        // Determine if countdown has reached zero
+        // Determine if countdown has reached zero.
+        // By default, this method is called every frame in CoreSet::Last.
         world.get::<Countdown>(agent).unwrap().0 <= 0
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        // Take current count (if paused), or use full count
+        // Take current count (if paused), or use full count.
         let count = self.current.take().unwrap_or(self.count);
 
-        // Run the countdown system on the agent
+        // Run the countdown system on the agent.
         world.entity_mut(agent).insert(Countdown(count));
 
         // Is action already finished?
+        // Returning true here will immediately advance the action queue.
         self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        // Take the countdown component from the agent
+        // Take the countdown component from the agent.
         let countdown = world.entity_mut(agent).take::<Countdown>();
 
-        // Store current count when paused
+        // Store current count when paused.
         if let StopReason::Paused = reason {
             self.current = Some(countdown.unwrap().0);
         }
@@ -125,7 +126,7 @@ the logic for advancing the action queue might not work properly.
 In general, there are two rules when modifying actions for an `agent` inside the action trait:
 
 * When adding new actions, you should either set the `start` property to `false`,
-    or use the `ActionQueue` component directly.
+    or push to the `ActionQueue` component directly.
 * The `execute` and `next` methods should not be used.
 
 ## :paperclip: Examples
