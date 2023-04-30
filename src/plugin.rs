@@ -9,18 +9,23 @@ use crate::*;
 ///
 /// This plugin adds the necessary systems for advancing the action queue for each `agent`.
 /// By default, the systems will be added to [`CoreSet::Last`].
+///
 /// If you want to schedule the systems yourself, see [`get_systems`](Self::get_systems).
+/// The generic marker type `T` is used for filtering agents,
+/// allowing you to add the systems multiple times for each type `T`.
+/// By default, the [`DefaultAgentMarker`] is used.
+///
+/// # Example
 ///
 /// ```rust,no_run
 /// # use bevy_ecs::prelude::*;
 /// # use bevy_app::prelude::*;
-/// use bevy_sequential_actions::*;
-///
-/// fn main() {
-///     App::new()
-///         .add_plugin(SequentialActionsPlugin::default())
-///         .run();
-/// }
+/// # use bevy_sequential_actions::*;
+/// # fn main() {
+/// App::new()
+///     .add_plugin(SequentialActionsPlugin::default())
+///     .run();
+/// # }
 /// ```
 pub struct SequentialActionsPlugin<T: AgentMarker = DefaultAgentMarker>(PhantomData<T>);
 

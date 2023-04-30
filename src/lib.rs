@@ -1,5 +1,8 @@
-#![allow(clippy::needless_doctest_main)]
-#![warn(missing_docs)]
+#![warn(
+    missing_docs,
+    rustdoc::broken_intra_doc_links,
+    rustdoc::private_intra_doc_links
+)]
 
 /*!
 # Bevy Sequential Actions
