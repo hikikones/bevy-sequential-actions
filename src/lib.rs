@@ -5,13 +5,17 @@
 )]
 
 /*!
+<div align="center">
+
 # Bevy Sequential Actions
 
 A [Bevy](https://bevyengine.org) library that aims to execute a queue of various actions in a sequential manner.
 This generally means that one action runs at a time, and when it is done,
 the next action will start and so on until the queue is empty.
 
-## Getting Started
+</div>
+
+## 📜 Getting Started
 
 #### Plugin
 
@@ -133,7 +137,7 @@ fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
 }
 ```
 
-#### Warning
+#### ⚠ Warning
 
 One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
 In order to pass a mutable reference to world when calling the trait methods,
