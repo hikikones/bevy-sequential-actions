@@ -20,8 +20,8 @@ fn setup(mut commands: Commands) {
         .add(DemoAction)
         // Add multiple actions
         .add_many(actions![
-            PrintAction("One"),
-            PrintAction("Two"),
+            PrintAction("hello"),
+            PrintAction("there"),
             CountdownAction::new(10)
         ])
         // Add an anonymous action with a closure
