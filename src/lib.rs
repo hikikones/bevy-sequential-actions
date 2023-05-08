@@ -202,16 +202,6 @@ impl<T: AgentMarker> ActionsBundle<T> {
     }
 }
 
-impl<T: AgentMarker> FromIterator<BoxedAction> for ActionsBundle<T> {
-    fn from_iter<I: IntoIterator<Item = BoxedAction>>(actions: I) -> Self {
-        Self {
-            marker: T::default(),
-            current: CurrentAction(None),
-            queue: ActionQueue(VecDeque::from_iter(actions)),
-        }
-    }
-}
-
 /// The default marker component for agents.
 /// Part of [`ActionsBundle::default`].
 #[derive(Default, Component)]
