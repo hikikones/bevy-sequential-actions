@@ -51,8 +51,8 @@ impl Action for DemoAction {
     }
 
     // Required method
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, reason: StopReason) {
-        println!("on_stop: called when an action is stopped. Reason: {reason:?}");
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {
+        println!("on_stop: called when an action is stopped");
     }
 
     // Optional method (empty by default)
