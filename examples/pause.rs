@@ -60,11 +60,11 @@ fn frame_logic(
 struct CountForeverAction;
 
 impl Action for CountForeverAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        false
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+        Finished(false)
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         let mut agent = world.entity_mut(agent);
 
         if agent.contains::<Paused>() {
@@ -73,7 +73,7 @@ impl Action for CountForeverAction {
             agent.insert(Count::default());
         }
 
-        false
+        Finished(false)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {

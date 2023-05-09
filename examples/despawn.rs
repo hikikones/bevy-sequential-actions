@@ -23,12 +23,12 @@ fn setup(mut commands: Commands) {
 struct DespawnAction;
 
 impl Action for DespawnAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
         // Don't advance the action queue
-        false
+        Finished(false)
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         println!("Despawn!");
 
         world.actions(agent).clear();
@@ -37,7 +37,7 @@ impl Action for DespawnAction {
         world.send_event(AppExit);
 
         // Don't advance the action queue
-        false
+        Finished(false)
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -46,13 +46,13 @@ impl Action for DespawnAction {
 struct PrintAction(&'static str);
 
 impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+        Finished(true)
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
         println!("{}", self.0);
-        true
+        Finished(true)
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

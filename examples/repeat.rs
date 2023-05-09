@@ -25,9 +25,9 @@ fn setup(mut commands: Commands) {
                 repeat: 1,
             },
         ])
-        .add(|_agent, world: &mut World| -> bool {
+        .add(|_agent, world: &mut World| -> Finished {
             world.send_event(AppExit);
-            false
+            Finished(false)
         });
 }
 
@@ -37,7 +37,7 @@ struct RepeatAction<A: Action> {
 }
 
 impl<A: Action> Action for RepeatAction<A> {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
         self.action.is_finished(agent, world)
     }
 
@@ -45,7 +45,7 @@ impl<A: Action> Action for RepeatAction<A> {
         self.action.on_add(agent, world);
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         self.action.on_start(agent, world)
     }
 
@@ -67,13 +67,13 @@ impl<A: Action> Action for RepeatAction<A> {
 struct PrintAction(&'static str);
 
 impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+        Finished(true)
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
         println!("{}", self.0);
-        true
+        Finished(true)
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

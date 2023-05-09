@@ -23,9 +23,9 @@ fn setup(mut commands: Commands) {
                 CountdownAction::new(10),
             ]
         },
-        |_, world: &mut World| -> bool {
+        |_, world: &mut World| -> Finished {
             world.send_event(AppExit);
-            false
+            Finished(false)
         }
     ]);
 }
@@ -35,10 +35,11 @@ struct ParallelActions<const N: usize> {
 }
 
 impl<const N: usize> Action for ParallelActions<N> {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
         self.actions
             .iter()
-            .all(|action| action.is_finished(agent, world))
+            .all(|action| action.is_finished(agent, world).into())
+            .into()
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
@@ -47,12 +48,12 @@ impl<const N: usize> Action for ParallelActions<N> {
         }
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         let mut finished = [false; N];
         for (i, action) in self.actions.iter_mut().enumerate() {
-            finished[i] = action.on_start(agent, world);
+            finished[i] = action.on_start(agent, world).into();
         }
-        finished.into_iter().all(|b| b)
+        finished.into_iter().all(|b| b).into()
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
@@ -71,13 +72,13 @@ impl<const N: usize> Action for ParallelActions<N> {
 struct PrintAction(&'static str);
 
 impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+        Finished(true)
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
         println!("{}", self.0);
-        true
+        Finished(true)
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -98,15 +99,15 @@ impl CountdownAction {
 }
 
 impl Action for CountdownAction {
-    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
-        world.get::<Countdown>(self.entity).unwrap().0 <= 0
+    fn is_finished(&self, _agent: Entity, world: &World) -> Finished {
+        Finished(world.get::<Countdown>(self.entity).unwrap().0 <= 0)
     }
 
     fn on_add(&mut self, _agent: Entity, world: &mut World) {
         self.entity = world.spawn_empty().id();
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         let mut entity = world.entity_mut(self.entity);
 
         if entity.contains::<Paused>() {

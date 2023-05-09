@@ -205,7 +205,7 @@ impl WorldHelperExt for World {
         if let Some(mut action) = self.pop_next_action(agent) {
             let is_finished = action.on_start(agent, self);
 
-            if is_finished {
+            if is_finished.0 {
                 action.on_stop(agent, self, StopReason::Finished);
                 action.on_remove(agent, self);
                 action.on_drop(agent, self);

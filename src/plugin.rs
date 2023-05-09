@@ -101,7 +101,7 @@ fn check_actions<T: AgentMarker>(
 ) {
     for (agent, current_action) in action_q.iter() {
         if let Some(action) = current_action.as_ref() {
-            if action.is_finished(agent, world) {
+            if action.is_finished(agent, world).0 {
                 commands.add(move |world: &mut World| {
                     world.stop_current_action(agent, StopReason::Finished);
                 });
@@ -117,7 +117,7 @@ fn check_actions_par<T: AgentMarker>(
 ) {
     action_q.par_iter().for_each(|(agent, current_action)| {
         if let Some(action) = current_action.as_ref() {
-            if action.is_finished(agent, world) {
+            if action.is_finished(agent, world).0 {
                 par_commands.command_scope(|mut commands: Commands| {
                     commands.add(move |world: &mut World| {
                         world.stop_current_action(agent, StopReason::Finished);

@@ -50,8 +50,8 @@ See the [`ModifyActions`] trait for available methods.
 #
 # struct EmptyAction;
 # impl Action for EmptyAction {
-#   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
-#   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+#   fn is_finished(&self, _a: Entity, _w: &World) -> Finished { true.into() }
+#   fn on_start(&mut self, _a: Entity, _w: &mut World) -> Finished { true.into() }
 #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
 # }
 #
@@ -102,13 +102,13 @@ pub struct CountdownAction {
 }
 
 impl Action for CountdownAction {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
         // Determine if countdown has reached zero.
         // By default, this method is called every frame in CoreSet::Last.
-        world.get::<Countdown>(agent).unwrap().0 <= 0
+        Finished(world.get::<Countdown>(agent).unwrap().0 <= 0)
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         // Take current count (if paused), or use full count.
         let count = self.current.take().unwrap_or(self.count);
 
@@ -240,6 +240,22 @@ pub enum StopReason {
     Canceled,
     /// The action was paused.
     Paused,
+}
+
+/// Wrapper struct for a `boolean`.
+#[derive(Debug, Default, Clone, Copy, Deref)]
+pub struct Finished(pub bool);
+
+impl From<bool> for Finished {
+    fn from(value: bool) -> Self {
+        Finished(value)
+    }
+}
+
+impl From<Finished> for bool {
+    fn from(value: Finished) -> Self {
+        value.0
+    }
 }
 
 #[derive(Clone, Copy)]

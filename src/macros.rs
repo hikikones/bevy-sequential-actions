@@ -6,8 +6,8 @@
 /// #
 /// # struct EmptyAction;
 /// # impl Action for EmptyAction {
-/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
-/// #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+/// #   fn is_finished(&self, _a: Entity, _w: &World) -> Finished { true.into() }
+/// #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> Finished { true.into() }
 /// #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
 /// # }
 /// #
@@ -17,9 +17,9 @@
 /// let actions: [Box<dyn Action>; 3] = actions![
 ///         action_a,
 ///         action_b,
-///         |agent: Entity, world: &mut World| -> bool {
+///         |agent: Entity, world: &mut World| -> Finished {
 ///             // on_start
-///             true
+///             Finished(true)
 ///         },
 ///     ];
 /// ```

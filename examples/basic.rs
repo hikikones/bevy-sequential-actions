@@ -25,10 +25,10 @@ fn setup(mut commands: Commands) {
             CountdownAction::new(10)
         ])
         // Add an anonymous action with a closure
-        .add(|_agent, world: &mut World| -> bool {
+        .add(|_agent, world: &mut World| -> Finished {
             // on_start
             world.send_event(AppExit);
-            false
+            Finished(false)
         });
 }
 
@@ -36,18 +36,18 @@ struct DemoAction;
 
 impl Action for DemoAction {
     // Required method
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
         println!("is_finished: called every frame in CoreSet::Last");
-        true
+        Finished(true)
     }
 
     // Required method
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
         println!("on_start: called when an action is started");
 
         // Returning true here marks the action as already finished,
         // and will immediately advance the action queue.
-        false
+        Finished(false)
     }
 
     // Required method
@@ -74,13 +74,13 @@ impl Action for DemoAction {
 struct PrintAction(&'static str);
 
 impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+        Finished(true)
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
         println!("{}", self.0);
-        true
+        Finished(true)
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -101,15 +101,15 @@ impl CountdownAction {
 }
 
 impl Action for CountdownAction {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
         let current_count = world.get::<Countdown>(agent).unwrap().0;
         println!("Countdown: {current_count}");
 
         // Determine if countdown has reached zero
-        current_count <= 0
+        Finished(current_count <= 0)
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         // Take current count (if paused), or use full count
         let count = self.current.take().unwrap_or(self.count);
 

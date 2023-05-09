@@ -77,13 +77,13 @@ pub struct CountdownAction {
 }
 
 impl Action for CountdownAction {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
         // Determine if countdown has reached zero.
         // By default, this method is called every frame in CoreSet::Last.
-        world.get::<Countdown>(agent).unwrap().0 <= 0
+        Finished(world.get::<Countdown>(agent).unwrap().0 <= 0)
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
         // Take current count (if paused), or use full count.
         let count = self.current.take().unwrap_or(self.count);
 
