@@ -68,7 +68,7 @@ In addition, there are 3 optional methods:
 * `on_remove` which is called when an action is removed from the queue.
 * `on_drop` which is the last method to be called with full ownership.
 
-A simple countdown action follows.
+A simple wait action follows.
 
 ```rust
 pub struct WaitAction {
