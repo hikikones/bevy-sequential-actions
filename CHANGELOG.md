@@ -6,7 +6,7 @@
     - Adds four new methods to the `Action` trait: `is_finished`, `on_add`, `on_remove` and `on_drop`.
     - Adds a generic marker type to both `SequentialActionsPlugin` and `ActionsBundle` for filtering agents.
         - By default, the `DefaultAgentMarker` type is used.
-    - Changes `Action::on_start` to now return a `bool` for immediate action queue advancement.
+    - Changes `Action::on_start` to now return a `Finished(bool)` for immediate action queue advancement.
     - Removes `ActionCommands` struct for modifying actions inside the action trait.
     - Removes `ActionFinished` component.
     - Removes `Repeat` configuration.
