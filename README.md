@@ -71,24 +71,27 @@ In addition, there are 3 optional methods:
 A simple countdown action follows.
 
 ```rust
-pub struct CountdownAction {
-    count: i32,
-    current: Option<i32>,
+pub struct WaitAction {
+    duration: f32, // Seconds
+    current: Option<f32>, // None
 }
 
-impl Action for CountdownAction {
+#[derive(Component)]
+struct WaitTimer(f32);
+
+impl Action for WaitAction {
     fn is_finished(&self, agent: Entity, world: &World) -> Finished {
-        // Determine if countdown has reached zero.
+        // Determine if wait timer has reached zero.
         // By default, this method is called every frame in CoreSet::Last.
-        Finished(world.get::<Countdown>(agent).unwrap().0 <= 0)
+        Finished(world.get::<WaitTimer>(agent).unwrap().0 <= 0.0)
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
-        // Take current count (if paused), or use full count.
-        let count = self.current.take().unwrap_or(self.count);
+        // Take current time (if paused), or use full duration.
+        let duration = self.current.take().unwrap_or(self.duration);
 
-        // Run the countdown system on the agent.
-        world.entity_mut(agent).insert(Countdown(count));
+        // Run the wait timer system on the agent.
+        world.entity_mut(agent).insert(WaitTimer(duration));
 
         // Is action already finished?
         // Returning true here will immediately advance the action queue.
@@ -96,22 +99,19 @@ impl Action for CountdownAction {
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        // Take the countdown component from the agent.
-        let countdown = world.entity_mut(agent).take::<Countdown>();
+        // Take the wait timer component from the agent.
+        let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
-        // Store current count when paused.
+        // Store current time when paused.
         if let StopReason::Paused = reason {
-            self.current = Some(countdown.unwrap().0);
+            self.current = Some(wait_timer.unwrap().0);
         }
     }
 }
 
-#[derive(Component)]
-struct Countdown(i32);
-
-fn countdown_system(mut countdown_q: Query<&mut Countdown>) {
-    for mut countdown in &mut countdown_q {
-        countdown.0 -= 1;
+fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
+    for mut wait_timer in &mut wait_timer_q {
+        wait_timer.0 -= time.delta_seconds();
     }
 }
 ```
