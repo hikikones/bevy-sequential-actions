@@ -14,10 +14,13 @@ fn main() {
         .add_plugin(ScheduleRunnerPlugin)
         // Add default plugin for default schedule
         .add_plugin(SequentialActionsPlugin::default())
-        // Schedule manually with marker component for custom schedule
-        .add_systems(
-            SequentialActionsPlugin::<CustomMarker>::get_systems().in_schedule(CustomSchedule),
-        )
+        // Add new plugin with marker component for custom schedule
+        .add_plugin(SequentialActionsPlugin::<CustomMarker>::new(
+            QueueAdvancement::Normal,
+            |app, system| {
+                app.add_system(system.in_schedule(CustomSchedule));
+            },
+        ))
         .add_startup_system(setup)
         .add_system(run_custom_schedule)
         .run();

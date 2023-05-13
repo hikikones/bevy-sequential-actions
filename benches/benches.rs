@@ -1,7 +1,9 @@
+use bevy_app::prelude::*;
+use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-
 use bevy_sequential_actions::*;
+
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 criterion_main!(benches);
 criterion_group!(benches, many_agents);
@@ -10,48 +12,40 @@ fn many_agents(c: &mut Criterion) {
     let mut group = c.benchmark_group("many_agents");
 
     for agents in [10, 100, 1000, 10_000, 100_000, 1_000_000] {
-        let mut bench = black_box(Benchmark::new(agents, false));
-        group.bench_function(format!("{agents}"), |b| {
-            b.iter(|| bench.run());
-        });
-
-        let mut bench = black_box(Benchmark::new(agents, true));
-        group.bench_function(format!("{agents} (parallel)"), |b| {
-            b.iter(|| bench.run());
-        });
+        for system_kind in [
+            QueueAdvancement::Normal,
+            QueueAdvancement::Parallel,
+            QueueAdvancement::Exclusive,
+        ] {
+            let mut bench = black_box(Benchmark::new(agents, system_kind));
+            group.bench_function(format!("{agents} {system_kind:?}"), |b| {
+                b.iter(|| bench.update());
+            });
+        }
     }
 
     group.finish();
 }
 
-struct Benchmark {
-    schedule: Schedule,
-    world: World,
-}
+#[derive(Deref, DerefMut)]
+struct Benchmark(App);
 
 impl Benchmark {
-    fn new(agents: u32, parallel: bool) -> Self {
-        let mut schedule = Schedule::new();
-        schedule.add_systems(if parallel {
-            SequentialActionsPlugin::<DefaultAgentMarker>::get_parallel_systems()
-        } else {
-            SequentialActionsPlugin::<DefaultAgentMarker>::get_systems()
-        });
+    fn new(agents: u32, system_kind: QueueAdvancement) -> Self {
+        let mut app = App::new();
+        app.add_plugin(SequentialActionsPlugin::<DefaultAgentMarker>::new(
+            system_kind,
+            |app, system| {
+                app.add_system(system);
+            },
+        ));
 
-        let mut world = World::new();
         for _ in 0..agents {
-            let agent = world.spawn(ActionsBundle::default()).id();
-            world.actions(agent).add(BenchAction);
+            let agent = app.world.spawn(ActionsBundle::default()).id();
+            app.world.actions(agent).add(BenchAction);
         }
 
-        let mut bench = Self { schedule, world };
-        bench.run();
-
-        bench
-    }
-
-    fn run(&mut self) {
-        self.schedule.run(&mut self.world);
+        Self(app)
     }
 }
 
