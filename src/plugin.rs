@@ -27,6 +27,7 @@ use crate::*;
 ///     .run();
 /// # }
 /// ```
+#[allow(clippy::type_complexity)]
 pub struct SequentialActionsPlugin<T: AgentMarker> {
     system_kind: QueueAdvancement,
     app_init: Box<dyn Fn(&mut App, BoxedSystem) + Send + Sync>,
@@ -78,22 +79,27 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
 
 impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
     fn build(&self, app: &mut App) {
-        app.init_resource::<CachedAgentQuery<T>>();
-
-        (self.app_init)(
-            app,
-            match self.system_kind {
-                QueueAdvancement::Normal => {
-                    Box::new(IntoSystem::into_system(check_actions_normal::<T>))
-                }
-                QueueAdvancement::Parallel => {
-                    Box::new(IntoSystem::into_system(check_actions_parallel::<T>))
-                }
-                QueueAdvancement::Exclusive => {
-                    Box::new(IntoSystem::into_system(check_actions_exclusive::<T>))
-                }
-            },
-        );
+        match self.system_kind {
+            QueueAdvancement::Normal => {
+                (self.app_init)(
+                    app,
+                    Box::new(IntoSystem::into_system(check_actions_normal::<T>)),
+                );
+            }
+            QueueAdvancement::Parallel => {
+                (self.app_init)(
+                    app,
+                    Box::new(IntoSystem::into_system(check_actions_parallel::<T>)),
+                );
+            }
+            QueueAdvancement::Exclusive => {
+                app.init_resource::<CachedAgentQuery<T>>();
+                (self.app_init)(
+                    app,
+                    Box::new(IntoSystem::into_system(check_actions_exclusive::<T>)),
+                );
+            }
+        }
     }
 }
 
