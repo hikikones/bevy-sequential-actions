@@ -129,7 +129,7 @@ impl Action for WaitAction {
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
         // Store current time when paused.
-        if let StopReason::Paused = reason {
+        if reason == StopReason::Paused {
             self.current = Some(wait_timer.unwrap().0);
         }
     }
@@ -208,7 +208,7 @@ impl<T: AgentMarker> ActionsBundle<T> {
 
 /// The default marker component for agents.
 /// Part of [`ActionsBundle::default`].
-#[derive(Default, Component)]
+#[derive(Debug, Default, Clone, Copy, Component)]
 pub struct DefaultAgentMarker;
 
 /// The current action for an `agent`.
@@ -226,7 +226,7 @@ pub struct CurrentAction(Option<BoxedAction>);
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
 /// The queue order for an [`Action`] to be added.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum AddOrder {
     /// An action is added to the back of the queue.
     #[default]
@@ -236,7 +236,7 @@ pub enum AddOrder {
 }
 
 /// The reason why an [`Action`] was stopped.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StopReason {
     /// The action was finished.
     Finished,
@@ -247,7 +247,7 @@ pub enum StopReason {
 }
 
 /// Wrapper struct for a `boolean`.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Finished(pub bool);
 
 impl From<bool> for Finished {
@@ -262,7 +262,7 @@ impl From<Finished> for bool {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 struct AddConfig {
     start: bool,
     order: AddOrder,

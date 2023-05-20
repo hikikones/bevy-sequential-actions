@@ -18,9 +18,9 @@ fn setup(mut commands: Commands) {
         ParallelActions {
             actions: actions![
                 PrintAction("hello"),
-                CountdownAction::new(5),
+                CountdownAction::new(2),
                 PrintAction("world"),
-                CountdownAction::new(10),
+                CountdownAction::new(4),
             ]
         },
         |_, world: &mut World| -> Finished {
@@ -121,7 +121,7 @@ impl Action for CountdownAction {
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
-        if let StopReason::Paused = reason {
+        if reason == StopReason::Paused {
             world.entity_mut(self.entity).insert(Paused);
         }
     }

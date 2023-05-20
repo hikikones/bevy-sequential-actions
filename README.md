@@ -100,7 +100,7 @@ impl Action for WaitAction {
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
         // Store current time when paused.
-        if let StopReason::Paused = reason {
+        if reason == StopReason::Paused {
             self.current = Some(wait_timer.unwrap().0);
         }
     }

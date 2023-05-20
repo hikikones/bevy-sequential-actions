@@ -125,7 +125,7 @@ impl Action for CountdownAction {
         let countdown = world.entity_mut(agent).take::<Countdown>();
 
         // Store current duration when paused
-        if let StopReason::Paused = reason {
+        if reason == StopReason::Paused {
             self.current = countdown.unwrap().0.into();
         }
     }
