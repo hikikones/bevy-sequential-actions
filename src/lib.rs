@@ -182,7 +182,7 @@ pub type BoxedAction = Box<dyn Action>;
 
 /// The component bundle that all entities with actions must have.
 #[derive(Bundle)]
-pub struct ActionsBundle<T: AgentMarker = DefaultAgentMarker> {
+pub struct ActionsBundle<T: AgentMarker> {
     marker: T,
     current: CurrentAction,
     queue: ActionQueue,
