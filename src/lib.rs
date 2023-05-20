@@ -247,7 +247,7 @@ pub enum StopReason {
 }
 
 /// Wrapper struct for a `boolean`.
-#[derive(Debug, Default, Clone, Copy, Deref)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Finished(pub bool);
 
 impl From<bool> for Finished {
