@@ -12,7 +12,7 @@ struct TestApp(App);
 impl TestApp {
     fn new() -> Self {
         let mut app = App::new();
-        app.add_plugin(SequentialActionsPlugin::<DefaultAgentMarker>::new(
+        app.add_plugin(SequentialActionsPlugin::<()>::new(
             QueueAdvancement::Normal,
             |app, system| {
                 app.add_system(system.after(countdown));

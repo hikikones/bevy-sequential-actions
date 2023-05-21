@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
 fn frame_logic(
     mut frame: Local<u32>,
     mut commands: Commands,
-    agent_q: Query<Entity, With<DefaultAgentMarker>>,
+    agent_q: Query<Entity, With<ActionQueue>>,
 ) {
     const PAUSE_FRAME: u32 = 10;
     const RESUME_FRAME: u32 = PAUSE_FRAME * 2;

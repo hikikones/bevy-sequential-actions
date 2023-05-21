@@ -4,8 +4,7 @@
 
 - [Rework actions to be both more composable and simpler][83]
     - Adds four new methods to the `Action` trait: `is_finished`, `on_add`, `on_remove` and `on_drop`.
-    - Adds a generic marker type to both `SequentialActionsPlugin` and `ActionsBundle` for filtering agents.
-        - By default, the `DefaultAgentMarker` type is used.
+    - Adds `F: ReadOnlyWorldQuery` to `SequentialActionsPlugin` for filtering agents.
     - Adds `QueueAdvancement` enum for configuring which system to use for advancing the action queue.
         - `Normal` advances the action queue using `Commands`.
         - `Parallel` advances the action queue using `ParallelCommands`.

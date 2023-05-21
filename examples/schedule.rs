@@ -10,15 +10,21 @@ fn main() {
         .insert_resource(ScheduleRunnerSettings::run_loop(Duration::from_secs_f64(
             1.0 / 10.0,
         )))
-        .add_schedule(CustomSchedule, Schedule::new())
+        .add_schedule(EvenSchedule, Schedule::new())
+        .add_schedule(OddSchedule, Schedule::new())
         .add_plugin(ScheduleRunnerPlugin)
-        // Add default plugin for default schedule
-        .add_plugin(SequentialActionsPlugin::default())
-        // Add new plugin with marker component for custom schedule
-        .add_plugin(SequentialActionsPlugin::<CustomMarker>::new(
+        // Add plugin with even marker filter for even schedule
+        .add_plugin(SequentialActionsPlugin::<With<EvenMarker>>::new(
             QueueAdvancement::Normal,
             |app, system| {
-                app.add_system(system.in_schedule(CustomSchedule));
+                app.add_system(system.in_schedule(EvenSchedule));
+            },
+        ))
+        // Add plugin with odd marker filter for odd schedule
+        .add_plugin(SequentialActionsPlugin::<With<OddMarker>>::new(
+            QueueAdvancement::Normal,
+            |app, system| {
+                app.add_system(system.in_schedule(OddSchedule));
             },
         ))
         .add_startup_system(setup)
@@ -27,38 +33,46 @@ fn main() {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, ScheduleLabel)]
-struct CustomSchedule;
+struct EvenSchedule;
 
-#[derive(Default, Component)]
-struct CustomMarker;
+#[derive(Debug, Clone, PartialEq, Eq, Hash, ScheduleLabel)]
+struct OddSchedule;
+
+#[derive(Component)]
+struct EvenMarker;
+
+#[derive(Component)]
+struct OddMarker;
 
 fn run_custom_schedule(world: &mut World, mut frame_count: Local<u32>) {
-    *frame_count += 1;
-
-    if *frame_count % 10 == 0 {
-        world.run_schedule(CustomSchedule);
+    if *frame_count % 2 == 0 {
+        world.run_schedule(EvenSchedule);
+    } else {
+        world.run_schedule(OddSchedule);
     }
 
-    if *frame_count == 30 {
+    if *frame_count == 10 {
         world.send_event(AppExit);
     }
+
+    *frame_count += 1;
 }
 
 fn setup(mut commands: Commands) {
-    // Use default bundle for default schedule
-    let agent_default = commands.spawn(ActionsBundle::default()).id();
-    commands.actions(agent_default).add(PrintForeverAction(
-        "Default: is_finished is called every frame in CoreSet::Last",
-    ));
+    // Spawn agent with even marker for even schedule
+    let agent_even = commands.spawn((ActionsBundle::new(), EvenMarker)).id();
+    commands.actions(agent_even).add(PrintForeverAction(format!(
+        "Even: is_finished is called every even frame for agent {agent_even:?}."
+    )));
 
-    // Use custom marker for custom schedule
-    let agent_custom = commands.spawn(ActionsBundle::<CustomMarker>::new()).id();
-    commands.actions(agent_custom).add(PrintForeverAction(
-        "\nCustom: is_finished is called every 10th frame in CoreSet::Update\n",
-    ));
+    // Spawn agent with odd marker for odd schedule
+    let agent_odd = commands.spawn((ActionsBundle::new(), OddMarker)).id();
+    commands.actions(agent_odd).add(PrintForeverAction(format!(
+        "Odd: is_finished is called every odd frame for agent {agent_odd:?}."
+    )));
 }
 
-struct PrintForeverAction(&'static str);
+struct PrintForeverAction(String);
 
 impl Action for PrintForeverAction {
     fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {

@@ -181,48 +181,35 @@ pub use world::*;
 pub type BoxedAction = Box<dyn Action>;
 
 /// The component bundle that all entities with actions must have.
-#[derive(Bundle)]
-pub struct ActionsBundle<T: AgentMarker> {
-    marker: T,
+#[derive(Default, Bundle)]
+pub struct ActionsBundle {
     current: CurrentAction,
     queue: ActionQueue,
 }
 
-impl Default for ActionsBundle<DefaultAgentMarker> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T: AgentMarker> ActionsBundle<T> {
+impl ActionsBundle {
     /// Creates a new [`Bundle`] that contains the necessary components
     /// that all entities with actions must have.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
-            marker: T::default(),
             current: CurrentAction(None),
             queue: ActionQueue(VecDeque::new()),
         }
     }
 }
 
-/// The default marker component for agents.
-/// Part of [`ActionsBundle::default`].
-#[derive(Debug, Default, Clone, Copy, Component)]
-pub struct DefaultAgentMarker;
-
 /// The current action for an `agent`.
 /// Part of [`ActionsBundle`].
 ///
 /// Note that you are not supposed to use this directly.
-#[derive(Component, Deref, DerefMut)]
+#[derive(Default, Component, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
 
 /// The action queue for an `agent`.
 /// Part of [`ActionsBundle`].
 ///
 /// Note that you are not supposed to use this directly.
-#[derive(Component, Deref, DerefMut)]
+#[derive(Default, Component, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
 /// The queue order for an [`Action`] to be added.

@@ -33,7 +33,7 @@ struct Benchmark(App);
 impl Benchmark {
     fn new(agents: u32, system_kind: QueueAdvancement) -> Self {
         let mut app = App::new();
-        app.add_plugin(SequentialActionsPlugin::<DefaultAgentMarker>::new(
+        app.add_plugin(SequentialActionsPlugin::<()>::new(
             system_kind,
             |app, system| {
                 app.add_system(system);

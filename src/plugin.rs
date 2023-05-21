@@ -1,7 +1,10 @@
 use std::marker::PhantomData;
 
 use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::system::{BoxedSystem, SystemState};
+use bevy_ecs::{
+    query::ReadOnlyWorldQuery,
+    system::{BoxedSystem, SystemState},
+};
 
 use crate::*;
 
@@ -10,10 +13,6 @@ use crate::*;
 /// In short, this plugin adds a system that advances the action queue for each `agent`.
 /// By default, the system is added to [`CoreSet::Last`].
 /// For more control over scheduling, see [`new`](Self::new).
-///
-/// The generic marker type `T` is used for filtering agents,
-/// allowing you to add the plugin multiple times for each type `T`.
-/// By default, the [`DefaultAgentMarker`] is used.
 ///
 /// # Example
 ///
@@ -28,13 +27,13 @@ use crate::*;
 /// # }
 /// ```
 #[allow(clippy::type_complexity)]
-pub struct SequentialActionsPlugin<T: AgentMarker> {
+pub struct SequentialActionsPlugin<F: ReadOnlyWorldQuery = ()> {
     system_kind: QueueAdvancement,
     app_init: Box<dyn Fn(&mut App, BoxedSystem) + Send + Sync>,
-    _marker: PhantomData<T>,
+    _filter: PhantomData<F>,
 }
 
-impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
+impl Default for SequentialActionsPlugin {
     fn default() -> Self {
         Self::new(QueueAdvancement::Normal, |app, system| {
             app.add_system(system.in_base_set(CoreSet::Last));
@@ -42,10 +41,14 @@ impl Default for SequentialActionsPlugin<DefaultAgentMarker> {
     }
 }
 
-impl<T: AgentMarker> SequentialActionsPlugin<T> {
+impl<F: ReadOnlyWorldQuery> SequentialActionsPlugin<F> {
     /// Creates a new [`Plugin`] with specified [`QueueAdvancement`].
-    /// The closure `f` provides the system used by this plugin
-    /// for advancing the action queue for each `agent`.
+    /// The closure `f` provides the system used by this plugin.
+    /// Add this system to your app with any constraints you may have.
+    ///
+    /// The query filter `F` is used for filtering agents
+    /// and is applied to the system provided by the closure.
+    /// Use the unit type `()` for no filtering.
     ///
     /// # Example
     ///
@@ -56,7 +59,7 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     /// #
     /// # fn main() {
     /// App::new()
-    ///     .add_plugin(SequentialActionsPlugin::<DefaultAgentMarker>::new(
+    ///     .add_plugin(SequentialActionsPlugin::<()>::new(
     ///         QueueAdvancement::Normal,
     ///         |app, system| {
     ///             app.add_system(system.in_base_set(CoreSet::Last));
@@ -65,38 +68,38 @@ impl<T: AgentMarker> SequentialActionsPlugin<T> {
     ///     .run();
     /// # }
     /// ```
-    pub fn new<F>(system_kind: QueueAdvancement, f: F) -> Self
-    where
-        F: Fn(&mut App, BoxedSystem) + Send + Sync + 'static,
-    {
+    pub fn new(
+        system_kind: QueueAdvancement,
+        f: impl Fn(&mut App, BoxedSystem) + Send + Sync + 'static,
+    ) -> Self {
         Self {
             system_kind,
             app_init: Box::new(f),
-            _marker: PhantomData,
+            _filter: PhantomData,
         }
     }
 }
 
-impl<T: AgentMarker> Plugin for SequentialActionsPlugin<T> {
+impl<F: ReadOnlyWorldQuery + Send + Sync + 'static> Plugin for SequentialActionsPlugin<F> {
     fn build(&self, app: &mut App) {
         match self.system_kind {
             QueueAdvancement::Normal => {
                 (self.app_init)(
                     app,
-                    Box::new(IntoSystem::into_system(check_actions_normal::<T>)),
+                    Box::new(IntoSystem::into_system(check_actions_normal::<F>)),
                 );
             }
             QueueAdvancement::Parallel => {
                 (self.app_init)(
                     app,
-                    Box::new(IntoSystem::into_system(check_actions_parallel::<T>)),
+                    Box::new(IntoSystem::into_system(check_actions_parallel::<F>)),
                 );
             }
             QueueAdvancement::Exclusive => {
-                app.init_resource::<CachedAgentQuery<T>>();
+                app.init_resource::<CachedAgentQuery<F>>();
                 (self.app_init)(
                     app,
-                    Box::new(IntoSystem::into_system(check_actions_exclusive::<T>)),
+                    Box::new(IntoSystem::into_system(check_actions_exclusive::<F>)),
                 );
             }
         }
@@ -120,8 +123,8 @@ pub enum QueueAdvancement {
     Exclusive,
 }
 
-fn check_actions_normal<T: AgentMarker>(
-    action_q: Query<(Entity, &CurrentAction), With<T>>,
+fn check_actions_normal<F: ReadOnlyWorldQuery>(
+    action_q: Query<(Entity, &CurrentAction), F>,
     world: &World,
     mut commands: Commands,
 ) {
@@ -136,8 +139,8 @@ fn check_actions_normal<T: AgentMarker>(
     }
 }
 
-fn check_actions_parallel<T: AgentMarker>(
-    action_q: Query<(Entity, &CurrentAction), With<T>>,
+fn check_actions_parallel<F: ReadOnlyWorldQuery>(
+    action_q: Query<(Entity, &CurrentAction), F>,
     world: &World,
     par_commands: ParallelCommands,
 ) {
@@ -155,18 +158,18 @@ fn check_actions_parallel<T: AgentMarker>(
 }
 
 #[derive(Resource)]
-struct CachedAgentQuery<T: AgentMarker>(
-    SystemState<Query<'static, 'static, (Entity, &'static CurrentAction), With<T>>>,
+struct CachedAgentQuery<F: ReadOnlyWorldQuery + 'static>(
+    SystemState<Query<'static, 'static, (Entity, &'static CurrentAction), F>>,
 );
 
-impl<T: AgentMarker> FromWorld for CachedAgentQuery<T> {
+impl<F: ReadOnlyWorldQuery> FromWorld for CachedAgentQuery<F> {
     fn from_world(world: &mut World) -> Self {
         Self(SystemState::new(world))
     }
 }
 
-fn check_actions_exclusive<T: AgentMarker>(world: &mut World) {
-    world.resource_scope(|world, mut system_state: Mut<CachedAgentQuery<T>>| {
+fn check_actions_exclusive<F: ReadOnlyWorldQuery + 'static>(world: &mut World) {
+    world.resource_scope(|world, mut system_state: Mut<CachedAgentQuery<F>>| {
         let agent_q = system_state.0.get(world);
 
         let finished_agents = agent_q
