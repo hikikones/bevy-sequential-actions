@@ -174,13 +174,13 @@ fn check_actions_exclusive<F: ReadOnlyWorldQuery + 'static>(world: &mut World) {
 
         let finished_agents = agent_q
             .iter()
-            .filter(|(agent, current_action)| {
+            .filter(|&(agent, current_action)| {
                 if let Some(action) = current_action.as_ref() {
-                    return action.is_finished(*agent, world).into();
+                    return action.is_finished(agent, world).into();
                 }
                 false
             })
-            .map(|(e, _)| e)
+            .map(|(agent, _)| agent)
             .collect::<Vec<_>>();
 
         for agent in finished_agents {
