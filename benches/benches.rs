@@ -41,7 +41,7 @@ impl Benchmark {
         ));
 
         for _ in 0..agents {
-            let agent = app.world.spawn(ActionsBundle::default()).id();
+            let agent = app.world.spawn(ActionsBundle::new()).id();
             app.world.actions(agent).add(BenchAction);
         }
 

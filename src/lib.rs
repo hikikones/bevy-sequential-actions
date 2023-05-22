@@ -61,7 +61,7 @@ fn setup(mut commands: Commands) {
 #   let action_c = EmptyAction;
 #   let action_d = EmptyAction;
 #
-    let agent = commands.spawn(ActionsBundle::default()).id();
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         .actions(agent)
         .add(action_a)

@@ -18,7 +18,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::default()).id();
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands.actions(agent).add(CountForeverAction);
 }
 

@@ -13,21 +13,21 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::default()).id();
-    commands.actions(agent).add_many(actions![
-        ParallelActions {
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands
+        .actions(agent)
+        .add(ParallelActions {
             actions: actions![
                 PrintAction("hello"),
                 CountdownAction::new(2),
                 PrintAction("world"),
                 CountdownAction::new(4),
-            ]
-        },
-        |_, world: &mut World| -> Finished {
+            ],
+        })
+        .add(|_, world: &mut World| -> Finished {
             world.send_event(AppExit);
             Finished(false)
-        }
-    ]);
+        });
 }
 
 struct ParallelActions<const N: usize> {

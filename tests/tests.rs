@@ -24,7 +24,7 @@ impl TestApp {
     }
 
     fn spawn_agent(&mut self) -> Entity {
-        self.world.spawn(ActionsBundle::default()).id()
+        self.world.spawn(ActionsBundle::new()).id()
     }
 
     fn actions(&mut self, agent: Entity) -> AgentActions {
