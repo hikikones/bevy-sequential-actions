@@ -3,9 +3,13 @@
 ## Version 0.8.0-dev
 
 - [Rework actions to be both more composable and simpler][83]
-    - Adds four new methods to the `Action` trait: `is_finished`, `on_add`, `on_remove` and `on_drop`.
+    - Adds four new methods to the `Action` trait:
+        - `is_finished` which determines if an action is finished or not.
+        - `on_add` which is called when an action is added to the queue.
+        - `on_remove` which is called when an action is removed from the queue.
+        - `on_drop` which is the last method to be called and gives full ownership.
     - Adds `F: ReadOnlyWorldQuery` to `SequentialActionsPlugin` for filtering agents.
-    - Adds `QueueAdvancement` enum for configuring which system to use for advancing the action queue.
+    - Adds `QueueAdvancement` enum for choosing which system to use for advancing the action queue:
         - `Normal` advances the action queue using `Commands`.
         - `Parallel` advances the action queue using `ParallelCommands`.
         - `Exclusive` advances the action queue using `World`.
