@@ -103,13 +103,14 @@ impl WorldActionsExt for World {
     fn add_action(&mut self, agent: Entity, config: AddConfig, mut action: BoxedAction) {
         action.on_add(agent, self);
 
+        let mut action_queue = self.get_mut::<ActionQueue>(agent).unwrap();
         match config.order {
-            AddOrder::Back => self.action_queue(agent).push_back(action),
-            AddOrder::Front => self.action_queue(agent).push_front(action),
+            AddOrder::Back => action_queue.push_back(action),
+            AddOrder::Front => action_queue.push_front(action),
         }
 
-        if config.start && !self.has_current_action(agent) {
-            self.start_next_action(agent);
+        if config.start && self.get::<CurrentAction>(agent).unwrap().is_none() {
+            start_next_action(agent, self);
         }
     }
 
@@ -126,120 +127,100 @@ impl WorldActionsExt for World {
             AddOrder::Back => {
                 for mut action in actions {
                     action.on_add(agent, self);
-                    self.action_queue(agent).push_back(action);
+                    self.get_mut::<ActionQueue>(agent)
+                        .unwrap()
+                        .push_back(action);
                 }
             }
             AddOrder::Front => {
                 for mut action in actions.into_iter().rev() {
                     action.on_add(agent, self);
-                    self.action_queue(agent).push_front(action);
+                    self.get_mut::<ActionQueue>(agent)
+                        .unwrap()
+                        .push_front(action);
                 }
             }
         }
 
-        if config.start && !self.has_current_action(agent) {
-            self.start_next_action(agent);
+        if config.start && self.get::<CurrentAction>(agent).unwrap().is_none() {
+            start_next_action(agent, self);
         }
     }
 
     fn execute_actions(&mut self, agent: Entity) {
-        if !self.has_current_action(agent) {
-            self.start_next_action(agent);
+        if self.get::<CurrentAction>(agent).unwrap().is_none() {
+            start_next_action(agent, self);
         }
     }
 
     fn next_action(&mut self, agent: Entity) {
         self.stop_current_action(agent, StopReason::Canceled);
-        self.start_next_action(agent);
+        start_next_action(agent, self);
     }
 
     fn stop_current_action(&mut self, agent: Entity, reason: StopReason) {
-        if let Some(mut action) = self.take_current_action(agent) {
+        if let Some(mut action) = self.get_mut::<CurrentAction>(agent).unwrap().take() {
             action.on_stop(agent, self, reason);
 
             match reason {
                 StopReason::Finished => {
                     action.on_remove(agent, self);
                     action.on_drop(agent, self, DropReason::Done);
-                    self.start_next_action(agent);
+                    start_next_action(agent, self);
                 }
                 StopReason::Canceled => {
                     action.on_remove(agent, self);
                     action.on_drop(agent, self, DropReason::Done);
                 }
                 StopReason::Paused => {
-                    self.action_queue(agent).push_front(action);
+                    self.get_mut::<ActionQueue>(agent)
+                        .unwrap()
+                        .push_front(action);
                 }
             }
         }
     }
 
     fn skip_next_action(&mut self, agent: Entity) {
-        if let Some(mut action) = self.pop_next_action(agent) {
+        if let Some(mut action) = self.get_mut::<ActionQueue>(agent).unwrap().pop_front() {
             action.on_remove(agent, self);
             action.on_drop(agent, self, DropReason::Skipped);
         }
     }
 
     fn clear_actions(&mut self, agent: Entity) {
-        if let Some(mut action) = self.take_current_action(agent) {
+        if let Some(mut action) = self.get_mut::<CurrentAction>(agent).unwrap().take() {
             action.on_stop(agent, self, StopReason::Canceled);
             action.on_remove(agent, self);
             action.on_drop(agent, self, DropReason::Cleared);
         }
 
-        for mut action in self.action_queue(agent).drain(..).collect::<Vec<_>>() {
+        for mut action in self
+            .get_mut::<ActionQueue>(agent)
+            .unwrap()
+            .drain(..)
+            .collect::<Vec<_>>()
+        {
             action.on_remove(agent, self);
             action.on_drop(agent, self, DropReason::Cleared);
         }
     }
 }
 
-trait WorldHelperExt {
-    fn start_next_action(&mut self, agent: Entity);
-    fn take_current_action(&mut self, agent: Entity) -> Option<BoxedAction>;
-    fn pop_next_action(&mut self, agent: Entity) -> Option<BoxedAction>;
-    fn current_action(&mut self, agent: Entity) -> Mut<CurrentAction>;
-    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue>;
-    fn has_current_action(&self, agent: Entity) -> bool;
-}
+fn start_next_action(agent: Entity, world: &mut World) {
+    let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
 
-impl WorldHelperExt for World {
-    fn start_next_action(&mut self, agent: Entity) {
-        if let Some(mut action) = self.pop_next_action(agent) {
-            let is_finished = action.on_start(agent, self);
-
-            if is_finished.0 {
-                action.on_stop(agent, self, StopReason::Finished);
-                action.on_remove(agent, self);
-                action.on_drop(agent, self, DropReason::Done);
-                self.start_next_action(agent);
-                return;
-            }
-
-            if let Some(mut current) = self.get_mut::<CurrentAction>(agent) {
-                current.0 = Some(action);
-            }
+    if let Some(mut next_action) = action_queue.pop_front() {
+        if next_action.on_start(agent, world).0 {
+            next_action.on_stop(agent, world, StopReason::Finished);
+            next_action.on_remove(agent, world);
+            next_action.on_drop(agent, world, DropReason::Done);
+            start_next_action(agent, world);
+            return;
         }
-    }
 
-    fn take_current_action(&mut self, agent: Entity) -> Option<BoxedAction> {
-        self.get_mut::<CurrentAction>(agent).unwrap().take()
-    }
-
-    fn pop_next_action(&mut self, agent: Entity) -> Option<BoxedAction> {
-        self.action_queue(agent).pop_front()
-    }
-
-    fn current_action(&mut self, agent: Entity) -> Mut<CurrentAction> {
-        self.get_mut::<CurrentAction>(agent).unwrap()
-    }
-
-    fn action_queue(&mut self, agent: Entity) -> Mut<ActionQueue> {
-        self.get_mut::<ActionQueue>(agent).unwrap()
-    }
-
-    fn has_current_action(&self, agent: Entity) -> bool {
-        self.get::<CurrentAction>(agent).unwrap().is_some()
+        if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) {
+            current_action.0 = Some(next_action);
+        }
     }
 }
