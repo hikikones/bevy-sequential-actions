@@ -66,7 +66,7 @@ impl Action for DemoAction {
     }
 
     // Optional method (empty by default)
-    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World) {
+    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World, _reason: DropReason) {
         println!("on_drop: the last method to be called with full ownership");
     }
 }

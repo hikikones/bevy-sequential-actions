@@ -26,7 +26,7 @@ pub trait Action: Send + Sync + 'static {
 
     /// The last method that is called for an action.
     /// Full ownership is given here, hence the name.
-    fn on_drop(self: Box<Self>, agent: Entity, world: &mut World) {}
+    fn on_drop(self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {}
 }
 
 impl<T> From<T> for BoxedAction

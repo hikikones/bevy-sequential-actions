@@ -68,7 +68,7 @@ fn setup(mut commands: Commands) {
     // Spawn agent with odd marker for odd schedule
     let agent_odd = commands.spawn((ActionsBundle::new(), OddMarker)).id();
     commands.actions(agent_odd).add(PrintForeverAction(format!(
-        "Odd: is_finished is called every odd frame for agent {agent_odd:?}."
+        "Odd:  is_finished is called every odd  frame for agent {agent_odd:?}."
     )));
 }
 

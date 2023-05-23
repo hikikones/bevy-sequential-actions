@@ -233,8 +233,20 @@ pub enum StopReason {
     Paused,
 }
 
+/// The reason why an [`Action`] was dropped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DropReason {
+    /// The action is considered done as it was either finished or canceled
+    /// without being skipped or cleared from the action queue.
+    Done,
+    /// The action was skipped.
+    Skipped,
+    /// The action queue was cleared.
+    Cleared,
+}
+
 /// Wrapper struct for a `boolean`.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deref)]
 pub struct Finished(pub bool);
 
 impl From<bool> for Finished {

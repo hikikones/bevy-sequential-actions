@@ -160,12 +160,12 @@ impl WorldActionsExt for World {
             match reason {
                 StopReason::Finished => {
                     action.on_remove(agent, self);
-                    action.on_drop(agent, self);
+                    action.on_drop(agent, self, DropReason::Done);
                     self.start_next_action(agent);
                 }
                 StopReason::Canceled => {
                     action.on_remove(agent, self);
-                    action.on_drop(agent, self);
+                    action.on_drop(agent, self, DropReason::Done);
                 }
                 StopReason::Paused => {
                     self.action_queue(agent).push_front(action);
@@ -177,16 +177,20 @@ impl WorldActionsExt for World {
     fn skip_next_action(&mut self, agent: Entity) {
         if let Some(mut action) = self.pop_next_action(agent) {
             action.on_remove(agent, self);
-            action.on_drop(agent, self);
+            action.on_drop(agent, self, DropReason::Skipped);
         }
     }
 
     fn clear_actions(&mut self, agent: Entity) {
-        self.stop_current_action(agent, StopReason::Canceled);
+        if let Some(mut action) = self.take_current_action(agent) {
+            action.on_stop(agent, self, StopReason::Canceled);
+            action.on_remove(agent, self);
+            action.on_drop(agent, self, DropReason::Cleared);
+        }
 
         for mut action in self.action_queue(agent).drain(..).collect::<Vec<_>>() {
             action.on_remove(agent, self);
-            action.on_drop(agent, self);
+            action.on_drop(agent, self, DropReason::Cleared);
         }
     }
 }
@@ -208,7 +212,7 @@ impl WorldHelperExt for World {
             if is_finished.0 {
                 action.on_stop(agent, self, StopReason::Finished);
                 action.on_remove(agent, self);
-                action.on_drop(agent, self);
+                action.on_drop(agent, self, DropReason::Done);
                 self.start_next_action(agent);
                 return;
             }

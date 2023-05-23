@@ -8,6 +8,7 @@ fn main() {
         .add_plugin(ScheduleRunnerPlugin)
         .add_plugin(SequentialActionsPlugin::default())
         .add_startup_system(setup)
+        .add_system(exit_app)
         .run();
 }
 
@@ -33,8 +34,6 @@ impl Action for DespawnAction {
 
         world.actions(agent).clear();
         world.despawn(agent);
-
-        world.send_event(AppExit);
 
         // Don't advance the action queue
         Finished(false)
@@ -76,7 +75,15 @@ impl Action for EmptyAction {
         println!("EmptyAction: on_remove")
     }
 
-    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World) {
+    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World, _reason: DropReason) {
         println!("EmptyAction: on_drop")
     }
+}
+
+fn exit_app(mut ew: EventWriter<AppExit>, mut frame: Local<u32>) {
+    if *frame == 10 {
+        ew.send(AppExit);
+    }
+
+    *frame += 1;
 }

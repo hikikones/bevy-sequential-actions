@@ -53,8 +53,8 @@ impl<A: Action> Action for RepeatAction<A> {
         self.action.on_stop(agent, world, reason);
     }
 
-    fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World) {
-        if self.repeat == 0 {
+    fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {
+        if self.repeat == 0 || reason != DropReason::Done {
             self.action.on_remove(agent, world);
             return;
         }

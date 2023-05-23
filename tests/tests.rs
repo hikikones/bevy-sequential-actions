@@ -80,7 +80,7 @@ impl Action for TestCountdownAction {
 
         match reason {
             StopReason::Finished => {
-                e.insert(FinishedMarker);
+                e.insert(Finito);
             }
             StopReason::Canceled => {
                 e.insert(Canceled);
@@ -96,8 +96,15 @@ impl Action for TestCountdownAction {
         world.entity_mut(self.entity.unwrap()).insert(Removed);
     }
 
-    fn on_drop(self: Box<Self>, _agent: Entity, world: &mut World) {
-        world.entity_mut(self.entity.unwrap()).insert(Dropped);
+    fn on_drop(self: Box<Self>, _agent: Entity, world: &mut World, reason: DropReason) {
+        let mut e = world.entity_mut(self.entity.unwrap());
+        e.insert(Dropped);
+
+        match reason {
+            DropReason::Done => e.insert(Done),
+            DropReason::Skipped => e.insert(Skipped),
+            DropReason::Cleared => e.insert(Cleared),
+        };
     }
 }
 
@@ -123,7 +130,7 @@ struct Started;
 struct Stopped;
 
 #[derive(Component)]
-struct FinishedMarker;
+struct Finito;
 
 #[derive(Component)]
 struct Canceled;
@@ -136,6 +143,15 @@ struct Removed;
 
 #[derive(Component)]
 struct Dropped;
+
+#[derive(Component)]
+struct Done;
+
+#[derive(Component)]
+struct Skipped;
+
+#[derive(Component)]
+struct Cleared;
 
 #[test]
 fn add() {
@@ -233,10 +249,13 @@ fn finish() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(&app.world);
 
-    assert_eq!(app.world.entity(e).contains::<FinishedMarker>(), true);
+    assert_eq!(app.world.entity(e).contains::<Finito>(), true);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.world.entity(e).contains::<Done>(), true);
+    assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -254,10 +273,13 @@ fn cancel() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(&app.world);
 
-    assert_eq!(app.world.entity(e).contains::<FinishedMarker>(), false);
+    assert_eq!(app.world.entity(e).contains::<Finito>(), false);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.world.entity(e).contains::<Done>(), true);
+    assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -275,10 +297,13 @@ fn pause() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(&app.world);
 
-    assert_eq!(app.world.entity(e).contains::<FinishedMarker>(), false);
+    assert_eq!(app.world.entity(e).contains::<Finito>(), false);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
     assert_eq!(app.world.entity(e).contains::<Paused>(), true);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Done>(), false);
+    assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
+    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -303,6 +328,9 @@ fn skip() {
     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
     assert_eq!(app.world.entity(e).contains::<Removed>(), true);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.world.entity(e).contains::<Done>(), false);
+    assert_eq!(app.world.entity(e).contains::<Skipped>(), true);
+    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -329,6 +357,20 @@ fn clear() {
     assert_eq!(
         app.world
             .query_filtered::<Entity, With<Removed>>()
+            .iter(&app.world)
+            .len(),
+        2
+    );
+    assert_eq!(
+        app.world
+            .query_filtered::<Entity, With<Dropped>>()
+            .iter(&app.world)
+            .len(),
+        2
+    );
+    assert_eq!(
+        app.world
+            .query_filtered::<Entity, With<Cleared>>()
             .iter(&app.world)
             .len(),
         2
