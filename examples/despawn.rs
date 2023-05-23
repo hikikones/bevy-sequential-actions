@@ -16,7 +16,7 @@ fn setup(mut commands: Commands) {
     commands.actions(agent).add_many(actions![
         PrintAction("First action"),
         DespawnAction,
-        PrintAction("This action should not run"),
+        EmptyAction, // This action does not start, but on_remove and on_drop is called
     ]);
 }
 
@@ -56,4 +56,27 @@ impl Action for PrintAction {
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
+struct EmptyAction;
+
+impl Action for EmptyAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+        Finished(true)
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
+        println!("EmptyAction: on_start");
+        Finished(true)
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+
+    fn on_remove(&mut self, _agent: Entity, _world: &mut World) {
+        println!("EmptyAction: on_remove")
+    }
+
+    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World) {
+        println!("EmptyAction: on_drop")
+    }
 }
