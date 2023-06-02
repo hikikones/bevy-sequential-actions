@@ -19,6 +19,7 @@ fn main() {
             |app, system| {
                 app.add_system(system.in_schedule(EvenSchedule));
             },
+            None,
         ))
         // Add plugin with odd marker filter for odd schedule
         .add_plugin(SequentialActionsPlugin::<With<OddMarker>>::new(
@@ -26,6 +27,7 @@ fn main() {
             |app, system| {
                 app.add_system(system.in_schedule(OddSchedule));
             },
+            None,
         ))
         .add_startup_system(setup)
         .add_system(run_custom_schedule)

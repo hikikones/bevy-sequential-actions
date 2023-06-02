@@ -38,6 +38,7 @@ impl Benchmark {
             |app, system| {
                 app.add_system(system);
             },
+            None,
         ));
 
         for _ in 0..agents {

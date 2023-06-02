@@ -8,11 +8,13 @@
         - `on_add` which is called when an action is added to the queue.
         - `on_remove` which is called when an action is removed from the queue.
         - `on_drop` which is the last method to be called and gives full ownership.
-    - Adds `F: ReadOnlyWorldQuery` to `SequentialActionsPlugin` for filtering agents.
-    - Adds `QueueAdvancement` enum for choosing which system to use for advancing the action queue:
-        - `Normal` advances the action queue using `Commands`.
-        - `Parallel` advances the action queue using `ParallelCommands`.
-        - `Exclusive` advances the action queue using `World`.
+    - Adds three new features for the `SequentialActionsPlugin`:
+        - Use the generic type `F: ReadOnlyWorldQuery` for filtering agents.
+        - Specify an optional function for sorting the query that checks all agents for finished actions.
+        - Specify which kind of system to use for advancing the action queue:
+            - `QueueAdvancement::Normal` advances the action queue using `Commands`.
+            - `QueueAdvancement::Parallel` advances the action queue using `ParallelCommands`.
+            - `QueueAdvancement::Exclusive` advances the action queue using `World`.
     - Changes `Action::on_start` to now return a `Finished(bool)` for immediate action queue advancement.
     - Removes `ActionCommands` struct for modifying actions inside the action trait.
     - Removes `ActionFinished` component.
