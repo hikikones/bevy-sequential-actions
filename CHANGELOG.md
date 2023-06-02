@@ -10,7 +10,7 @@
         - `on_drop` which is the last method to be called and gives full ownership.
     - Adds three new features for the `SequentialActionsPlugin`:
         - Use the generic type `F: ReadOnlyWorldQuery` for filtering agents.
-        - Specify an optional function for sorting the query that checks all agents for finished actions.
+        - Specify an optional function for sorting the query that check agents for finished actions.
         - Specify which kind of system to use for `QueueAdvancement`:
             - `Normal` advances the action queue using `Commands`.
             - `Parallel` advances the action queue using `ParallelCommands`.
