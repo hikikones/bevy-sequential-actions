@@ -59,6 +59,11 @@ impl<F: ReadOnlyWorldQuery> SequentialActionsPlugin<F> {
     /// and is applied to the system provided by the closure.
     /// Use the unit type `()` for no filtering.
     ///
+    /// Note that `sort_fn` can only be defined once per unique type `F`.
+    /// Adding the plugin multiple times with the same type `F`
+    /// and different `sort_fn` will end up with only one `sort_fn`,
+    /// as they will overwrite each other.
+    ///
     /// # Example
     ///
     /// ```rust,no_run
