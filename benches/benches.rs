@@ -1,25 +1,24 @@
 use bevy_app::prelude::*;
-use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::*;
+use bevy_ecs::{prelude::*, schedule::ExecutorKind};
 use bevy_sequential_actions::*;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 
 criterion_main!(benches);
-criterion_group!(benches, many_agents);
+criterion_group!(benches, many_countdowns);
 
-fn many_agents(c: &mut Criterion) {
-    let mut group = c.benchmark_group("many_agents");
+fn many_countdowns(c: &mut Criterion) {
+    let mut group = c.benchmark_group("many_countdowns");
+    group.sample_size(10);
 
-    for agents in [10, 100, 1000, 10_000, 100_000, 1_000_000] {
+    for agents in [100, 10_000, 1_000_000] {
         for system_kind in [
             QueueAdvancement::Normal,
             QueueAdvancement::Parallel,
             QueueAdvancement::Exclusive,
         ] {
-            let mut bench = black_box(Benchmark::new(agents, system_kind));
             group.bench_function(format!("{agents} {system_kind:?}"), |b| {
-                b.iter(|| bench.update());
+                b.iter(|| run_many_countdowns(agents, system_kind));
             });
         }
     }
@@ -27,37 +26,62 @@ fn many_agents(c: &mut Criterion) {
     group.finish();
 }
 
-#[derive(Deref, DerefMut)]
-struct Benchmark(App);
+fn run_many_countdowns(agents: i32, system_kind: QueueAdvancement) {
+    let mut app = App::new();
+    app.edit_schedule(CoreSchedule::Main, |schedule| {
+        schedule.set_executor_kind(ExecutorKind::SingleThreaded);
+    })
+    .add_plugin(SequentialActionsPlugin::<()>::new(
+        system_kind,
+        |app, system| {
+            app.add_system(system.after(countdown));
+        },
+        None,
+    ))
+    .add_system(countdown);
 
-impl Benchmark {
-    fn new(agents: u32, system_kind: QueueAdvancement) -> Self {
-        let mut app = App::new();
-        app.add_plugin(SequentialActionsPlugin::<()>::new(
-            system_kind,
-            |app, system| {
-                app.add_system(system);
-            },
-            None,
-        ));
+    for i in 0..agents {
+        let agent = app.world.spawn(ActionsBundle::new()).id();
+        app.world.actions(agent).add(CountdownAction {
+            count: i,
+            current: None,
+        });
+    }
 
-        for _ in 0..agents {
-            let agent = app.world.spawn(ActionsBundle::new()).id();
-            app.world.actions(agent).add(BenchAction);
+    for _ in 0..10 {
+        app.update();
+    }
+
+    struct CountdownAction {
+        count: i32,
+        current: Option<i32>,
+    }
+
+    impl Action for CountdownAction {
+        fn is_finished(&self, agent: Entity, world: &World) -> Finished {
+            Finished(world.get::<Countdown>(agent).unwrap().0 <= 0)
         }
 
-        Self(app)
-    }
-}
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+            let count = self.current.take().unwrap_or(self.count);
+            world.entity_mut(agent).insert(Countdown(count));
+            self.is_finished(agent, world)
+        }
 
-struct BenchAction;
+        fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+            let countdown = world.entity_mut(agent).take::<Countdown>();
+            if reason == StopReason::Paused {
+                self.current = countdown.unwrap().0.into();
+            }
+        }
+    }
 
-impl Action for BenchAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-        Finished(false)
+    #[derive(Component)]
+    struct Countdown(i32);
+
+    fn countdown(mut countdown_q: Query<&mut Countdown>) {
+        for mut countdown in &mut countdown_q {
+            countdown.0 -= 1;
+        }
     }
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
-        Finished(false)
-    }
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
