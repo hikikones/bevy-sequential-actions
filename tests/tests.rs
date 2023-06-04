@@ -166,7 +166,7 @@ struct Cleared;
 #[test]
 fn add() {
     let mut app = TestApp::default();
-    let a: Entity = app.spawn_agent();
+    let a = app.spawn_agent();
 
     app.actions(a).start(false).add(TestCountdownAction::new(0));
 
@@ -608,7 +608,7 @@ fn sort_fn() {
     const COUNT: u32 = 10;
 
     let mut app = TestApp::new(QueueAdvancement::Normal, Some(sort_fn));
-    app.world.insert_resource(Countdown(COUNT));
+    app.insert_resource(Countdown(COUNT));
 
     for i in 0..COUNT {
         let a = app.spawn_agent();
