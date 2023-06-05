@@ -80,14 +80,10 @@ pub trait ModifyActions {
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
 
     /// Adds a collection of actions to the queue.
-    fn add_many(
-        &mut self,
-        actions: impl IntoIterator<
-                Item = BoxedAction,
-                IntoIter = impl DoubleEndedIterator<Item = BoxedAction>,
-            > + Send
-            + 'static,
-    ) -> &mut Self;
+    fn add_many<I>(&mut self, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + Send + 'static,
+        I::IntoIter: DoubleEndedIterator;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no current action.

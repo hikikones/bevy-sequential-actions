@@ -42,14 +42,11 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         self
     }
 
-    fn add_many(
-        &mut self,
-        actions: impl IntoIterator<
-                Item = BoxedAction,
-                IntoIter = impl DoubleEndedIterator<Item = BoxedAction>,
-            > + Send
-            + 'static,
-    ) -> &mut Self {
+    fn add_many<I>(&mut self, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + Send + 'static,
+        I::IntoIter: DoubleEndedIterator,
+    {
         let agent = self.agent;
         let config = self.config;
 
