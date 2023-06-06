@@ -54,15 +54,15 @@ impl TestCountdownAction {
 }
 
 impl Action for TestCountdownAction {
-    fn is_finished(&self, _agent: Entity, world: &World) -> Finished {
-        Finished(world.get::<Countdown>(self.entity.unwrap()).unwrap().0 <= 0)
+    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
+        world.get::<Countdown>(self.entity.unwrap()).unwrap().0 <= 0
     }
 
     fn on_add(&mut self, _agent: Entity, world: &mut World) {
         self.entity = world.spawn((Added, CountdownMarker)).id().into();
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let count = self.current.take().unwrap_or(self.count);
         world
             .entity_mut(self.entity.unwrap())
@@ -77,7 +77,7 @@ impl Action for TestCountdownAction {
 
         match reason {
             StopReason::Finished => {
-                e.insert(Finito);
+                e.insert(Finished);
             }
             StopReason::Canceled => {
                 e.insert(Canceled);
@@ -127,7 +127,7 @@ struct Started;
 struct Stopped;
 
 #[derive(Component)]
-struct Finito;
+struct Finished;
 
 #[derive(Component)]
 struct Canceled;
@@ -246,7 +246,7 @@ fn finish() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(&app.world);
 
-    assert_eq!(app.world.entity(e).contains::<Finito>(), true);
+    assert_eq!(app.world.entity(e).contains::<Finished>(), true);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
@@ -270,7 +270,7 @@ fn cancel() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(&app.world);
 
-    assert_eq!(app.world.entity(e).contains::<Finito>(), false);
+    assert_eq!(app.world.entity(e).contains::<Finished>(), false);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
@@ -294,7 +294,7 @@ fn pause() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(&app.world);
 
-    assert_eq!(app.world.entity(e).contains::<Finito>(), false);
+    assert_eq!(app.world.entity(e).contains::<Finished>(), false);
     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
     assert_eq!(app.world.entity(e).contains::<Paused>(), true);
     assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
@@ -426,12 +426,12 @@ fn order() {
         }
     }
     impl<M: Default + Component> Action for MarkerAction<M> {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-            Finished(true)
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
         }
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world.entity_mut(agent).insert(M::default());
-            Finished(false)
+            false
         }
         fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
             world.entity_mut(agent).remove::<M>();
@@ -534,13 +534,13 @@ fn pause_resume() {
 fn despawn() {
     struct DespawnAction;
     impl Action for DespawnAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-            Finished(false)
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world.despawn(agent);
-            Finished(false)
+            false
         }
 
         fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

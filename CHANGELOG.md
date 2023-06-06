@@ -8,7 +8,7 @@
         - `on_add` which is called when an action is added to the queue.
         - `on_remove` which is called when an action is removed from the queue.
         - `on_drop` which is the last method to be called and gives full ownership.
-    - Changes `Action::on_start` to now return a `Finished(bool)` for immediate action queue advancement.
+    - Changes `Action::on_start` to now return a `bool` for immediate action queue advancement.
     - Removes `ActionCommands` struct for modifying actions inside the action trait.
     - Removes `ActionFinished` component.
     - Removes `Repeat` configuration.

@@ -77,13 +77,13 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
-    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if wait timer has reached zero.
         // By default, this method is called every frame in CoreSet::Last.
-        Finished(world.get::<WaitTimer>(agent).unwrap().0 <= 0.0)
+        world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
 

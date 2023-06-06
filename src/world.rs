@@ -171,7 +171,7 @@ impl ActionHandler {
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
     pub fn start_next(agent: Entity, world: &mut World) {
         if let Some(mut next_action) = world.get_mut::<ActionQueue>(agent).unwrap().pop_front() {
-            if next_action.on_start(agent, world).0 {
+            if next_action.on_start(agent, world) {
                 next_action.on_stop(agent, world, StopReason::Finished);
                 next_action.on_remove(agent, world);
                 next_action.on_drop(agent, world, DropReason::Done);

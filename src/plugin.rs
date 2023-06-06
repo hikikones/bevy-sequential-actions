@@ -64,7 +64,7 @@ fn check_actions<F: ReadOnlyWorldQuery>(
 ) {
     action_q.for_each(|(agent, current_action)| {
         if let Some(action) = current_action.as_ref() {
-            if action.is_finished(agent, world).0 {
+            if action.is_finished(agent, world) {
                 commands.add(move |world: &mut World| {
                     ActionHandler::stop_current(agent, StopReason::Finished, world);
                 });

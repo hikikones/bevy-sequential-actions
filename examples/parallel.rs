@@ -24,9 +24,9 @@ fn setup(mut commands: Commands) {
                 CountdownAction::new(4),
             ],
         })
-        .add(|_, world: &mut World| -> Finished {
+        .add(|_, world: &mut World| -> bool {
             world.send_event(AppExit);
-            Finished(false)
+            false
         });
 }
 
@@ -35,62 +35,59 @@ struct ParallelActions<const N: usize> {
 }
 
 impl<const N: usize> Action for ParallelActions<N> {
-    fn is_finished(&self, agent: Entity, world: &World) -> Finished {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
         self.actions
             .iter()
-            .all(|action| action.is_finished(agent, world).into())
-            .into()
+            .all(|action| action.is_finished(agent, world))
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
-        for action in self.actions.iter_mut() {
-            action.on_add(agent, world);
-        }
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_add(agent, world));
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
-        let mut finished = [false; N];
-        for (i, action) in self.actions.iter_mut().enumerate() {
-            finished[i] = action.on_start(agent, world).into();
-        }
-        finished.into_iter().all(|b| b).into()
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        std::array::from_fn::<bool, N, _>(|i| self.actions[i].on_start(agent, world))
+            .into_iter()
+            .all(|b| b)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        for action in self.actions.iter_mut() {
-            action.on_stop(agent, world, reason);
-        }
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_stop(agent, world, reason));
     }
 
     fn on_remove(&mut self, agent: Entity, world: &mut World) {
-        for action in self.actions.iter_mut() {
-            action.on_remove(agent, world);
-        }
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_remove(agent, world));
     }
 }
 
 struct PrintAction(&'static str);
 
 impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-        Finished(true)
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
-        Finished(true)
+        true
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }
 
 struct CountdownAction {
-    count: i32,
+    count: u32,
     entity: Entity,
 }
 
 impl CountdownAction {
-    const fn new(count: i32) -> Self {
+    const fn new(count: u32) -> Self {
         Self {
             count,
             entity: Entity::PLACEHOLDER,
@@ -99,15 +96,15 @@ impl CountdownAction {
 }
 
 impl Action for CountdownAction {
-    fn is_finished(&self, _agent: Entity, world: &World) -> Finished {
-        Finished(world.get::<Countdown>(self.entity).unwrap().0 <= 0)
+    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
+        world.get::<Countdown>(self.entity).unwrap().0 == 0
     }
 
     fn on_add(&mut self, _agent: Entity, world: &mut World) {
         self.entity = world.spawn_empty().id();
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let mut entity = world.entity_mut(self.entity);
 
         if entity.contains::<Paused>() {
@@ -132,14 +129,14 @@ impl Action for CountdownAction {
 }
 
 #[derive(Component)]
-struct Countdown(i32);
+struct Countdown(u32);
 
 #[derive(Component)]
 struct Paused;
 
 fn countdown(mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>) {
     for (entity, mut countdown) in &mut countdown_q {
-        countdown.0 -= 1;
+        countdown.0 = countdown.0.saturating_sub(1);
         println!("Countdown({:?}): {}", entity, countdown.0);
     }
 }

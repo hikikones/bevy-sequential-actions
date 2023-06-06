@@ -32,12 +32,12 @@ struct Id(u32);
 struct PrintIdAction;
 
 impl Action for PrintIdAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-        Finished(true)
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
-        Finished(false)
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+        false
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
@@ -72,7 +72,7 @@ fn check_actions_exclusive(world: &mut World) {
             .iter()
             .filter(|&(agent, current_action, _)| {
                 if let Some(action) = current_action.as_ref() {
-                    action.is_finished(agent, world).into()
+                    action.is_finished(agent, world)
                 } else {
                     false
                 }

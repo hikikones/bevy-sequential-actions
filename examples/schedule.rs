@@ -65,12 +65,12 @@ fn setup(mut commands: Commands) {
 struct PrintForeverAction(String);
 
 impl Action for PrintForeverAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
         println!("{}", self.0);
-        Finished(false)
+        false
     }
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
-        Finished(false)
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+        false
     }
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }

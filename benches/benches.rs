@@ -20,7 +20,7 @@ fn many_countdowns(c: &mut Criterion) {
     group.finish();
 }
 
-fn run_many_countdowns(agents: i32) {
+fn run_many_countdowns(agents: u32) {
     let mut app = App::new();
     app.edit_schedule(CoreSchedule::Main, |schedule| {
         schedule.set_executor_kind(ExecutorKind::SingleThreaded);
@@ -43,16 +43,16 @@ fn run_many_countdowns(agents: i32) {
     }
 
     struct CountdownAction {
-        count: i32,
-        current: Option<i32>,
+        count: u32,
+        current: Option<u32>,
     }
 
     impl Action for CountdownAction {
-        fn is_finished(&self, agent: Entity, world: &World) -> Finished {
-            Finished(world.get::<Countdown>(agent).unwrap().0 <= 0)
+        fn is_finished(&self, agent: Entity, world: &World) -> bool {
+            world.get::<Countdown>(agent).unwrap().0 == 0
         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             let count = self.current.take().unwrap_or(self.count);
             world.entity_mut(agent).insert(Countdown(count));
             self.is_finished(agent, world)
@@ -67,7 +67,7 @@ fn run_many_countdowns(agents: i32) {
     }
 
     #[derive(Component)]
-    struct Countdown(i32);
+    struct Countdown(u32);
 
     fn countdown(mut countdown_q: Query<&mut Countdown>) {
         for mut countdown in &mut countdown_q {

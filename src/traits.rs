@@ -7,13 +7,13 @@ pub trait Action: Send + Sync + 'static {
     /// Advances the action queue when returning `true`.
     ///
     /// By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
-    fn is_finished(&self, agent: Entity, world: &World) -> Finished;
+    fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
     /// The method that is called when an action is started.
     ///
     /// Returning `true` here marks the action as already finished,
     /// and will immediately advance the action queue.
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished;
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool;
 
     /// The method that is called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
@@ -40,13 +40,13 @@ where
 
 impl<OnStart> Action for OnStart
 where
-    OnStart: FnMut(Entity, &mut World) -> Finished + Send + Sync + 'static,
+    OnStart: FnMut(Entity, &mut World) -> bool + Send + Sync + 'static,
 {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-        Finished(true)
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> Finished {
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         (self)(agent, world)
     }
 
