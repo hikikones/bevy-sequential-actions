@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, marker::PhantomData};
+use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
@@ -9,26 +9,13 @@ use bevy_sequential_actions::*;
 #[derive(Deref, DerefMut)]
 struct TestApp(App);
 
-impl Default for TestApp {
-    fn default() -> Self {
-        Self::new(QueueAdvancement::Normal, None)
-    }
-}
-
 impl TestApp {
-    fn new(
-        system_kind: QueueAdvancement,
-        sort_fn: Option<fn(Entity, Entity, &World) -> Ordering>,
-    ) -> Self {
+    fn default() -> Self {
         let mut app = App::new();
-        app.add_plugin(SequentialActionsPlugin::<()>::new(
-            system_kind,
-            |app, system| {
-                app.add_system(system.after(countdown));
-            },
-            sort_fn,
-        ))
-        .add_system(countdown);
+        app.add_systems((
+            countdown,
+            ActionHandler::check_actions::<()>().after(countdown),
+        ));
 
         Self(app)
     }
@@ -571,50 +558,4 @@ fn despawn() {
     app.update();
 
     assert!(app.world.get_entity(a).is_none());
-}
-
-#[test]
-fn sort_fn() {
-    #[derive(Component)]
-    struct Id(u32);
-
-    #[derive(Resource)]
-    struct Countdown(u32);
-
-    struct AssertIdAction;
-    impl Action for AssertIdAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> Finished {
-            Finished(true)
-        }
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> Finished {
-            Finished(false)
-        }
-        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            let id = world.get::<Id>(agent).unwrap().0;
-
-            let mut countdown = world.resource_mut::<Countdown>();
-            countdown.0 -= 1;
-
-            assert_eq!(id, countdown.0);
-        }
-    }
-
-    fn sort_fn(a1: Entity, a2: Entity, world: &World) -> Ordering {
-        let id1 = world.get::<Id>(a1).unwrap();
-        let id2 = world.get::<Id>(a2).unwrap();
-        id1.0.cmp(&id2.0).reverse()
-    }
-
-    const COUNT: u32 = 10;
-
-    let mut app = TestApp::new(QueueAdvancement::Normal, Some(sort_fn));
-    app.insert_resource(Countdown(COUNT));
-
-    for i in 0..COUNT {
-        let a = app.spawn_agent();
-        app.world.entity_mut(a).insert(Id(i));
-        app.actions(a).add(AssertIdAction);
-    }
-
-    app.update();
 }

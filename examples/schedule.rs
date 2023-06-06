@@ -13,24 +13,12 @@ fn main() {
         .add_schedule(EvenSchedule, Schedule::new())
         .add_schedule(OddSchedule, Schedule::new())
         .add_plugin(ScheduleRunnerPlugin)
-        // Add plugin with even marker filter for even schedule
-        .add_plugin(SequentialActionsPlugin::<With<EvenMarker>>::new(
-            QueueAdvancement::Normal,
-            |app, system| {
-                app.add_system(system.in_schedule(EvenSchedule));
-            },
-            None,
-        ))
-        // Add plugin with odd marker filter for odd schedule
-        .add_plugin(SequentialActionsPlugin::<With<OddMarker>>::new(
-            QueueAdvancement::Normal,
-            |app, system| {
-                app.add_system(system.in_schedule(OddSchedule));
-            },
-            None,
-        ))
         .add_startup_system(setup)
-        .add_system(run_custom_schedule)
+        .add_systems((
+            run_custom_schedule,
+            ActionHandler::check_actions::<With<EvenMarker>>().in_schedule(EvenSchedule),
+            ActionHandler::check_actions::<With<OddMarker>>().in_schedule(OddSchedule),
+        ))
         .run();
 }
 

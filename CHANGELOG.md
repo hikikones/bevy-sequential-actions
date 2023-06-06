@@ -8,13 +8,6 @@
         - `on_add` which is called when an action is added to the queue.
         - `on_remove` which is called when an action is removed from the queue.
         - `on_drop` which is the last method to be called and gives full ownership.
-    - Adds three new features for the `SequentialActionsPlugin`:
-        - Use the generic type `F: ReadOnlyWorldQuery` for filtering agents.
-        - Specify an optional function for sorting the query that check agents for finished actions.
-        - Specify which kind of system to use for `QueueAdvancement`:
-            - `Normal` advances the action queue using `Commands`.
-            - `Parallel` advances the action queue using `ParallelCommands`.
-            - `Exclusive` advances the action queue using `World`.
     - Changes `Action::on_start` to now return a `Finished(bool)` for immediate action queue advancement.
     - Removes `ActionCommands` struct for modifying actions inside the action trait.
     - Removes `ActionFinished` component.
@@ -22,7 +15,8 @@
     - Removes parallel and linked actions.
     - Removes tuple closure for anonymous actions with both `on_start` and `on_stop`.
     - Renames `add_sequential` to `add_many`.
-    - Exposes the `ActionQueue` and `CurrentAction` components.
+    - Exposes the `ActionQueue` and `CurrentAction` components used by agents.
+    - Exposes the `ActionHandler` struct that contains the system and methods used by this library.
 
 [83]: https://github.com/hikikones/bevy-sequential-actions/pull/83
 

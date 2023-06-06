@@ -6,7 +6,7 @@ impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
     fn actions(&'c mut self, agent: Entity) -> AgentCommands<'c, 'w, 's> {
         AgentCommands {
             agent,
-            config: AddConfig::new(),
+            config: AddConfig::default(),
             commands: self,
         }
     }
@@ -20,6 +20,11 @@ pub struct AgentCommands<'c, 'w, 's> {
 }
 
 impl ModifyActions for AgentCommands<'_, '_, '_> {
+    fn config(&mut self, config: AddConfig) -> &mut Self {
+        self.config = config;
+        self
+    }
+
     fn start(&mut self, start: bool) -> &mut Self {
         self.config.start = start;
         self
@@ -36,7 +41,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let action = action.into();
 
         self.commands.add(move |world: &mut World| {
-            world.add_action(agent, config, action);
+            ActionHandler::add(agent, config, action, world);
         });
 
         self
@@ -51,7 +56,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let config = self.config;
 
         self.commands.add(move |world: &mut World| {
-            world.add_actions(agent, config, actions);
+            ActionHandler::add_many(agent, config, actions, world);
         });
 
         self
@@ -61,7 +66,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.execute_actions(agent);
+            ActionHandler::execute(agent, world);
         });
 
         self
@@ -71,7 +76,8 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.next_action(agent);
+            ActionHandler::stop_current(agent, StopReason::Canceled, world);
+            ActionHandler::start_next(agent, world);
         });
 
         self
@@ -81,7 +87,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.stop_current_action(agent, StopReason::Canceled);
+            ActionHandler::stop_current(agent, StopReason::Canceled, world);
         });
 
         self
@@ -91,7 +97,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.stop_current_action(agent, StopReason::Paused);
+            ActionHandler::stop_current(agent, StopReason::Paused, world);
         });
 
         self
@@ -101,7 +107,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.skip_next_action(agent);
+            ActionHandler::skip_next(agent, world);
         });
 
         self
@@ -111,7 +117,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.clear_actions(agent);
+            ActionHandler::clear(agent, world);
         });
 
         self

@@ -6,7 +6,7 @@ use bevy_sequential_actions::*;
 fn main() {
     App::new()
         .add_plugin(ScheduleRunnerPlugin)
-        .add_plugin(SequentialActionsPlugin::default())
+        .add_plugin(SequentialActionsPlugin)
         .add_startup_system(setup)
         .add_system(exit_app)
         .run();

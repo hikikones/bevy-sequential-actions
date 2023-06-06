@@ -64,14 +64,15 @@ pub trait ActionsProxy<'a> {
 
 /// Methods for modifying actions.
 pub trait ModifyActions {
-    /// Specify if the next [`action`](Action) in the queue should
-    /// [`start`](Action::on_start) when new actions are added.
-    /// The next action will only start if there is no current action.
+    /// Sets the current [`config`](AddConfig) for actions to be added.
+    fn config(&mut self, config: AddConfig) -> &mut Self;
+
+    /// Sets the [`start`](AddConfig::start) field in the current [`config`](AddConfig).
     ///
     /// Default is `true`.
     fn start(&mut self, start: bool) -> &mut Self;
 
-    /// Specify the queue order for actions to be added.
+    /// Sets the [`order`](AddConfig::order) field in the current [`config`](AddConfig).
     ///
     /// Default is [`AddOrder::Back`].
     fn order(&mut self, order: AddOrder) -> &mut Self;

@@ -12,33 +12,23 @@ fn many_countdowns(c: &mut Criterion) {
     group.sample_size(10);
 
     for agents in [100, 10_000, 1_000_000] {
-        for system_kind in [
-            QueueAdvancement::Normal,
-            QueueAdvancement::Parallel,
-            QueueAdvancement::Exclusive,
-        ] {
-            group.bench_function(format!("{agents} {system_kind:?}"), |b| {
-                b.iter(|| run_many_countdowns(agents, system_kind));
-            });
-        }
+        group.bench_function(format!("{agents}"), |b| {
+            b.iter(|| run_many_countdowns(agents));
+        });
     }
 
     group.finish();
 }
 
-fn run_many_countdowns(agents: i32, system_kind: QueueAdvancement) {
+fn run_many_countdowns(agents: i32) {
     let mut app = App::new();
     app.edit_schedule(CoreSchedule::Main, |schedule| {
         schedule.set_executor_kind(ExecutorKind::SingleThreaded);
     })
-    .add_plugin(SequentialActionsPlugin::<()>::new(
-        system_kind,
-        |app, system| {
-            app.add_system(system.after(countdown));
-        },
-        None,
-    ))
-    .add_system(countdown);
+    .add_systems((
+        countdown,
+        ActionHandler::check_actions::<()>().after(countdown),
+    ));
 
     for i in 0..agents {
         let agent = app.world.spawn(ActionsBundle::new()).id();

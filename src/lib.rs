@@ -32,7 +32,7 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugin(SequentialActionsPlugin::default())
+        .add_plugin(SequentialActionsPlugin)
         .run();
 }
 ```
@@ -212,7 +212,29 @@ pub struct CurrentAction(Option<BoxedAction>);
 #[derive(Default, Component, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
-/// The queue order for an [`Action`] to be added.
+/// Configuration for actions to be added.
+#[derive(Debug, Clone, Copy)]
+pub struct AddConfig {
+    /// Start the next action in the queue if nothing is currently running.
+    pub start: bool,
+    /// The queue order for actions to be added.
+    pub order: AddOrder,
+}
+
+impl AddConfig {
+    /// Returns a new configuration for actions to be added.
+    pub const fn new(start: bool, order: AddOrder) -> Self {
+        Self { start, order }
+    }
+}
+
+impl Default for AddConfig {
+    fn default() -> Self {
+        Self::new(true, AddOrder::Back)
+    }
+}
+
+/// The queue order for actions to be added.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum AddOrder {
     /// An action is added to the back of the queue.
@@ -245,7 +267,7 @@ pub enum DropReason {
     Cleared,
 }
 
-/// Wrapper struct for a `boolean`.
+/// A boolean tuple struct for stating that an [`Action`] is finished or not.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deref)]
 pub struct Finished(pub bool);
 
@@ -261,17 +283,8 @@ impl From<Finished> for bool {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-struct AddConfig {
-    start: bool,
-    order: AddOrder,
-}
-
-impl AddConfig {
-    const fn new() -> Self {
-        Self {
-            start: true,
-            order: AddOrder::Back,
-        }
-    }
-}
+/// Namespace struct containing the system used by [`SequentialActionsPlugin`]
+/// and various static methods for modifying the action queue.
+///
+/// Note that you are not supposed to use this directly.
+pub struct ActionHandler;

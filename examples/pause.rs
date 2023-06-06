@@ -11,7 +11,7 @@ fn main() {
             1.0 / 10.0,
         )))
         .add_plugin(ScheduleRunnerPlugin)
-        .add_plugin(SequentialActionsPlugin::default())
+        .add_plugin(SequentialActionsPlugin)
         .add_startup_system(setup)
         .add_systems((count, frame_logic).chain())
         .run();
