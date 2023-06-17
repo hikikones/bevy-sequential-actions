@@ -24,8 +24,6 @@ fn setup(mut commands: Commands) {
             PrintAction("there"),
             CountdownAction::new(10)
         ])
-        // Add an already boxed action by casting
-        .add(Box::new(PrintAction("boxed action")) as BoxedAction)
         // Add an anonymous action with a closure
         .add(|_agent, world: &mut World| -> bool {
             // on_start
