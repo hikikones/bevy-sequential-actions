@@ -111,22 +111,22 @@ impl ActionHandler {
     {
         match config.order {
             AddOrder::Back => {
-                for mut action in actions {
+                actions.into_iter().for_each(|mut action| {
                     action.on_add(agent, world);
                     world
                         .get_mut::<ActionQueue>(agent)
                         .unwrap()
                         .push_back(action);
-                }
+                });
             }
             AddOrder::Front => {
-                for mut action in actions.into_iter().rev() {
+                actions.into_iter().rev().for_each(|mut action| {
                     action.on_add(agent, world);
                     world
                         .get_mut::<ActionQueue>(agent)
                         .unwrap()
                         .push_front(action);
-                }
+                });
             }
         }
 
