@@ -149,12 +149,7 @@ impl ActionHandler {
             action.on_stop(agent, world, reason);
 
             match reason {
-                StopReason::Finished => {
-                    action.on_remove(agent, world);
-                    action.on_drop(agent, world, DropReason::Done);
-                    Self::start_next(agent, world);
-                }
-                StopReason::Canceled => {
+                StopReason::Finished | StopReason::Canceled => {
                     action.on_remove(agent, world);
                     action.on_drop(agent, world, DropReason::Done);
                 }

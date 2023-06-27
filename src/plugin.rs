@@ -67,6 +67,7 @@ fn check_actions<F: ReadOnlyWorldQuery>(
             if action.is_finished(agent, world) {
                 commands.add(move |world: &mut World| {
                     ActionHandler::stop_current(agent, StopReason::Finished, world);
+                    ActionHandler::start_next(agent, world);
                 });
             }
         }
