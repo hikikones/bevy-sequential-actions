@@ -196,17 +196,23 @@ impl ActionsBundle {
             queue: ActionQueue(VecDeque::new()),
         }
     }
+
+    /// Creates a new [`Bundle`] with specified `capacity` for the action queue.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            current: CurrentAction(None),
+            queue: ActionQueue(VecDeque::with_capacity(capacity)),
+        }
+    }
 }
 
 /// The current action for an `agent`.
-/// Part of [`ActionsBundle`].
 ///
 /// Note that you are not supposed to use this directly.
 #[derive(Default, Component, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
 
 /// The action queue for an `agent`.
-/// Part of [`ActionsBundle`].
 ///
 /// Note that you are not supposed to use this directly.
 #[derive(Default, Component, Deref, DerefMut)]
