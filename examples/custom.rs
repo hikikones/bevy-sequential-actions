@@ -71,11 +71,10 @@ fn check_actions_exclusive(world: &mut World) {
         let mut finished_agents = agent_q
             .iter()
             .filter(|&(agent, current_action, _)| {
-                if let Some(action) = current_action.as_ref() {
-                    action.is_finished(agent, world)
-                } else {
-                    false
-                }
+                current_action
+                    .as_ref()
+                    .map(|action| action.is_finished(agent, world))
+                    .unwrap_or(false)
             })
             .map(|(agent, _, id)| (agent, id.0))
             .collect::<Vec<_>>();
