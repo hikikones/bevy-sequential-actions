@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin, ScheduleRunnerSettings};
-use bevy_ecs::{prelude::*, system::SystemState};
+use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
 
@@ -10,7 +10,6 @@ fn main() {
         .insert_resource(ScheduleRunnerSettings::run_loop(Duration::from_secs_f64(
             1.0 / 10.0,
         )))
-        .init_resource::<CachedAgentQuery>()
         .add_plugin(ScheduleRunnerPlugin)
         .add_startup_system(setup)
         // Add custom system for action queue advancement
@@ -52,39 +51,27 @@ impl Action for PrintIdAction {
     }
 }
 
-#[derive(Resource)]
-struct CachedAgentQuery(
-    SystemState<Query<'static, 'static, (Entity, &'static CurrentAction, &'static Id)>>,
-);
+fn check_actions_exclusive(
+    world: &mut World,
+    mut agent_q: Local<QueryState<(Entity, &CurrentAction, &Id)>>,
+) {
+    // Collect all agents with finished action
+    let mut finished_agents = agent_q
+        .iter(world)
+        .filter(|&(agent, current_action, _)| {
+            current_action
+                .as_ref()
+                .map(|action| action.is_finished(agent, world))
+                .unwrap_or(false)
+        })
+        .map(|(agent, _, id)| (agent, id.0))
+        .collect::<Vec<_>>();
 
-impl FromWorld for CachedAgentQuery {
-    fn from_world(world: &mut World) -> Self {
-        Self(SystemState::new(world))
-    }
-}
+    // Sort by id in reverse
+    finished_agents.sort_by_key(|&(_, id)| std::cmp::Reverse(id));
 
-fn check_actions_exclusive(world: &mut World) {
-    world.resource_scope::<CachedAgentQuery, _>(|world, mut agent_query| {
-        let agent_q = agent_query.0.get(world);
-
-        // Collect all agents with finished action
-        let mut finished_agents = agent_q
-            .iter()
-            .filter(|&(agent, current_action, _)| {
-                current_action
-                    .as_ref()
-                    .map(|action| action.is_finished(agent, world))
-                    .unwrap_or(false)
-            })
-            .map(|(agent, _, id)| (agent, id.0))
-            .collect::<Vec<_>>();
-
-        // Sort by id in reverse
-        finished_agents.sort_by_key(|&(_, id)| std::cmp::Reverse(id));
-
-        // Advance the action queue
-        finished_agents.into_iter().for_each(|(agent, _)| {
-            ActionHandler::stop_current(agent, StopReason::Finished, world);
-        });
+    // Advance the action queue
+    finished_agents.into_iter().for_each(|(agent, _)| {
+        ActionHandler::stop_current(agent, StopReason::Finished, world);
     });
 }
