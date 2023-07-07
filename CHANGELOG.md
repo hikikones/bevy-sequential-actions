@@ -2,6 +2,24 @@
 
 ## Version 0.8.0-dev
 
+- [Rework actions to be both more composable and simpler][83]
+    - Adds four new methods to the `Action` trait:
+        - `is_finished` which determines if an action is finished or not.
+        - `on_add` which is called when an action is added to the queue.
+        - `on_remove` which is called when an action is removed from the queue.
+        - `on_drop` which is the last method to be called and gives full ownership.
+    - Changes `Action::on_start` to now return a `bool` for immediate action queue advancement.
+    - Removes `ActionCommands` struct for modifying actions inside the action trait.
+    - Removes `ActionFinished` component.
+    - Removes `Repeat` configuration.
+    - Removes parallel and linked actions.
+    - Removes tuple closure for anonymous actions with both `on_start` and `on_stop`.
+    - Renames `add_sequential` to `add_many`.
+    - Exposes the `ActionQueue` and `CurrentAction` components used by agents.
+    - Exposes the `ActionHandler` struct that contains the system and methods used by this library.
+
+[83]: https://github.com/hikikones/bevy-sequential-actions/pull/83
+
 ## Version 0.7.0
 
 - [Update to Bevy 0.10][73]

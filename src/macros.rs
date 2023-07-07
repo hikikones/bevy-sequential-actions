@@ -1,24 +1,31 @@
-/// Helper macro for creating a collection of boxed actions.
+/// Helper macro for creating an array of boxed actions.
 ///
 /// ```rust,no_run
-/// # use bevy::prelude::*;
+/// # use bevy_ecs::prelude::*;
 /// # use bevy_sequential_actions::*;
-/// # use shared::actions::QuitAction;
 /// #
-/// # let action_a = QuitAction;
-/// # let action_b = QuitAction;
+/// # struct EmptyAction;
+/// # impl Action for EmptyAction {
+/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true.into() }
+/// #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true.into() }
+/// #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
+/// # }
 /// #
-/// let actions: std::array::IntoIter<Box<dyn Action>, 3> = actions![
+/// # let action_a = EmptyAction;
+/// # let action_b = EmptyAction;
+/// #
+/// let actions: [Box<dyn Action>; 3] = actions![
 ///         action_a,
 ///         action_b,
-///         |agent: Entity, world: &mut World, commands: &mut ActionCommands| {
+///         |agent: Entity, world: &mut World| -> bool {
 ///             // on_start
+///             true
 ///         },
 ///     ];
 /// ```
 #[macro_export]
 macro_rules! actions {
     ( $( $action:expr ),* $(,)? ) => {
-        [ $( ::core::convert::Into::<::std::boxed::Box<dyn $crate::Action>>::into($action) ),* ].into_iter()
+        [ $( ::core::convert::Into::<::std::boxed::Box<dyn $crate::Action>>::into($action) ),* ]
     }
 }

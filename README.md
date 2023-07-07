@@ -1,4 +1,11 @@
+<div align="center">
+
 # Bevy Sequential Actions
+
+[![crates.io](https://img.shields.io/crates/v/bevy-sequential-actions?style=flat-square)](https://crates.io/crates/bevy-sequential-actions)
+[![docs.rs](https://img.shields.io/docsrs/bevy-sequential-actions?style=flat-square)](https://docs.rs/bevy_sequential_actions)
+[![MIT/Apache 2.0](https://img.shields.io/crates/l/bevy-sequential-actions?style=flat-square)](https://github.com/hikikones/bevy-sequential-actions#license)
+
 
 A [Bevy](https://bevyengine.org) library that aims to execute a queue of various actions in a sequential manner.
 This generally means that one action runs at a time, and when it is done,
@@ -6,19 +13,19 @@ the next action will start and so on until the queue is empty.
 
 https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-a326-f34e055a1b40.mp4
 
-## Getting Started
+</div>
+
+## 📜 Getting Started
 
 #### Plugin
 
 In order for everything to work, the `SequentialActionsPlugin` must be added to your `App`.
 
 ```rust
-use bevy::prelude::*;
 use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
         .add_plugin(SequentialActionsPlugin)
         .run();
 }
@@ -26,8 +33,10 @@ fn main() {
 
 #### Modifying Actions
 
-An action is anything that implements the `Action` trait, and can be added to any `Entity` that contains the `ActionsBundle`.
-An entity with actions is referred to as an `agent`. See the `ModifyActions` trait for available methods.
+An action is anything that implements the `Action` trait,
+and can be added to any `Entity` that contains the `ActionsBundle`.
+An entity with actions is referred to as an `agent`.
+See the `ModifyActions` trait for available methods.
 
 ```rust
 fn setup(mut commands: Commands) {
@@ -35,12 +44,11 @@ fn setup(mut commands: Commands) {
     commands
         .actions(agent)
         .add(action_a)
-        .add_parallel(actions![
+        .add_many(actions![
             action_b,
             action_c
         ])
-        .repeat(Repeat::Forever)
-        .order(AddOrder::Back)
+        .order(AddOrder::Front)
         .add(action_d)
         // ...
 }
@@ -48,19 +56,17 @@ fn setup(mut commands: Commands) {
 
 #### Implementing an Action
 
-The `Action` trait contains two methods:
+The `Action` trait contains 3 required methods:
 
-* The `on_start` method which is called when an action is started.
-* The `on_stop` method which is called when an action is stopped.
+* `is_finished` to determine if an action is finished or not.
+* `on_start` which is called when an action is started.
+* `on_stop` which is called when an action is stopped.
 
-In order for the action queue to advance, every action has to somehow signal when they are finished.
-There are two ways of doing this:
+In addition, there are 3 optional methods:
 
-* Using the `ActionFinished` component on an `agent`.
-  By default, a system at the end of the frame will advance the queue if all active actions are finished.
-  This is the typical approach as it composes well with other actions running in parallel.
-* Calling the `next` method on an `agent`.
-  This simply advances the queue, and is useful for short one-at-a-time actions.
+* `on_add` which is called when an action is added to the queue.
+* `on_remove` which is called when an action is removed from the queue.
+* `on_drop` which is the last method to be called with full ownership.
 
 A simple wait action follows.
 
@@ -71,91 +77,76 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        // Take current duration (if paused), or use full duration
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        // Determine if wait timer has reached zero.
+        // By default, this method is called every frame in CoreSet::Last.
+        world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
 
-        // Run the wait system on the agent
-        world.entity_mut(agent).insert(Wait(duration));
+        // Run the wait timer system on the agent.
+        world.entity_mut(agent).insert(WaitTimer(duration));
+
+        // Is action already finished?
+        // Returning true here will immediately advance the action queue.
+        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        // Remove the wait component from the agent
-        let wait = world.entity_mut(agent).take::<Wait>();
+        // Take the wait timer component from the agent.
+        let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
-        // Store current duration when paused
-        if let StopReason::Paused = reason {
-            self.current = Some(wait.unwrap().0);
+        // Store current time when paused.
+        if reason == StopReason::Paused {
+            self.current = Some(wait_timer.unwrap().0);
         }
     }
 }
 
 #[derive(Component)]
-struct Wait(f32);
+struct WaitTimer(f32);
 
-fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
-    for (mut wait, mut finished) in wait_q.iter_mut() {
-        wait.0 -= time.delta_seconds();
-
-        // Confirm finished state every frame
-        if wait.0 <= 0.0 {
-            finished.confirm_and_reset();
-        }
+fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
+    for mut wait_timer in &mut wait_timer_q {
+        wait_timer.0 -= time.delta_seconds();
     }
 }
 ```
 
-#### Warning
+#### ⚠️ Warning
 
-One thing to keep in mind is that you should not modify actions using `World` inside the `Action` trait.
-We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
-Since an action is detached from an `agent` when the trait methods are called,
-the logic for advancing the action queue will not work properly.
+One thing to keep in mind is when modifying actions using `World` inside the `Action` trait.
+In order to pass a mutable reference to world when calling the trait methods,
+the action has to be temporarily removed from an `agent`.
+This means that depending on what you do,
+the logic for advancing the action queue might not work properly.
 
-This is why `ActionCommands` was created, so you can modify actions inside the `Action` trait in a deferred way.
+In general, there are two rules when modifying actions for an `agent` inside the action trait:
 
-```rust
-pub struct SetStateAction<S: States>(S);
+* When adding new actions, you should either set the `start` property to `false`,
+    or push to the `ActionQueue` component directly.
+* The `execute` and `next` methods should not be used.
 
-impl<S: States> Action for SetStateAction<S> {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        // Set state
-        world.resource_mut::<NextState<S>>().set(self.0.clone());
+## 📎 Examples
 
-        // Bad. The action queue will advance immediately.
-        world.actions(agent).next();
-        
-        // Good. The action queue will advance a bit later.
-        commands.actions(agent).next();
-
-        // Also good. Does the same as above.
-        commands.add(move |w: &mut World| {
-            w.actions(agent).next();
-        });
-
-        // Also good. By default, the action queue will advance at the end of the frame.
-        world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-}
-```
-
-## Examples
-
-See the [examples](examples/) for more usage, specifically the [shared actions](examples/shared/src/actions/).
+See the [examples](examples/) for more usage.
 Each example can be run with `cargo run --example <example>`.
-Consider running with `--release` as debug builds can be quite slow.
 
-| Example    | Description                                                                                                                                                        |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `basic`    | Shows the basic usage of the library by adding some actions and then quitting the app.                                                                             |
-| `pause`    | Shows how to pause and resume an action when pressing `space`.                                                                                                     |
-| `repeat`   | Shows how to add actions that repeat `n` times and forever.                                                                                                        |
-| `parallel` | Shows how to add a collection of actions that run in parallel.                                                                                                     |
-| `moba`     | Shows how actions can be used to control a unit. Right click for movement, hold down left shift for queueing movements and press `space` for canceling everything. |
+| Example | Description |
+| ------- | ----------- |
+| `basic` | Shows the basic usage of the library. |
+| `pause` | Shows how to pause and resume an action. |
+| `repeat` | Shows how to create an action that repeats. |
+| `parallel` | Shows how to create actions that run in parallel. |
+| `sequence` | Shows how to create an action with a sequence of actions. |
+| `schedule` | Shows how to use the plugin with two different schedules. |
+| `custom` | Shows how to use a custom system for advancing the action queue. |
+| `despawn` | Shows how to properly despawn an `agent`. |
 
-## Compatibility
+## 📌 Compatibility
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
@@ -163,3 +154,12 @@ Consider running with `--release` as debug builds can be quite slow.
 | 0.9  | 0.6                     |
 | 0.8  | 0.3 — 0.5               |
 | 0.7  | 0.1 — 0.2               |
+
+## 🔖 License
+
+`bevy-sequential-actions` is dual-licensed under either
+
+* MIT License ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
+* Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
+
+at your option.

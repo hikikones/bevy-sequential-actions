@@ -1,50 +1,80 @@
-use bevy::prelude::*;
-use bevy_sequential_actions::*;
+use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
+use bevy_ecs::prelude::*;
 
-use shared::{actions::*, bootstrap::*, extensions::FromLookExt};
+use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BootstrapPlugin)
-        .add_plugin(ActionsPlugin)
+        .add_plugin(ScheduleRunnerPlugin)
+        .add_plugin(SequentialActionsPlugin)
         .add_startup_system(setup)
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    let range = 0..4;
-    let last = (range.len() - 1) as u32;
-    let x = last as f32;
-
-    for i in range {
-        let start = Vec3::new(-x, 0.0, -2.0) + Vec3::X * i as f32 * 2.0;
-        let end = start + Vec3::Z * 4.0;
-
-        let agent = commands.spawn_agent(AgentConfig {
-            position: start,
-            rotation: Quat::from_look(Vec3::Z, Vec3::Y),
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands
+        .actions(agent)
+        .add_many(actions![
+            RepeatAction {
+                action: PrintAction("hello"),
+                repeat: 3,
+            },
+            RepeatAction {
+                action: PrintAction("world"),
+                repeat: 1,
+            },
+        ])
+        .add(|_agent, world: &mut World| -> bool {
+            world.send_event(AppExit);
+            false
         });
+}
 
-        let repeat = match i {
-            i if i < last => Repeat::Amount(i),
-            _ => Repeat::Forever,
-        };
+struct RepeatAction<A: Action> {
+    action: A,
+    repeat: u32,
+}
 
-        commands
-            .actions(agent)
-            .repeat(repeat)
-            .add(WaitAction::new(0.5))
-            .add(MoveAction::new(MoveConfig {
-                target: end,
-                speed: 4.0,
-                rotate: true,
-            }))
-            .add(WaitAction::new(0.5))
-            .add(MoveAction::new(MoveConfig {
-                target: start,
-                speed: 4.0,
-                rotate: true,
-            }));
+impl<A: Action> Action for RepeatAction<A> {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        self.action.is_finished(agent, world)
     }
+
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        self.action.on_add(agent, world);
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        self.action.on_start(agent, world)
+    }
+
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        self.action.on_stop(agent, world, reason);
+    }
+
+    fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {
+        if self.repeat == 0 || reason != DropReason::Done {
+            self.action.on_remove(agent, world);
+            return;
+        }
+
+        self.repeat -= 1;
+        world.get_mut::<ActionQueue>(agent).unwrap().push_back(self);
+    }
+}
+
+struct PrintAction(&'static str);
+
+impl Action for PrintAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+        println!("{}", self.0);
+        true
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }

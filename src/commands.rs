@@ -1,25 +1,30 @@
 use crate::*;
 
 impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
-    type Modifier = AgentCommandsActions<'c, 'w, 's>;
+    type Modifier = AgentCommands<'c, 'w, 's>;
 
-    fn actions(&'c mut self, agent: Entity) -> AgentCommandsActions<'c, 'w, 's> {
-        AgentCommandsActions {
+    fn actions(&'c mut self, agent: Entity) -> AgentCommands<'c, 'w, 's> {
+        AgentCommands {
             agent,
-            config: AddConfig::new(),
+            config: AddConfig::default(),
             commands: self,
         }
     }
 }
 
 /// Modify actions using [`Commands`].
-pub struct AgentCommandsActions<'c, 'w, 's> {
+pub struct AgentCommands<'c, 'w, 's> {
     agent: Entity,
     config: AddConfig,
     commands: &'c mut Commands<'w, 's>,
 }
 
-impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
+impl ModifyActions for AgentCommands<'_, '_, '_> {
+    fn config(&mut self, config: AddConfig) -> &mut Self {
+        self.config = config;
+        self
+    }
+
     fn start(&mut self, start: bool) -> &mut Self {
         self.config.start = start;
         self
@@ -30,60 +35,28 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         self
     }
 
-    fn repeat(&mut self, repeat: Repeat) -> &mut Self {
-        self.config.repeat = repeat;
-        self
-    }
-
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
         let agent = self.agent;
         let config = self.config;
         let action = action.into();
 
         self.commands.add(move |world: &mut World| {
-            world.add_action(agent, config, action);
+            ActionHandler::add(agent, config, action, world);
         });
 
         self
     }
 
-    fn add_sequence(
-        &mut self,
-        actions: impl DoubleEndedIterator<Item = BoxedAction> + Send + Sync + 'static,
-    ) -> &mut Self {
+    fn add_many<I>(&mut self, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + Send + 'static,
+        I::IntoIter: DoubleEndedIterator,
+    {
         let agent = self.agent;
         let config = self.config;
 
         self.commands.add(move |world: &mut World| {
-            world.add_actions(agent, config, actions);
-        });
-
-        self
-    }
-
-    fn add_parallel(
-        &mut self,
-        actions: impl Iterator<Item = BoxedAction> + Send + Sync + 'static,
-    ) -> &mut Self {
-        let agent = self.agent;
-        let config = self.config;
-
-        self.commands.add(move |world: &mut World| {
-            world.add_parallel_actions(agent, config, actions);
-        });
-
-        self
-    }
-
-    fn add_linked(
-        &mut self,
-        f: impl FnOnce(&mut LinkedActionsBuilder) + Send + Sync + 'static,
-    ) -> &mut Self {
-        let agent = self.agent;
-        let config = self.config;
-
-        self.commands.add(move |world: &mut World| {
-            world.add_linked_actions(agent, config, f);
+            ActionHandler::add_many(agent, config, actions, world);
         });
 
         self
@@ -93,7 +66,7 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.execute_actions(agent);
+            ActionHandler::execute(agent, world);
         });
 
         self
@@ -103,7 +76,8 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.next_action(agent);
+            ActionHandler::stop_current(agent, StopReason::Canceled, world);
+            ActionHandler::start_next(agent, world);
         });
 
         self
@@ -113,7 +87,7 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.cancel_action(agent);
+            ActionHandler::stop_current(agent, StopReason::Canceled, world);
         });
 
         self
@@ -123,7 +97,7 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.pause_action(agent);
+            ActionHandler::stop_current(agent, StopReason::Paused, world);
         });
 
         self
@@ -133,7 +107,7 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.skip_action(agent);
+            ActionHandler::skip_next(agent, world);
         });
 
         self
@@ -143,7 +117,7 @@ impl ModifyActions for AgentCommandsActions<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            world.clear_actions(agent);
+            ActionHandler::clear(agent, world);
         });
 
         self

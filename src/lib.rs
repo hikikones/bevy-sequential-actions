@@ -1,26 +1,37 @@
-#![allow(clippy::needless_doctest_main)]
-#![warn(missing_docs)]
+#![warn(
+    missing_docs,
+    rustdoc::broken_intra_doc_links,
+    rustdoc::private_intra_doc_links
+)]
 
 /*!
+<div align="center">
+
 # Bevy Sequential Actions
+
+[![crates.io](https://img.shields.io/crates/v/bevy-sequential-actions?style=flat-square)](https://crates.io/crates/bevy-sequential-actions)
+[![github.com](https://img.shields.io/github/stars/hikikones/bevy-sequential-actions?logo=github&style=flat-square)](https://github.com/hikikones/bevy-sequential-actions)
+[![MIT/Apache 2.0](https://img.shields.io/crates/l/bevy-sequential-actions?style=flat-square)](https://github.com/hikikones/bevy-sequential-actions#license)
 
 A [Bevy](https://bevyengine.org) library that aims to execute a queue of various actions in a sequential manner.
 This generally means that one action runs at a time, and when it is done,
 the next action will start and so on until the queue is empty.
 
-## Getting Started
+</div>
+
+## 📜 Getting Started
 
 #### Plugin
 
 In order for everything to work, the [`SequentialActionsPlugin`] must be added to your [`App`](bevy_app::App).
 
 ```rust,no_run
-use bevy::prelude::*;
+# use bevy_ecs::prelude::*;
+# use bevy_app::prelude::*;
 use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
         .add_plugin(SequentialActionsPlugin)
         .run();
 }
@@ -34,26 +45,31 @@ An entity with actions is referred to as an `agent`.
 See the [`ModifyActions`] trait for available methods.
 
 ```rust,no_run
-# use bevy::prelude::*;
+# use bevy_ecs::prelude::*;
 # use bevy_sequential_actions::*;
-# use shared::actions::QuitAction;
+#
+# struct EmptyAction;
+# impl Action for EmptyAction {
+#   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true.into() }
+#   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true.into() }
+#   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
+# }
 #
 fn setup(mut commands: Commands) {
-#   let action_a = QuitAction;
-#   let action_b = QuitAction;
-#   let action_c = QuitAction;
-#   let action_d = QuitAction;
+#   let action_a = EmptyAction;
+#   let action_b = EmptyAction;
+#   let action_c = EmptyAction;
+#   let action_d = EmptyAction;
 #
     let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         .actions(agent)
         .add(action_a)
-        .add_parallel(actions![
+        .add_many(actions![
             action_b,
             action_c
         ])
-        .repeat(Repeat::Forever)
-        .order(AddOrder::Back)
+        .order(AddOrder::Front)
         .add(action_d)
         // ...
 #       ;
@@ -62,25 +78,27 @@ fn setup(mut commands: Commands) {
 
 #### Implementing an Action
 
-The [`Action`] trait contains two methods:
+The [`Action`] trait contains 3 required methods:
 
-* The [`on_start`](Action::on_start) method which is called when an action is started.
-* The [`on_stop`](Action::on_stop) method which is called when an action is stopped.
+* [`is_finished`](Action::is_finished) to determine if an action is finished or not.
+* [`on_start`](Action::on_start) which is called when an action is started.
+* [`on_stop`](Action::on_stop) which is called when an action is stopped.
 
-In order for the action queue to advance, every action has to somehow signal when they are finished.
-There are two ways of doing this:
+In addition, there are 3 optional methods:
 
-* Using the [`ActionFinished`] component on an `agent`.
-  By default, a system at the end of the frame will advance the queue if all active actions are finished.
-  This is the typical approach as it composes well with other actions running in parallel.
-* Calling the [`next`](ModifyActions::next) method on an `agent`.
-  This simply advances the queue, and is useful for short one-at-a-time actions.
+* [`on_add`](Action::on_add) which is called when an action is added to the queue.
+* [`on_remove`](Action::on_remove) which is called when an action is removed from the queue.
+* [`on_drop`](Action::on_drop) which is the last method to be called with full ownership.
 
 A simple wait action follows.
 
 ```rust,no_run
-# use bevy::prelude::*;
+# use bevy_ecs::prelude::*;
 # use bevy_sequential_actions::*;
+#
+# struct Time;
+# impl Resource for Time {}
+# impl Time { fn delta_seconds(&self) -> f32 { 0.0 } }
 #
 pub struct WaitAction {
     duration: f32, // Seconds
@@ -88,110 +106,85 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
-    fn on_start(&mut self, agent: Entity, world: &mut World, _commands: &mut ActionCommands) {
-        // Take current duration (if paused), or use full duration
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        // Determine if wait timer has reached zero.
+        // By default, this method is called every frame in CoreSet::Last.
+        world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
 
-        // Run the wait system on the agent
-        world.entity_mut(agent).insert(Wait(duration));
+        // Run the wait timer system on the agent.
+        world.entity_mut(agent).insert(WaitTimer(duration));
+
+        // Is action already finished?
+        // Returning true here will immediately advance the action queue.
+        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-        // Remove the wait component from the agent
-        let wait = world.entity_mut(agent).take::<Wait>();
+        // Take the wait timer component from the agent.
+        let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
-        // Store current duration when paused
-        if let StopReason::Paused = reason {
-            self.current = Some(wait.unwrap().0);
+        // Store current time when paused.
+        if reason == StopReason::Paused {
+            self.current = Some(wait_timer.unwrap().0);
         }
     }
 }
 
 #[derive(Component)]
-struct Wait(f32);
+struct WaitTimer(f32);
 
-fn wait_system(mut wait_q: Query<(&mut Wait, &mut ActionFinished)>, time: Res<Time>) {
-    for (mut wait, mut finished) in wait_q.iter_mut() {
-        wait.0 -= time.delta_seconds();
-
-        // Confirm finished state every frame
-        if wait.0 <= 0.0 {
-            finished.confirm_and_reset();
-        }
+fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
+    for mut wait_timer in &mut wait_timer_q {
+        wait_timer.0 -= time.delta_seconds();
     }
 }
 ```
 
-#### Warning
+#### ⚠️ Warning
 
-One thing to keep in mind is that you should not modify actions using [`World`] inside the [`Action`] trait.
-We cannot borrow a mutable action from an `agent` while also passing a mutable world to it.
-Since an action is detached from an `agent` when the trait methods are called,
-the logic for advancing the action queue will not work properly.
+One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
+In order to pass a mutable reference to world when calling the trait methods,
+the action has to be temporarily removed from an `agent`.
+This means that depending on what you do,
+the logic for advancing the action queue might not work properly.
 
-This is why [`ActionCommands`] was created, so you can modify actions inside the [`Action`] trait in a deferred way.
+In general, there are two rules when modifying actions for an `agent` inside the action trait:
 
-```rust,no_run
-# use bevy::{ecs::schedule::States, prelude::*};
-# use bevy_sequential_actions::*;
-#
-pub struct SetStateAction<S: States>(S);
-
-impl<S: States> Action for SetStateAction<S> {
-    fn on_start(&mut self, agent: Entity, world: &mut World, commands: &mut ActionCommands) {
-        // Set state
-        world.resource_mut::<NextState<S>>().set(self.0.clone());
-
-        // Bad. The action queue will advance immediately.
-        world.actions(agent).next();
-
-        // Good. The action queue will advance a bit later.
-        commands.actions(agent).next();
-
-        // Also good. Does the same as above.
-        commands.add(move |w: &mut World| {
-            w.actions(agent).next();
-        });
-
-        // Also good. By default, the action queue will advance at the end of the frame.
-        world.get_mut::<ActionFinished>(agent).unwrap().confirm_and_persist();
-    }
-
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-}
-```
+* When adding new actions, you should either set the [`start`](ModifyActions::start) property to `false`,
+    or push to the [`ActionQueue`] component directly.
+* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be used.
 */
 
-use std::{
-    collections::VecDeque,
-    ops::{Deref, DerefMut},
-};
+use std::collections::VecDeque;
 
+use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 
-mod action_commands;
 mod commands;
 mod macros;
 mod plugin;
 mod traits;
 mod world;
 
-#[cfg(test)]
-mod tests;
-
-pub use action_commands::*;
 pub use commands::*;
 pub use macros::*;
 pub use plugin::*;
 pub use traits::*;
 pub use world::*;
 
+/// A boxed [`Action`].
+pub type BoxedAction = Box<dyn Action>;
+
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
-    finished: ActionFinished,
-    queue: ActionQueue,
     current: CurrentAction,
+    queue: ActionQueue,
 }
 
 impl ActionsBundle {
@@ -199,220 +192,89 @@ impl ActionsBundle {
     /// that all entities with actions must have.
     pub const fn new() -> Self {
         Self {
-            finished: ActionFinished {
-                reset_count: 0,
-                persist_count: 0,
-            },
-            queue: ActionQueue(VecDeque::new()),
             current: CurrentAction(None),
+            queue: ActionQueue(VecDeque::new()),
+        }
+    }
+
+    /// Creates a new [`Bundle`] with specified `capacity` for the action queue.
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            current: CurrentAction(None),
+            queue: ActionQueue(VecDeque::with_capacity(capacity)),
         }
     }
 }
 
-/// Component for counting how many active actions have finished.
-#[derive(Default, Component)]
-pub struct ActionFinished {
-    reset_count: u16,
-    persist_count: u16,
-}
+/// The current action for an `agent`.
+///
+/// Note that you are not supposed to use this directly.
+#[derive(Default, Component, Deref, DerefMut)]
+pub struct CurrentAction(Option<BoxedAction>);
 
-impl ActionFinished {
-    /// Confirms that an [`Action`] is finished by incrementing a counter.
-    /// This should be called __every frame__,
-    /// as the counter is reset every frame.
-    ///
-    /// By default, the reset occurs in [`CoreSet::Last`](bevy_app::CoreSet::Last).
-    /// If you want to schedule the reset yourself, see [`SequentialActionsPlugin::get_systems`].
-    pub fn confirm_and_reset(&mut self) {
-        self.reset_count += 1;
-    }
+/// The action queue for an `agent`.
+///
+/// Note that you are not supposed to use this directly.
+#[derive(Default, Component, Deref, DerefMut)]
+pub struct ActionQueue(VecDeque<BoxedAction>);
 
-    /// Confirms that an [`Action`] is finished by incrementing a counter.
-    /// This should be called __only once__,
-    /// as the counter will only reset when an active action is [`stopped`](Action::on_stop).
-    pub fn confirm_and_persist(&mut self) {
-        self.persist_count += 1;
-    }
-
-    fn reset_counts(&mut self) {
-        self.reset_count = 0;
-        self.persist_count = 0;
-    }
-
-    fn total(&self) -> u32 {
-        self.reset_count as u32 + self.persist_count as u32
-    }
-}
-
-/// The queue order for an [`Action`] to be added.
-#[derive(Clone, Copy)]
-pub enum AddOrder {
-    /// An [`action`](Action) is added to the back of the queue.
-    Back,
-    /// An [`action`](Action) is added to the front of the queue.
-    Front,
-}
-
-/// The repeat configuration for an [`Action`] to be added.
-#[derive(Clone, Copy, Default)]
-pub enum Repeat {
-    /// Don't repeat the [`action`](Action).
-    #[default]
-    None,
-    /// Repeat the [`action`](Action) by a specified amount.
-    Amount(u32),
-    /// Repeat the [`action`](Action) forever.
-    Forever,
-}
-
-impl Repeat {
-    fn process(&mut self) -> bool {
-        match self {
-            Repeat::None => false,
-            Repeat::Amount(n) => {
-                if *n == 0 {
-                    return false;
-                }
-                *n -= 1;
-                true
-            }
-            Repeat::Forever => true,
-        }
-    }
-}
-
-/// The reason why an [`Action`] was stopped.
-#[derive(Clone, Copy)]
-pub enum StopReason {
-    /// The [`action`](Action) was finished.
-    Finished,
-    /// The [`action`](Action) was canceled.
-    Canceled,
-    /// The [`action`](Action) was paused.
-    Paused,
-}
-
-#[derive(Clone, Copy)]
-struct AddConfig {
-    order: AddOrder,
-    start: bool,
-    repeat: Repeat,
+/// Configuration for actions to be added.
+#[derive(Debug, Clone, Copy)]
+pub struct AddConfig {
+    /// Start the next action in the queue if nothing is currently running.
+    pub start: bool,
+    /// The queue order for actions to be added.
+    pub order: AddOrder,
 }
 
 impl AddConfig {
-    const fn new() -> Self {
-        Self {
-            order: AddOrder::Back,
-            start: true,
-            repeat: Repeat::None,
-        }
+    /// Returns a new configuration for actions to be added.
+    pub const fn new(start: bool, order: AddOrder) -> Self {
+        Self { start, order }
     }
 }
 
-/// Builder for linked actions.
-pub struct LinkedActionsBuilder(Vec<OneOrMany>);
-
-impl LinkedActionsBuilder {
-    const fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    fn build(self) -> Box<[OneOrMany]> {
-        self.0.into_boxed_slice()
-    }
-
-    /// Add a single [`action`](Action).
-    pub fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
-        self.0.push(OneOrMany::One(action.into()));
-        self
-    }
-
-    /// Add a collection of sequential actions.
-    pub fn add_sequence(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
-        for action in actions {
-            self.0.push(OneOrMany::One(action));
-        }
-        self
-    }
-
-    /// Add a collection of parallel actions.
-    pub fn add_parallel(&mut self, actions: impl Iterator<Item = BoxedAction>) -> &mut Self {
-        let actions = actions.collect::<Box<[_]>>();
-
-        if !actions.is_empty() {
-            self.0.push(OneOrMany::Many(actions));
-        }
-
-        self
+impl Default for AddConfig {
+    fn default() -> Self {
+        Self::new(true, AddOrder::Back)
     }
 }
 
-enum ActionType {
-    One(BoxedAction),
-    Many(Box<[BoxedAction]>),
-    Linked(Box<[OneOrMany]>, usize),
+/// The queue order for actions to be added.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum AddOrder {
+    /// An action is added to the back of the queue.
+    #[default]
+    Back,
+    /// An action is added to the front of the queue.
+    Front,
 }
 
-impl ActionType {
-    fn len(&self) -> u32 {
-        match self {
-            ActionType::One(_) => 1,
-            ActionType::Many(actions) => actions.len() as u32,
-            ActionType::Linked(actions, index) => match &actions[*index] {
-                OneOrMany::One(_) => 1,
-                OneOrMany::Many(actions) => actions.len() as u32,
-            },
-        }
-    }
+/// The reason why an [`Action`] was stopped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StopReason {
+    /// The action was finished.
+    Finished,
+    /// The action was canceled.
+    Canceled,
+    /// The action was paused.
+    Paused,
 }
 
-enum OneOrMany {
-    One(BoxedAction),
-    Many(Box<[BoxedAction]>),
+/// The reason why an [`Action`] was dropped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DropReason {
+    /// The action is considered done as it was either finished or canceled
+    /// without being skipped or cleared from the action queue.
+    Done,
+    /// The action was skipped.
+    Skipped,
+    /// The action queue was cleared.
+    Cleared,
 }
 
-type BoxedAction = Box<dyn Action>;
-type ActionTuple = (ActionType, Repeat);
-
-#[derive(Default, Component)]
-struct ActionQueue(VecDeque<ActionTuple>);
-
-impl ActionQueue {
-    fn push(&mut self, order: AddOrder, action: ActionTuple) {
-        match order {
-            AddOrder::Back => self.0.push_back(action),
-            AddOrder::Front => self.0.push_front(action),
-        }
-    }
-}
-
-#[derive(Default, Component)]
-struct CurrentAction(Option<ActionTuple>);
-
-impl Deref for ActionQueue {
-    type Target = VecDeque<ActionTuple>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Deref for CurrentAction {
-    type Target = Option<ActionTuple>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for ActionQueue {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl DerefMut for CurrentAction {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+/// Namespace struct containing the system used by [`SequentialActionsPlugin`]
+/// and various static methods for modifying the action queue.
+///
+/// Note that you are not supposed to use this directly.
+pub struct ActionHandler;

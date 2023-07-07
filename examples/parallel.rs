@@ -1,75 +1,142 @@
-use bevy::prelude::*;
-use bevy_sequential_actions::*;
+use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
+use bevy_ecs::prelude::*;
 
-use shared::{actions::*, bootstrap::*, extensions::FromLookExt};
+use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BootstrapPlugin)
-        .add_plugin(ActionsPlugin)
+        .add_plugin(ScheduleRunnerPlugin)
+        .add_plugin(SequentialActionsPlugin)
         .add_startup_system(setup)
+        .add_system(countdown)
         .run();
 }
 
-fn setup(mut commands: Commands, camera_q: Query<Entity, With<CameraPivot>>) {
-    let agent = commands.spawn_agent(AgentConfig::default());
-    let camera_pivot = camera_q.single();
-
+fn setup(mut commands: Commands) {
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         .actions(agent)
-        .repeat(Repeat::Forever)
-        .add(WaitAction::new(1.0))
-        .add_parallel(actions![
-            MoveAction::new(MoveConfig {
-                target: Vec3::X * 3.0,
-                speed: Random::new(0.5, 5.0),
-                rotate: false,
-            }),
-            RotateAction::new(RotateConfig {
-                target: RotateType::Look(Vec3::X),
-                speed: Random::new(std::f32::consts::FRAC_PI_8, std::f32::consts::PI),
-            }),
-            LerpAction::new(LerpConfig {
-                target: camera_pivot,
-                lerp_type: LerpType::Rotation(Quat::from_look(-Vec3::X, Vec3::Y)),
-                duration: Random::new(2.0, 6.0),
-            }),
-            |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
-                println!("on_start");
-                world
-                    .get_mut::<ActionFinished>(agent)
-                    .unwrap()
-                    .confirm_and_persist();
-            }
-        ])
-        .add(WaitAction::new(1.0))
-        .add_parallel(actions![
-            MoveAction::new(MoveConfig {
-                target: -Vec3::X * 3.0,
-                speed: Random::new(0.5, 5.0),
-                rotate: false,
-            }),
-            RotateAction::new(RotateConfig {
-                target: RotateType::Look(-Vec3::X),
-                speed: Random::new(std::f32::consts::FRAC_PI_8, std::f32::consts::PI),
-            }),
-            LerpAction::new(LerpConfig {
-                target: camera_pivot,
-                lerp_type: LerpType::Rotation(Quat::from_look(Vec3::X, Vec3::Y)),
-                duration: Random::new(2.0, 6.0),
-            }),
-            (
-                |agent: Entity, world: &mut World, _commands: &mut ActionCommands| {
-                    println!("on_start and... ");
-                    world
-                        .get_mut::<ActionFinished>(agent)
-                        .unwrap()
-                        .confirm_and_persist();
-                },
-                |_agent: Entity, _world: &mut World, _reason: StopReason| {
-                    println!("on_stop");
-                }
-            )
-        ]);
+        .add(ParallelActions {
+            actions: actions![
+                PrintAction("hello"),
+                CountdownAction::new(2),
+                PrintAction("world"),
+                CountdownAction::new(4),
+            ],
+        })
+        .add(|_, world: &mut World| -> bool {
+            world.send_event(AppExit);
+            false
+        });
+}
+
+struct ParallelActions<const N: usize> {
+    actions: [BoxedAction; N],
+}
+
+impl<const N: usize> Action for ParallelActions<N> {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        self.actions
+            .iter()
+            .all(|action| action.is_finished(agent, world))
+    }
+
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_add(agent, world));
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        std::array::from_fn::<bool, N, _>(|i| self.actions[i].on_start(agent, world))
+            .into_iter()
+            .all(|b| b)
+    }
+
+    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_stop(agent, world, reason));
+    }
+
+    fn on_remove(&mut self, agent: Entity, world: &mut World) {
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_remove(agent, world));
+    }
+}
+
+struct PrintAction(&'static str);
+
+impl Action for PrintAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+        println!("{}", self.0);
+        true
+    }
+
+    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
+struct CountdownAction {
+    count: u32,
+    entity: Entity,
+}
+
+impl CountdownAction {
+    const fn new(count: u32) -> Self {
+        Self {
+            count,
+            entity: Entity::PLACEHOLDER,
+        }
+    }
+}
+
+impl Action for CountdownAction {
+    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
+        world.get::<Countdown>(self.entity).unwrap().0 == 0
+    }
+
+    fn on_add(&mut self, _agent: Entity, world: &mut World) {
+        self.entity = world.spawn_empty().id();
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        let mut entity = world.entity_mut(self.entity);
+
+        if entity.contains::<Paused>() {
+            entity.remove::<Paused>();
+        } else {
+            entity.insert(Countdown(self.count));
+            println!("Countdown({:?}): {}", self.entity, self.count);
+        }
+
+        self.is_finished(agent, world)
+    }
+
+    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+        if reason == StopReason::Paused {
+            world.entity_mut(self.entity).insert(Paused);
+        }
+    }
+
+    fn on_remove(&mut self, _agent: Entity, world: &mut World) {
+        world.despawn(self.entity);
+    }
+}
+
+#[derive(Component)]
+struct Countdown(u32);
+
+#[derive(Component)]
+struct Paused;
+
+fn countdown(mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>) {
+    for (entity, mut countdown) in &mut countdown_q {
+        countdown.0 = countdown.0.saturating_sub(1);
+        println!("Countdown({:?}): {}", entity, countdown.0);
+    }
 }

@@ -1,81 +1,75 @@
-use std::cmp::Ordering;
-
 use bevy_app::{App, CoreSet, Plugin};
-use bevy_ecs::schedule::SystemConfigs;
+use bevy_ecs::{query::ReadOnlyWorldQuery, system::BoxedSystem};
 
 use crate::*;
 
 /// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
-/// This plugin adds the necessary systems for advancing the action queue for each `agent`.
-/// By default, the systems will be added to [`CoreSet::Last`].
-/// If you want to schedule the systems yourself, see [`get_systems`](Self::get_systems).
+/// This plugin adds a system that advances the action queue for each `agent`.
+/// By default, the system is added to [`CoreSet::Last`].
+/// For custom scheduling, see [`ActionHandler::check_actions`].
+///
+/// # Example
 ///
 /// ```rust,no_run
-/// use bevy::prelude::*;
-/// use bevy_sequential_actions::*;
-///
-/// fn main() {
-///     App::new()
-///         .add_plugins(DefaultPlugins)
-///         .add_plugin(SequentialActionsPlugin)
-///         .run();
-/// }
+/// # use bevy_ecs::prelude::*;
+/// # use bevy_app::prelude::*;
+/// # use bevy_sequential_actions::*;
+/// # fn main() {
+/// App::new()
+///     .add_plugin(SequentialActionsPlugin)
+///     .run();
+/// # }
 /// ```
 pub struct SequentialActionsPlugin;
 
-impl SequentialActionsPlugin {
-    /// Returns the systems used by this plugin.
-    /// Useful if you want to schedule the systems yourself.
-    ///
-    /// ```rust,no_run
-    /// use bevy::prelude::*;
-    /// use bevy_sequential_actions::*;
-    ///
-    /// fn main() {
-    ///     App::new()
-    ///         .add_plugins(DefaultPlugins)
-    ///         .add_systems(SequentialActionsPlugin::get_systems().in_base_set(CoreSet::Last))
-    ///         .run();
-    /// }
-    /// ```
-    pub fn get_systems() -> SystemConfigs {
-        (check_actions,).into_configs()
-    }
-}
-
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Self::get_systems().in_base_set(CoreSet::Last));
+        app.add_system(check_actions::<()>.in_base_set(CoreSet::Last));
     }
 }
 
-fn check_actions(
-    mut action_q: Query<(Entity, &CurrentAction, &mut ActionFinished), Changed<ActionFinished>>,
+impl ActionHandler {
+    /// The [`System`] used by [`SequentialActionsPlugin`].
+    /// It is responsible for checking all agents for finished actions
+    /// and advancing the action queue.
+    ///
+    /// The query filter `F` is used for filtering agents.
+    /// Use the unit type `()` for no filtering.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use bevy_ecs::prelude::*;
+    /// # use bevy_app::prelude::*;
+    /// # use bevy_sequential_actions::*;
+    /// #
+    /// # fn main() {
+    /// App::new()
+    ///     .add_system(
+    ///         ActionHandler::check_actions::<()>().in_base_set(CoreSet::Last)
+    ///     )
+    ///     .run();
+    /// # }
+    /// ```
+    pub fn check_actions<F: ReadOnlyWorldQuery + 'static>() -> BoxedSystem {
+        Box::new(IntoSystem::into_system(check_actions::<F>))
+    }
+}
+
+fn check_actions<F: ReadOnlyWorldQuery>(
+    action_q: Query<(Entity, &CurrentAction), F>,
+    world: &World,
     mut commands: Commands,
 ) {
-    for (agent, current_action, mut finished) in action_q.iter_mut() {
-        if let Some((current_action, _)) = &current_action.0 {
-            let finished_count = finished.total();
-            let active_count = current_action.len();
-
-            match finished_count.cmp(&active_count) {
-                Ordering::Less => {
-                    finished.reset_count = 0;
-                }
-                Ordering::Equal => {
-                    commands.add(move |world: &mut World| {
-                        world.finish_action(agent);
-                    });
-                }
-                Ordering::Greater => {
-                    panic!(
-                        "Finished actions exceeds active. \
-                        Entity {agent:?} has {active_count} active action(s), \
-                        but a total of {finished_count} action(s) have been confirmed finished."
-                    );
-                }
+    action_q.for_each(|(agent, current_action)| {
+        if let Some(action) = current_action.as_ref() {
+            if action.is_finished(agent, world) {
+                commands.add(move |world: &mut World| {
+                    ActionHandler::stop_current(agent, StopReason::Finished, world);
+                    ActionHandler::start_next(agent, world);
+                });
             }
         }
-    }
+    });
 }

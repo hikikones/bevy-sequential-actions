@@ -12,9 +12,13 @@ categories = ["game-development"]
 readme = "README.md"
 
 [dependencies]
-bevy_ecs = "0.10"
-bevy_app = "0.10"
+bevy_ecs = { version = "0.10", default-features = false }
+bevy_app = { version = "0.10", default-features = false }
+bevy_derive = { version = "0.10", default-features = false }
 
 [dev-dependencies]
-shared = { path = "examples/shared" }
-bevy = "0.10"
+criterion = { version = "0.4", default-features = false }
+
+[[bench]]
+name = "benches"
+harness = false
