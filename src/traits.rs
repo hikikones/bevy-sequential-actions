@@ -1,8 +1,10 @@
+use downcast_rs::{impl_downcast, Downcast};
+
 use crate::*;
 
 /// The trait that all actions must implement.
 #[allow(unused_variables)]
-pub trait Action: Send + Sync + 'static {
+pub trait Action: Downcast + Send + Sync + 'static {
     /// Determines if an action is finished or not.
     /// Advances the action queue when returning `true`.
     ///
@@ -28,6 +30,8 @@ pub trait Action: Send + Sync + 'static {
     /// Full ownership is given here, hence the name.
     fn on_drop(self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {}
 }
+
+impl_downcast!(Action);
 
 impl<T> From<T> for BoxedAction
 where

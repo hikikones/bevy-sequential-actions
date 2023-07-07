@@ -14,6 +14,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::new()).id();
+
     commands
         .actions(agent)
         // Add a single action
