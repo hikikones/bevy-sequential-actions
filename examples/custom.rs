@@ -28,29 +28,6 @@ fn setup(mut commands: Commands) {
 #[derive(Component)]
 struct Id(u32);
 
-struct PrintIdAction;
-
-impl Action for PrintIdAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-        false
-    }
-
-    fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-        let id = world.get::<Id>(agent).unwrap().0;
-
-        // Observe that id is printed in descending order
-        println!("Agent: {agent:?}, Id: {id}");
-
-        if id == 0 {
-            world.send_event(AppExit);
-        }
-    }
-}
-
 fn check_actions_exclusive(
     world: &mut World,
     mut agent_q: Local<QueryState<(Entity, &CurrentAction, &Id)>>,
@@ -75,4 +52,27 @@ fn check_actions_exclusive(
         ActionHandler::stop_current(agent, StopReason::Finished, world);
         ActionHandler::start_next(agent, world);
     });
+}
+
+struct PrintIdAction;
+
+impl Action for PrintIdAction {
+    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+        false
+    }
+
+    fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
+        let id = world.get::<Id>(agent).unwrap().0;
+
+        // Observe that id is printed in descending order
+        println!("Agent: {agent:?}, Id: {id}");
+
+        if id == 0 {
+            world.send_event(AppExit);
+        }
+    }
 }
