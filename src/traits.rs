@@ -29,6 +29,11 @@ pub trait Action: Downcast + Send + Sync + 'static {
     /// The last method that is called for an action.
     /// Full ownership is given here, hence the name.
     fn on_drop(self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {}
+
+    /// Returns the name of a type as a string slice.
+    fn type_name(&self) -> &'static str {
+        std::any::type_name::<Self>()
+    }
 }
 
 impl_downcast!(Action);
@@ -55,6 +60,12 @@ where
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+}
+
+impl std::fmt::Debug for BoxedAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.type_name())
+    }
 }
 
 /// Proxy method for modifying actions.
