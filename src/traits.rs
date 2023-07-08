@@ -30,7 +30,7 @@ pub trait Action: Downcast + Send + Sync + 'static {
     /// Full ownership is given here, hence the name.
     fn on_drop(self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {}
 
-    /// Returns the name of a type as a string slice.
+    /// Returns the type name of an action.
     fn type_name(&self) -> &'static str {
         std::any::type_name::<Self>()
     }

@@ -2,6 +2,7 @@
 
 ## Version 0.8.0-dev
 
+- [Add downcasting for boxed actions][84]
 - [Rework actions to be both more composable and simpler][83]
     - Adds four new methods to the `Action` trait:
         - `is_finished` which determines if an action is finished or not.
@@ -18,6 +19,7 @@
     - Exposes the `ActionQueue` and `CurrentAction` components used by agents.
     - Exposes the `ActionHandler` struct that contains the system and methods used by this library.
 
+[84]: https://github.com/hikikones/bevy-sequential-actions/pull/84
 [83]: https://github.com/hikikones/bevy-sequential-actions/pull/83
 
 ## Version 0.7.0
