@@ -12,10 +12,13 @@ struct TestApp(App);
 impl TestApp {
     fn default() -> Self {
         let mut app = App::new();
-        app.add_systems((
-            countdown,
-            ActionHandler::check_actions::<()>().after(countdown),
-        ));
+        app.add_systems(
+            Update,
+            (
+                countdown,
+                ActionHandler::check_actions::<()>().after(countdown),
+            ),
+        );
 
         Self(app)
     }

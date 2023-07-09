@@ -1,19 +1,18 @@
 use std::time::Duration;
 
-use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin, ScheduleRunnerSettings};
+use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
 use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .insert_resource(ScheduleRunnerSettings::run_loop(Duration::from_secs_f64(
+        .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
             1.0 / 10.0,
         )))
-        .add_plugin(ScheduleRunnerPlugin)
-        .add_startup_system(setup)
+        .add_systems(Startup, setup)
         // Add custom system for action queue advancement
-        .add_system(check_actions_exclusive)
+        .add_systems(Update, check_actions_exclusive)
         .run();
 }
 

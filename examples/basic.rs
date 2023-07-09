@@ -5,10 +5,9 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugin(ScheduleRunnerPlugin)
-        .add_plugin(SequentialActionsPlugin)
-        .add_startup_system(setup)
-        .add_system(countdown)
+        .add_plugins((ScheduleRunnerPlugin::default(), SequentialActionsPlugin))
+        .add_systems(Startup, setup)
+        .add_systems(Update, countdown)
         .run();
 }
 

@@ -162,6 +162,7 @@ In general, there are two rules when modifying actions for an `agent` inside the
 
 use std::collections::VecDeque;
 
+use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 
