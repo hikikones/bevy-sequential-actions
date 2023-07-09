@@ -21,14 +21,15 @@ fn many_countdowns(c: &mut Criterion) {
 }
 
 fn run_many_countdowns(agents: u32) {
-    let mut app = App::new();
-    app.edit_schedule(CoreSchedule::Main, |schedule| {
-        schedule.set_executor_kind(ExecutorKind::SingleThreaded);
-    })
-    .add_systems((
-        countdown,
-        ActionHandler::check_actions::<()>().after(countdown),
-    ));
+    let mut app = App::empty();
+    app.edit_schedule(Main, |schedule| {
+        schedule
+            .set_executor_kind(ExecutorKind::SingleThreaded)
+            .add_systems((
+                countdown,
+                ActionHandler::check_actions::<()>().after(countdown),
+            ));
+    });
 
     for i in 0..agents {
         let agent = app.world.spawn(ActionsBundle::new()).id();

@@ -2,6 +2,7 @@
 
 ## Version 0.8.0-dev
 
+- [Update to Bevy 0.11][85]
 - [Add downcasting for boxed actions][84]
 - [Rework actions to be both more composable and simpler][83]
     - Adds four new methods to the `Action` trait:
@@ -19,6 +20,7 @@
     - Exposes the `ActionQueue` and `CurrentAction` components used by agents.
     - Exposes the `ActionHandler` struct that contains the system and methods used by this library.
 
+[85]: https://github.com/hikikones/bevy-sequential-actions/pull/85
 [84]: https://github.com/hikikones/bevy-sequential-actions/pull/84
 [83]: https://github.com/hikikones/bevy-sequential-actions/pull/83
 

@@ -1,4 +1,3 @@
-use bevy_app::{App, CoreSet, Plugin};
 use bevy_ecs::{query::ReadOnlyWorldQuery, system::BoxedSystem};
 
 use crate::*;
@@ -25,7 +24,7 @@ pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(check_actions::<()>.in_base_set(CoreSet::Last));
+        app.add_systems(Last, check_actions::<()>);
     }
 }
 
@@ -46,9 +45,7 @@ impl ActionHandler {
     /// #
     /// # fn main() {
     /// App::new()
-    ///     .add_system(
-    ///         ActionHandler::check_actions::<()>().in_base_set(CoreSet::Last)
-    ///     )
+    ///     .add_systems(Last, ActionHandler::check_actions::<()>())
     ///     .run();
     /// # }
     /// ```

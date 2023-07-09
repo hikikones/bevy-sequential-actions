@@ -1,24 +1,27 @@
 use std::time::Duration;
 
-use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin, ScheduleRunnerSettings};
+use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
 use bevy_ecs::{prelude::*, schedule::ScheduleLabel};
 
 use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .insert_resource(ScheduleRunnerSettings::run_loop(Duration::from_secs_f64(
-            1.0 / 10.0,
-        )))
         .add_schedule(EvenSchedule, Schedule::new())
         .add_schedule(OddSchedule, Schedule::new())
-        .add_plugin(ScheduleRunnerPlugin)
-        .add_startup_system(setup)
-        .add_systems((
-            run_custom_schedule,
-            ActionHandler::check_actions::<With<EvenMarker>>().in_schedule(EvenSchedule),
-            ActionHandler::check_actions::<With<OddMarker>>().in_schedule(OddSchedule),
-        ))
+        .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
+            1.0 / 10.0,
+        )))
+        .add_systems(Startup, setup)
+        .add_systems(Update, run_custom_schedule)
+        .add_systems(
+            EvenSchedule,
+            ActionHandler::check_actions::<With<EvenMarker>>(),
+        )
+        .add_systems(
+            OddSchedule,
+            ActionHandler::check_actions::<With<OddMarker>>(),
+        )
         .run();
 }
 
