@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.8.0-dev
+## Version 0.8.0
 
 - [Update to Bevy 0.11][85]
 - [Add downcasting for boxed actions][84]
