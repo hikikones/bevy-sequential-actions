@@ -45,9 +45,7 @@ impl ActionHandler {
     /// #
     /// # fn main() {
     /// App::new()
-    ///     .add_system(
-    ///         ActionHandler::check_actions::<()>().in_base_set(CoreSet::Last)
-    ///     )
+    ///     .add_systems(Last, ActionHandler::check_actions::<()>())
     ///     .run();
     /// # }
     /// ```
