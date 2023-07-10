@@ -8,7 +8,7 @@ pub trait Action: Downcast + Send + Sync + 'static {
     /// Determines if an action is finished or not.
     /// Advances the action queue when returning `true`.
     ///
-    /// By default, this method is called every frame in [`CoreSet::Last`](bevy_app::CoreSet::Last).
+    /// By default, this method is called every frame in the [`Last`] schedule.
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
     /// The method that is called when an action is started.
