@@ -108,7 +108,7 @@ pub struct WaitAction {
 impl Action for WaitAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if wait timer has reached zero.
-        // By default, this method is called every frame in CoreSet::Last.
+        // By default, this method is called every frame in the Last schedule.
         world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
     }
 
