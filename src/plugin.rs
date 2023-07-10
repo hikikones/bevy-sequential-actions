@@ -5,7 +5,7 @@ use crate::*;
 /// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
 ///
 /// This plugin adds a system that advances the action queue for each `agent`.
-/// By default, the system is added to [`CoreSet::Last`].
+/// By default, the system is added to the [`Last`] schedule.
 /// For custom scheduling, see [`ActionHandler::check_actions`].
 ///
 /// # Example
