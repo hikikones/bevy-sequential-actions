@@ -24,10 +24,9 @@ fn setup(mut commands: Commands) {
             CountdownAction::new(10)
         ])
         // Add an anonymous action with a closure
-        .add(|_agent, world: &mut World| -> bool {
+        .add(|_agent, world: &mut World| {
             // on_start
             world.send_event(AppExit);
-            false
         });
 }
 
@@ -41,12 +40,8 @@ impl Action for DemoAction {
     }
 
     // Required method
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
         println!("on_start: called when an action is started");
-
-        // Returning true here marks the action as already finished,
-        // and will immediately advance the action queue.
-        false
     }
 
     // Required method
@@ -77,9 +72,8 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
         println!("{}", self.0);
-        true
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -108,15 +102,12 @@ impl Action for CountdownAction {
         current_count == 0
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         // Take current count (if paused), or use full count
         let count = self.current.take().unwrap_or(self.count);
 
         // Run the countdown system on the agent
         world.entity_mut(agent).insert(Countdown(count));
-
-        // Is action already finished?
-        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {

@@ -60,9 +60,7 @@ impl Action for PrintIdAction {
         true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-        false
-    }
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {}
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
         let id = world.get::<Id>(agent).unwrap().0;

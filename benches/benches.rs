@@ -53,10 +53,9 @@ fn run_many_countdowns(agents: u32) {
             world.get::<Countdown>(agent).unwrap().0 == 0
         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        fn on_start(&mut self, agent: Entity, world: &mut World) {
             let count = self.current.take().unwrap_or(self.count);
             world.entity_mut(agent).insert(Countdown(count));
-            self.is_finished(agent, world)
         }
 
         fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {

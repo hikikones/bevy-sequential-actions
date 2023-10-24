@@ -65,13 +65,11 @@ impl Action for TestCountdownAction {
         self.entity = world.spawn((Added, CountdownMarker)).id().into();
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, world: &mut World) {
         let count = self.current.take().unwrap_or(self.count);
         world
             .entity_mut(self.entity.unwrap())
             .insert((Started, Countdown(count)));
-
-        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
@@ -168,13 +166,13 @@ fn add() {
         .start(true)
         .add(TestCountdownAction::new(0));
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
-
-    app.actions(a).start(true).add(TestCountdownAction::new(1));
-
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 0);
+
+    app.actions(a).add(TestCountdownAction::new(0));
+
+    assert!(app.current_action(a).is_some());
+    assert!(app.action_queue(a).len() == 1);
 }
 
 #[test]
@@ -195,21 +193,21 @@ fn add_many() {
         TestCountdownAction::new(0)
     ]);
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
+    assert!(app.current_action(a).is_some());
+    assert!(app.action_queue(a).len() == 1);
 
-    app.actions(a).start(true).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
+    app.actions(a).add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
     ]);
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
+    assert!(app.action_queue(a).len() == 3);
 
     app.actions(a).add_many(actions![]);
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
+    assert!(app.action_queue(a).len() == 3);
 }
 
 #[test]
@@ -432,9 +430,8 @@ fn order() {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
             true
         }
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        fn on_start(&mut self, agent: Entity, world: &mut World) {
             world.entity_mut(agent).insert(M::default());
-            false
         }
         fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
             world.entity_mut(agent).remove::<M>();
@@ -541,9 +538,8 @@ fn despawn() {
             false
         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        fn on_start(&mut self, agent: Entity, world: &mut World) {
             world.despawn(agent);
-            false
         }
 
         fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

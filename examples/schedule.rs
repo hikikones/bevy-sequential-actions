@@ -72,8 +72,6 @@ impl Action for PrintForeverAction {
         println!("{}", self.0);
         false
     }
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-        false
-    }
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {}
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
 }

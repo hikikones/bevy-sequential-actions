@@ -23,9 +23,8 @@ fn setup(mut commands: Commands) {
                 CountdownAction::new(4),
             ],
         })
-        .add(|_, world: &mut World| -> bool {
+        .add(|_, world: &mut World| {
             world.send_event(AppExit);
-            false
         });
 }
 
@@ -46,10 +45,10 @@ impl<const N: usize> Action for ParallelActions<N> {
             .for_each(|action| action.on_add(agent, world));
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        std::array::from_fn::<bool, N, _>(|i| self.actions[i].on_start(agent, world))
-            .into_iter()
-            .all(|b| b)
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
+        self.actions
+            .iter_mut()
+            .for_each(|action| action.on_start(agent, world));
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
@@ -72,9 +71,8 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, _world: &mut World) {
         println!("{}", self.0);
-        true
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
@@ -103,7 +101,7 @@ impl Action for CountdownAction {
         self.entity = world.spawn_empty().id();
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, _agent: Entity, world: &mut World) {
         let mut entity = world.entity_mut(self.entity);
 
         if entity.contains::<Paused>() {
@@ -112,8 +110,6 @@ impl Action for CountdownAction {
             entity.insert(Countdown(self.count));
             println!("Countdown({:?}): {}", self.entity, self.count);
         }
-
-        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {

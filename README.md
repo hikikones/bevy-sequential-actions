@@ -83,16 +83,12 @@ impl Action for WaitAction {
         world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
 
         // Run the wait timer system on the agent.
         world.entity_mut(agent).insert(WaitTimer(duration));
-
-        // Is action already finished?
-        // Returning true here will immediately advance the action queue.
-        self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {

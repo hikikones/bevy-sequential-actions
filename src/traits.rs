@@ -15,7 +15,7 @@ pub trait Action: Downcast + Send + Sync + 'static {
     ///
     /// Returning `true` here marks the action as already finished,
     /// and will immediately advance the action queue.
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool;
+    fn on_start(&mut self, agent: Entity, world: &mut World);
 
     /// The method that is called when an action is stopped.
     fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
@@ -49,13 +49,13 @@ where
 
 impl<OnStart> Action for OnStart
 where
-    OnStart: FnMut(Entity, &mut World) -> bool + Send + Sync + 'static,
+    OnStart: FnMut(Entity, &mut World) + Send + Sync + 'static,
 {
     fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
         true
     }
 
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, world: &mut World) {
         (self)(agent, world)
     }
 
