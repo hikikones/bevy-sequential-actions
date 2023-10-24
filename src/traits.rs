@@ -12,9 +12,6 @@ pub trait Action: Downcast + Send + Sync + 'static {
     fn is_finished(&self, agent: Entity, world: &World) -> bool;
 
     /// The method that is called when an action is started.
-    ///
-    /// Returning `true` here marks the action as already finished,
-    /// and will immediately advance the action queue.
     fn on_start(&mut self, agent: Entity, world: &mut World);
 
     /// The method that is called when an action is stopped.
