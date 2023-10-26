@@ -224,12 +224,12 @@ impl SequentialActionsBuilder<'_> {
             AddOrder::Back => actions.into_iter().for_each(|action| {
                 self.buffer
                     .0
-                    .push((self.agent, ApplyAction::Add(self.config, action.into())))
+                    .push((self.agent, ApplyAction::Add(self.config, action.into())));
             }),
             AddOrder::Front => actions.into_iter().rev().for_each(|action| {
                 self.buffer
                     .0
-                    .push((self.agent, ApplyAction::Add(self.config, action.into())))
+                    .push((self.agent, ApplyAction::Add(self.config, action.into())));
             }),
         };
         // self.buffer.0.push((

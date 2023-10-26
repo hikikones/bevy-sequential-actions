@@ -23,7 +23,8 @@ pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Last, Self::check_actions::<()>);
+        app.init_resource::<SequentialActions>()
+            .add_systems(Last, (Self::check_actions::<()>, apply_actions).chain());
     }
 }
 
@@ -192,4 +193,57 @@ impl SequentialActionsPlugin {
                 action.on_drop(agent, world, DropReason::Cleared);
             });
     }
+}
+
+// TODO: Marker type for SequentialActions.
+fn apply_actions(mut action_buffer: ResMut<SequentialActions>, mut commands: Commands) {
+    action_buffer
+        .0
+        .drain(..)
+        .for_each(|(agent, modifier)| match modifier {
+            ApplyAction::Add(config, action) => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::add_action(agent, config, action, world);
+                });
+            }
+            ApplyAction::Execute => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::execute_actions(agent, world);
+                });
+            }
+            ApplyAction::Next => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::stop_current_action(
+                        agent,
+                        StopReason::Finished,
+                        world,
+                    );
+                    SequentialActionsPlugin::start_next_action(agent, world);
+                });
+            }
+            ApplyAction::Cancel => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::stop_current_action(
+                        agent,
+                        StopReason::Canceled,
+                        world,
+                    );
+                });
+            }
+            ApplyAction::Pause => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
+                });
+            }
+            ApplyAction::Skip => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::skip_next_action(agent, world);
+                });
+            }
+            ApplyAction::Clear => {
+                commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::clear_actions(agent, world);
+                });
+            }
+        });
 }
