@@ -177,7 +177,7 @@ pub use world::*;
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct SequentialActions(Vec<(Entity, ApplyAction)>);
 
 impl SequentialActions {
@@ -192,7 +192,7 @@ impl SequentialActions {
 
 pub enum ApplyAction {
     Add(AddConfig, BoxedAction),
-    AddMany(AddConfig, Box<dyn DoubleEndedIterator<Item = BoxedAction>>),
+    // AddMany(AddConfig, Box<dyn DoubleEndedIterator<Item = BoxedAction>>),
     Execute,
     Next,
     Cancel,
@@ -217,13 +217,25 @@ impl SequentialActionsBuilder<'_> {
 
     pub fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
-        I: IntoIterator<Item = BoxedAction> + 'static,
+        I: IntoIterator<Item = BoxedAction>,
         I::IntoIter: DoubleEndedIterator,
     {
-        self.buffer.0.push((
-            self.agent,
-            ApplyAction::AddMany(self.config, Box::new(actions.into_iter())),
-        ));
+        match self.config.order {
+            AddOrder::Back => actions.into_iter().for_each(|action| {
+                self.buffer
+                    .0
+                    .push((self.agent, ApplyAction::Add(self.config, action.into())))
+            }),
+            AddOrder::Front => actions.into_iter().rev().for_each(|action| {
+                self.buffer
+                    .0
+                    .push((self.agent, ApplyAction::Add(self.config, action.into())))
+            }),
+        };
+        // self.buffer.0.push((
+        //     self.agent,
+        //     ApplyAction::AddMany(self.config, Box::new(actions.into_iter())),
+        // ));
         self
     }
 
