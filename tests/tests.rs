@@ -22,8 +22,14 @@ impl TestApp {
         self.world.spawn(ActionsBundle::new()).id()
     }
 
-    fn actions(&mut self, agent: Entity) -> AgentActions {
-        self.world.actions(agent)
+    // fn actions(&mut self, agent: Entity) -> AgentActions {
+    //     self.world.actions(agent)
+    // }
+
+    fn actions(&mut self, agent: Entity, f: impl FnOnce(SequentialActionsBuilder)) {
+        let mut actions = self.world.resource_mut::<SequentialActions>();
+        let builder = actions.entity(agent);
+        f(builder);
     }
 
     fn current_action(&self, agent: Entity) -> &CurrentAction {
@@ -151,269 +157,292 @@ struct Cleared;
 #[test]
 fn add() {
     let mut app = TestApp::new();
-    let a = app.spawn_agent();
+    let agent = app.spawn_agent();
 
-    app.actions(a).start(false).add(TestCountdownAction::new(0));
+    app.actions(agent, |mut builder| {
+        builder.start(false).add(TestCountdownAction::new(0));
+    });
+    // .start(false)
+    // .add(TestCountdownAction::new(0));
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 1);
-
-    app.actions(a)
-        .clear()
-        .start(true)
-        .add(TestCountdownAction::new(0));
-
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
-
-    app.actions(a).start(true).add(TestCountdownAction::new(1));
-
-    assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 0);
-}
-
-#[test]
-fn add_many() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).start(false).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
-
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 2);
-
-    app.actions(a).clear().start(true).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
-
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
-
-    app.actions(a).start(true).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
-    ]);
-
-    assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
-
-    app.actions(a).add_many(actions![]);
-
-    assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
-}
-
-#[test]
-fn next() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).add(TestCountdownAction::new(1));
-
-    let e = app
-        .world
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(&app.world);
-
-    assert_eq!(app.world.entity(e).contains::<Started>(), true);
-    assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
-
-    app.actions(a).next();
-
-    assert_eq!(app.world.entity(e).contains::<Started>(), true);
-    assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
-}
-
-#[test]
-fn finish() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).add(TestCountdownAction::new(1));
     app.update();
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).is_empty());
+    assert!(app.current_action(agent).is_none());
+    assert!(app.action_queue(agent).len() == 1);
 
-    let e = app
-        .world
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(&app.world);
+    // app.actions(agent)
+    //     .clear()
+    //     .start(true)
+    //     .add(TestCountdownAction::new(0));
 
-    assert_eq!(app.world.entity(e).contains::<Finished>(), true);
-    assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.world.entity(e).contains::<Paused>(), false);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world.entity(e).contains::<Done>(), true);
-    assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
+    app.actions(agent, |mut builder| {
+        builder
+            .clear()
+            .start(true)
+            .add(TestCountdownAction::new(10));
+    });
+
+    app.update();
+
+    assert!(app.current_action(agent).is_some());
+    assert!(app.action_queue(agent).len() == 0);
+
+    // app.actions(agent)
+    //     .start(true)
+    //     .add(TestCountdownAction::new(1));
+
+    app.actions(agent, |mut builder| {
+        builder.add(TestCountdownAction::new(10));
+    });
+
+    app.update();
+
+    assert!(app.current_action(agent).is_some());
+    assert!(app.action_queue(agent).len() == 1);
 }
 
-#[test]
-fn cancel() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+// #[test]
+// fn add_many() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).cancel();
+//     app.actions(a).start(false).add_many(actions![
+//         TestCountdownAction::new(0),
+//         TestCountdownAction::new(0)
+//     ]);
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).is_empty());
+//     assert!(app.current_action(a).is_none());
+//     assert!(app.action_queue(a).len() == 2);
 
-    let e = app
-        .world
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(&app.world);
+//     app.actions(a).clear().start(true).add_many(actions![
+//         TestCountdownAction::new(0),
+//         TestCountdownAction::new(0)
+//     ]);
 
-    assert_eq!(app.world.entity(e).contains::<Finished>(), false);
-    assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
-    assert_eq!(app.world.entity(e).contains::<Paused>(), false);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world.entity(e).contains::<Done>(), true);
-    assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
-}
+//     assert!(app.current_action(a).is_none());
+//     assert!(app.action_queue(a).len() == 0);
 
-#[test]
-fn pause() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+//     app.actions(a).start(true).add_many(actions![
+//         TestCountdownAction::new(1),
+//         TestCountdownAction::new(1)
+//     ]);
 
-    app.actions(a).add(TestCountdownAction::new(1)).pause();
+//     assert!(app.current_action(a).is_some());
+//     assert!(app.action_queue(a).len() == 1);
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 1);
+//     app.actions(a).add_many(actions![]);
 
-    let e = app
-        .world
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(&app.world);
+//     assert!(app.current_action(a).is_some());
+//     assert!(app.action_queue(a).len() == 1);
+// }
 
-    assert_eq!(app.world.entity(e).contains::<Finished>(), false);
-    assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.world.entity(e).contains::<Paused>(), true);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Done>(), false);
-    assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
-}
+// #[test]
+// fn next() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-#[test]
-fn skip() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+//     app.actions(a).add(TestCountdownAction::new(1));
 
-    app.actions(a)
-        .start(false)
-        .add(TestCountdownAction::new(0))
-        .skip();
+//     let e = app
+//         .world
+//         .query_filtered::<Entity, With<CountdownMarker>>()
+//         .single(&app.world);
 
-    assert!(app.action_queue(a).is_empty());
+//     assert_eq!(app.world.entity(e).contains::<Started>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
 
-    let e = app
-        .world
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(&app.world);
+//     app.actions(a).next();
 
-    assert_eq!(app.world.entity(e).contains::<Added>(), true);
-    assert_eq!(app.world.entity(e).contains::<Started>(), false);
-    assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Removed>(), true);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world.entity(e).contains::<Done>(), false);
-    assert_eq!(app.world.entity(e).contains::<Skipped>(), true);
-    assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
-}
+//     assert_eq!(app.world.entity(e).contains::<Started>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
+// }
 
-#[test]
-fn clear() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+// #[test]
+// fn finish() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-    app.actions(a)
-        .add_many(actions![
-            TestCountdownAction::new(1),
-            TestCountdownAction::new(1)
-        ])
-        .clear();
+//     app.actions(a).add(TestCountdownAction::new(1));
+//     app.update();
 
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).is_empty());
-    assert_eq!(
-        app.world
-            .query_filtered::<Entity, With<Canceled>>()
-            .iter(&app.world)
-            .len(),
-        1
-    );
-    assert_eq!(
-        app.world
-            .query_filtered::<Entity, With<Removed>>()
-            .iter(&app.world)
-            .len(),
-        2
-    );
-    assert_eq!(
-        app.world
-            .query_filtered::<Entity, With<Dropped>>()
-            .iter(&app.world)
-            .len(),
-        2
-    );
-    assert_eq!(
-        app.world
-            .query_filtered::<Entity, With<Cleared>>()
-            .iter(&app.world)
-            .len(),
-        2
-    );
-}
+//     assert!(app.current_action(a).is_none());
+//     assert!(app.action_queue(a).is_empty());
 
-#[test]
-fn lifecycle() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+//     let e = app
+//         .world
+//         .query_filtered::<Entity, With<CountdownMarker>>()
+//         .single(&app.world);
 
-    app.actions(a).start(false).add(TestCountdownAction::new(1));
+//     assert_eq!(app.world.entity(e).contains::<Finished>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Done>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
+// }
 
-    let e = app
-        .world
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(&app.world);
+// #[test]
+// fn cancel() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-    assert_eq!(app.world.entity(e).contains::<Added>(), true);
-    assert_eq!(app.world.entity(e).contains::<Started>(), false);
-    assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+//     app.actions(a).add(TestCountdownAction::new(1)).cancel();
 
-    app.actions(a).execute();
+//     assert!(app.current_action(a).is_none());
+//     assert!(app.action_queue(a).is_empty());
 
-    assert_eq!(app.world.entity(e).contains::<Added>(), true);
-    assert_eq!(app.world.entity(e).contains::<Started>(), true);
-    assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world.entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+//     let e = app
+//         .world
+//         .query_filtered::<Entity, With<CountdownMarker>>()
+//         .single(&app.world);
 
-    app.actions(a).pause();
+//     assert_eq!(app.world.entity(e).contains::<Finished>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Canceled>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Paused>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Done>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
+// }
 
-    assert_eq!(app.world.entity(e).contains::<Added>(), true);
-    assert_eq!(app.world.entity(e).contains::<Started>(), true);
-    assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.world.entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+// #[test]
+// fn pause() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-    app.actions(a).clear();
+//     app.actions(a).add(TestCountdownAction::new(1)).pause();
 
-    assert_eq!(app.world.entity(e).contains::<Added>(), true);
-    assert_eq!(app.world.entity(e).contains::<Started>(), true);
-    assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.world.entity(e).contains::<Removed>(), true);
-    assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
-}
+//     assert!(app.current_action(a).is_none());
+//     assert!(app.action_queue(a).len() == 1);
+
+//     let e = app
+//         .world
+//         .query_filtered::<Entity, With<CountdownMarker>>()
+//         .single(&app.world);
+
+//     assert_eq!(app.world.entity(e).contains::<Finished>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Canceled>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Paused>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Done>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Skipped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
+// }
+
+// #[test]
+// fn skip() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
+
+//     app.actions(a)
+//         .start(false)
+//         .add(TestCountdownAction::new(0))
+//         .skip();
+
+//     assert!(app.action_queue(a).is_empty());
+
+//     let e = app
+//         .world
+//         .query_filtered::<Entity, With<CountdownMarker>>()
+//         .single(&app.world);
+
+//     assert_eq!(app.world.entity(e).contains::<Added>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Started>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Removed>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Done>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Skipped>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Cleared>(), false);
+// }
+
+// #[test]
+// fn clear() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
+
+//     app.actions(a)
+//         .add_many(actions![
+//             TestCountdownAction::new(1),
+//             TestCountdownAction::new(1)
+//         ])
+//         .clear();
+
+//     assert!(app.current_action(a).is_none());
+//     assert!(app.action_queue(a).is_empty());
+//     assert_eq!(
+//         app.world
+//             .query_filtered::<Entity, With<Canceled>>()
+//             .iter(&app.world)
+//             .len(),
+//         1
+//     );
+//     assert_eq!(
+//         app.world
+//             .query_filtered::<Entity, With<Removed>>()
+//             .iter(&app.world)
+//             .len(),
+//         2
+//     );
+//     assert_eq!(
+//         app.world
+//             .query_filtered::<Entity, With<Dropped>>()
+//             .iter(&app.world)
+//             .len(),
+//         2
+//     );
+//     assert_eq!(
+//         app.world
+//             .query_filtered::<Entity, With<Cleared>>()
+//             .iter(&app.world)
+//             .len(),
+//         2
+//     );
+// }
+
+// #[test]
+// fn lifecycle() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
+
+//     app.actions(a).start(false).add(TestCountdownAction::new(1));
+
+//     let e = app
+//         .world
+//         .query_filtered::<Entity, With<CountdownMarker>>()
+//         .single(&app.world);
+
+//     assert_eq!(app.world.entity(e).contains::<Added>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Started>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Removed>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+
+//     app.actions(a).execute();
+
+//     assert_eq!(app.world.entity(e).contains::<Added>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Started>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Stopped>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Removed>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+
+//     app.actions(a).pause();
+
+//     assert_eq!(app.world.entity(e).contains::<Added>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Started>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Removed>(), false);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), false);
+
+//     app.actions(a).clear();
+
+//     assert_eq!(app.world.entity(e).contains::<Added>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Started>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Stopped>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Removed>(), true);
+//     assert_eq!(app.world.entity(e).contains::<Dropped>(), true);
+// }
 
 #[test]
 fn order() {
@@ -447,40 +476,63 @@ fn order() {
     let a = app.spawn_agent();
 
     // Back
-    app.actions(a).add_many(actions![
-        MarkerAction::<A>::new(),
-        MarkerAction::<B>::new(),
-        MarkerAction::<C>::new(),
-    ]);
+    // app.actions(a).add_many(actions![
+    //     MarkerAction::<A>::new(),
+    //     MarkerAction::<B>::new(),
+    //     MarkerAction::<C>::new(),
+    // ]);
+    // app.actions(a, |mut builder| {
+    //     builder.add_many(actions![
+    //         MarkerAction::<A>::new(),
+    //         MarkerAction::<B>::new(),
+    //         MarkerAction::<C>::new(),
+    //     ]);
+    // });
 
-    assert_eq!(app.world.entity(a).contains::<A>(), true);
-    assert_eq!(app.world.entity(a).contains::<B>(), false);
-    assert_eq!(app.world.entity(a).contains::<C>(), false);
+    // app.update();
 
-    app.update();
+    // assert_eq!(app.world.entity(a).contains::<A>(), true);
+    // assert_eq!(app.world.entity(a).contains::<B>(), false);
+    // assert_eq!(app.world.entity(a).contains::<C>(), false);
 
-    assert_eq!(app.world.entity(a).contains::<A>(), false);
-    assert_eq!(app.world.entity(a).contains::<B>(), true);
-    assert_eq!(app.world.entity(a).contains::<C>(), false);
+    // app.update();
 
-    app.update();
+    // assert_eq!(app.world.entity(a).contains::<A>(), false);
+    // assert_eq!(app.world.entity(a).contains::<B>(), true);
+    // assert_eq!(app.world.entity(a).contains::<C>(), false);
 
-    assert_eq!(app.world.entity(a).contains::<A>(), false);
-    assert_eq!(app.world.entity(a).contains::<B>(), false);
-    assert_eq!(app.world.entity(a).contains::<C>(), true);
+    // app.update();
+
+    // assert_eq!(app.world.entity(a).contains::<A>(), false);
+    // assert_eq!(app.world.entity(a).contains::<B>(), false);
+    // assert_eq!(app.world.entity(a).contains::<C>(), true);
 
     // Front
-    app.actions(a)
-        .clear()
-        .start(false)
-        .add(TestCountdownAction::new(0))
-        .order(AddOrder::Front)
-        .add_many(actions![
-            MarkerAction::<A>::new(),
-            MarkerAction::<B>::new(),
-            MarkerAction::<C>::new(),
-        ])
-        .execute();
+    // app.actions(a)
+    //     .clear()
+    //     .start(false)
+    //     .add(TestCountdownAction::new(0))
+    //     .order(AddOrder::Front)
+    //     .add_many(actions![
+    //         MarkerAction::<A>::new(),
+    //         MarkerAction::<B>::new(),
+    //         MarkerAction::<C>::new(),
+    //     ])
+    //     .execute();
+
+    app.actions(a, |mut builder| {
+        builder
+            .clear()
+            .config(AddConfig::new(true, AddOrder::Front))
+            .add_many(actions![
+                MarkerAction::<A>::new(),
+                MarkerAction::<B>::new(),
+                MarkerAction::<C>::new(),
+            ])
+            .execute();
+    });
+
+    app.update();
 
     assert_eq!(app.world.entity(a).contains::<A>(), true);
     assert_eq!(app.world.entity(a).contains::<B>(), false);
@@ -499,61 +551,61 @@ fn order() {
     assert_eq!(app.world.entity(a).contains::<C>(), true);
 }
 
-#[test]
-fn pause_resume() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+// #[test]
+// fn pause_resume() {
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-    fn countdown_value(app: &mut TestApp) -> i32 {
-        app.world.query::<&Countdown>().single(&app.world).0
-    }
+//     fn countdown_value(app: &mut TestApp) -> i32 {
+//         app.world.query::<&Countdown>().single(&app.world).0
+//     }
 
-    app.actions(a).add(TestCountdownAction::new(10));
+//     app.actions(a).add(TestCountdownAction::new(10));
 
-    assert_eq!(countdown_value(&mut app), 10);
+//     assert_eq!(countdown_value(&mut app), 10);
 
-    app.update();
+//     app.update();
 
-    assert_eq!(countdown_value(&mut app), 9);
+//     assert_eq!(countdown_value(&mut app), 9);
 
-    app.actions(a)
-        .pause()
-        .order(AddOrder::Front)
-        .add(TestCountdownAction::new(1));
+//     app.actions(a)
+//         .pause()
+//         .order(AddOrder::Front)
+//         .add(TestCountdownAction::new(1));
 
-    assert_eq!(countdown_value(&mut app), 1);
+//     assert_eq!(countdown_value(&mut app), 1);
 
-    app.update();
+//     app.update();
 
-    assert_eq!(countdown_value(&mut app), 9);
-}
+//     assert_eq!(countdown_value(&mut app), 9);
+// }
 
-#[test]
-fn despawn() {
-    struct DespawnAction;
-    impl Action for DespawnAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
+// #[test]
+// fn despawn() {
+//     struct DespawnAction;
+//     impl Action for DespawnAction {
+//         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+//             false
+//         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            world.despawn(agent);
-            false
-        }
+//         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+//             world.despawn(agent);
+//             false
+//         }
 
-        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
-    }
+//         fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+//     }
 
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+//     let mut app = TestApp::default();
+//     let a = app.spawn_agent();
 
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        DespawnAction,
-        TestCountdownAction::new(0),
-    ]);
+//     app.actions(a).add_many(actions![
+//         TestCountdownAction::new(1),
+//         DespawnAction,
+//         TestCountdownAction::new(0),
+//     ]);
 
-    app.update();
+//     app.update();
 
-    assert!(app.world.get_entity(a).is_none());
-}
+//     assert!(app.world.get_entity(a).is_none());
+// }

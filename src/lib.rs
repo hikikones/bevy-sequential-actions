@@ -208,6 +208,21 @@ pub struct SequentialActionsBuilder<'a> {
 }
 
 impl SequentialActionsBuilder<'_> {
+    pub fn config(&mut self, config: AddConfig) -> &mut Self {
+        self.config = config;
+        self
+    }
+
+    pub fn start(&mut self, start: bool) -> &mut Self {
+        self.config.start = start;
+        self
+    }
+
+    pub fn order(&mut self, order: AddOrder) -> &mut Self {
+        self.config.order = order;
+        self
+    }
+
     pub fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
         self.buffer
             .0
@@ -227,6 +242,7 @@ impl SequentialActionsBuilder<'_> {
                     .push((self.agent, ApplyAction::Add(self.config, action.into())));
             }),
             AddOrder::Front => actions.into_iter().rev().for_each(|action| {
+                dbg!(&action);
                 self.buffer
                     .0
                     .push((self.agent, ApplyAction::Add(self.config, action.into())));

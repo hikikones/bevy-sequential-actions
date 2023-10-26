@@ -196,8 +196,8 @@ impl SequentialActionsPlugin {
 }
 
 // TODO: Marker type for SequentialActions.
-fn apply_actions(mut action_buffer: ResMut<SequentialActions>, mut commands: Commands) {
-    action_buffer
+fn apply_actions(mut actions: ResMut<SequentialActions>, mut commands: Commands) {
+    actions
         .0
         .drain(..)
         .for_each(|(agent, modifier)| match modifier {
