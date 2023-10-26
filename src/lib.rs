@@ -177,6 +177,87 @@ pub use world::*;
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
+#[derive(Default)]
+pub struct SequentialActions(Vec<(Entity, ApplyAction)>);
+
+impl SequentialActions {
+    pub fn entity(&mut self, agent: Entity) -> SequentialActionsBuilder<'_> {
+        SequentialActionsBuilder {
+            agent,
+            config: AddConfig::default(),
+            buffer: self,
+        }
+    }
+}
+
+pub enum ApplyAction {
+    Add(AddConfig, BoxedAction),
+    AddMany(AddConfig, Box<dyn DoubleEndedIterator<Item = BoxedAction>>),
+    Execute,
+    Next,
+    Cancel,
+    Pause,
+    Skip,
+    Clear,
+}
+
+pub struct SequentialActionsBuilder<'a> {
+    agent: Entity,
+    config: AddConfig,
+    buffer: &'a mut SequentialActions,
+}
+
+impl SequentialActionsBuilder<'_> {
+    pub fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
+        self.buffer
+            .0
+            .push((self.agent, ApplyAction::Add(self.config, action.into())));
+        self
+    }
+
+    pub fn add_many<I>(&mut self, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + 'static,
+        I::IntoIter: DoubleEndedIterator,
+    {
+        self.buffer.0.push((
+            self.agent,
+            ApplyAction::AddMany(self.config, Box::new(actions.into_iter())),
+        ));
+        self
+    }
+
+    pub fn execute(&mut self) -> &mut Self {
+        self.buffer.0.push((self.agent, ApplyAction::Execute));
+        self
+    }
+
+    pub fn next(&mut self) -> &mut Self {
+        self.buffer.0.push((self.agent, ApplyAction::Next));
+        self
+    }
+
+    pub fn cancel(&mut self) -> &mut Self {
+        self.buffer.0.push((self.agent, ApplyAction::Cancel));
+        self
+    }
+
+    pub fn pause(&mut self) -> &mut Self {
+        self.buffer.0.push((self.agent, ApplyAction::Pause));
+        self
+    }
+
+    pub fn skip(&mut self) -> &mut Self {
+        self.buffer.0.push((self.agent, ApplyAction::Skip));
+        self
+    }
+
+    pub fn clear(&mut self) -> &mut Self {
+        self.buffer.0.push((self.agent, ApplyAction::Clear));
+        self
+    }
+}
+
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
