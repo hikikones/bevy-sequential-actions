@@ -241,12 +241,57 @@ impl SequentialActionsBuilder<'_> {
                     .0
                     .push((self.agent, ApplyAction::Add(self.config, action.into())));
             }),
-            AddOrder::Front => actions.into_iter().rev().for_each(|action| {
-                dbg!(&action);
-                self.buffer
-                    .0
-                    .push((self.agent, ApplyAction::Add(self.config, action.into())));
-            }),
+            AddOrder::Front => {
+                if self.config.start {
+                    let mut actions = actions.into_iter().rev().peekable();
+                    while let Some(action) = actions.next() {
+                        let is_last = actions.peek().is_none();
+                        self.buffer.0.push((
+                            self.agent,
+                            ApplyAction::Add(
+                                AddConfig::new(is_last, AddOrder::Front),
+                                action.into(),
+                            ),
+                        ));
+                        // if actions.peek().is_some() {
+                        //     self.buffer.0.push((
+                        //         self.agent,
+                        //         ApplyAction::Add(
+                        //             AddConfig::new(false, AddOrder::Front),
+                        //             action.into(),
+                        //         ),
+                        //     ));
+                        // } else {
+                        //     // Last element
+                        //     self.buffer.0.push((
+                        //         self.agent,
+                        //         ApplyAction::Add(
+                        //             AddConfig::new(true, AddOrder::Front),
+                        //             action.into(),
+                        //         ),
+                        //     ));
+                        // }
+                    }
+                } else {
+                    actions.into_iter().rev().for_each(|action| {
+                        self.buffer
+                            .0
+                            .push((self.agent, ApplyAction::Add(self.config, action.into())));
+                    });
+                }
+                // let iter = actions.into_iter();
+                // if iter.len() >= 2 && self.config.start {
+                //     let cfg = AddConfig::new(false, AddOrder::Front);
+                //     // iter.
+                // } else {
+                //     iter.rev().for_each(|action| {
+                //         dbg!(&action);
+                //         self.buffer
+                //             .0
+                //             .push((self.agent, ApplyAction::Add(self.config, action.into())));
+                //     });
+                // }
+            }
         };
         // self.buffer.0.push((
         //     self.agent,

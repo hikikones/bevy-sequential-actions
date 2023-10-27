@@ -473,7 +473,7 @@ fn order() {
     struct C;
 
     let mut app = TestApp::new();
-    let a = app.spawn_agent();
+    let agent = app.spawn_agent();
 
     // Back
     // app.actions(a).add_many(actions![
@@ -481,31 +481,31 @@ fn order() {
     //     MarkerAction::<B>::new(),
     //     MarkerAction::<C>::new(),
     // ]);
-    // app.actions(a, |mut builder| {
-    //     builder.add_many(actions![
-    //         MarkerAction::<A>::new(),
-    //         MarkerAction::<B>::new(),
-    //         MarkerAction::<C>::new(),
-    //     ]);
-    // });
+    app.actions(agent, |mut builder| {
+        builder.add_many(actions![
+            MarkerAction::<A>::new(),
+            MarkerAction::<B>::new(),
+            MarkerAction::<C>::new(),
+        ]);
+    });
 
-    // app.update();
+    app.update();
 
-    // assert_eq!(app.world.entity(a).contains::<A>(), true);
-    // assert_eq!(app.world.entity(a).contains::<B>(), false);
-    // assert_eq!(app.world.entity(a).contains::<C>(), false);
+    assert_eq!(app.world.entity(agent).contains::<A>(), true);
+    assert_eq!(app.world.entity(agent).contains::<B>(), false);
+    assert_eq!(app.world.entity(agent).contains::<C>(), false);
 
-    // app.update();
+    app.update();
 
-    // assert_eq!(app.world.entity(a).contains::<A>(), false);
-    // assert_eq!(app.world.entity(a).contains::<B>(), true);
-    // assert_eq!(app.world.entity(a).contains::<C>(), false);
+    assert_eq!(app.world.entity(agent).contains::<A>(), false);
+    assert_eq!(app.world.entity(agent).contains::<B>(), true);
+    assert_eq!(app.world.entity(agent).contains::<C>(), false);
 
-    // app.update();
+    app.update();
 
-    // assert_eq!(app.world.entity(a).contains::<A>(), false);
-    // assert_eq!(app.world.entity(a).contains::<B>(), false);
-    // assert_eq!(app.world.entity(a).contains::<C>(), true);
+    assert_eq!(app.world.entity(agent).contains::<A>(), false);
+    assert_eq!(app.world.entity(agent).contains::<B>(), false);
+    assert_eq!(app.world.entity(agent).contains::<C>(), true);
 
     // Front
     // app.actions(a)
@@ -520,10 +520,10 @@ fn order() {
     //     ])
     //     .execute();
 
-    app.actions(a, |mut builder| {
+    app.actions(agent, |mut builder| {
         builder
             .clear()
-            .config(AddConfig::new(true, AddOrder::Front))
+            .order(AddOrder::Front)
             .add_many(actions![
                 MarkerAction::<A>::new(),
                 MarkerAction::<B>::new(),
@@ -534,21 +534,21 @@ fn order() {
 
     app.update();
 
-    assert_eq!(app.world.entity(a).contains::<A>(), true);
-    assert_eq!(app.world.entity(a).contains::<B>(), false);
-    assert_eq!(app.world.entity(a).contains::<C>(), false);
+    assert_eq!(app.world.entity(agent).contains::<A>(), true);
+    assert_eq!(app.world.entity(agent).contains::<B>(), false);
+    assert_eq!(app.world.entity(agent).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world.entity(a).contains::<A>(), false);
-    assert_eq!(app.world.entity(a).contains::<B>(), true);
-    assert_eq!(app.world.entity(a).contains::<C>(), false);
+    assert_eq!(app.world.entity(agent).contains::<A>(), false);
+    assert_eq!(app.world.entity(agent).contains::<B>(), true);
+    assert_eq!(app.world.entity(agent).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world.entity(a).contains::<A>(), false);
-    assert_eq!(app.world.entity(a).contains::<B>(), false);
-    assert_eq!(app.world.entity(a).contains::<C>(), true);
+    assert_eq!(app.world.entity(agent).contains::<A>(), false);
+    assert_eq!(app.world.entity(agent).contains::<B>(), false);
+    assert_eq!(app.world.entity(agent).contains::<C>(), true);
 }
 
 // #[test]
