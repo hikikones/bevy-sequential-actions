@@ -68,6 +68,7 @@ impl std::fmt::Debug for BoxedAction {
     }
 }
 
+#[deprecated(note = "Use the SequentialActions resource instead")]
 /// Proxy method for modifying actions.
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
@@ -77,6 +78,7 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 
+#[deprecated(note = "Use SequentialActionsBuilder instead")]
 /// Methods for modifying actions.
 pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
