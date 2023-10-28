@@ -195,7 +195,66 @@ impl SequentialActionsPlugin {
     }
 }
 
+fn check_actions_exclusive<F: ReadOnlyWorldQuery>(
+    world: &mut World,
+    mut action_q: Local<QueryState<(Entity, &CurrentAction), F>>,
+) {
+    action_q.for_each(world, |(agent, current_action)| {
+        if let Some(action) = current_action.as_ref() {
+            if action.is_finished(agent, world) {
+                // ActionHandler::stop_current(agent, StopReason::Finished, world);
+                // ActionHandler::start_next(agent, world);
+            }
+        }
+    });
+}
+
 // TODO: Marker type for SequentialActions.
+
+fn apply_actions_exclusive(world: &mut World) {
+    world.resource_scope::<SequentialActions, _>(|world, mut actions| {
+        actions.0.drain(..).for_each(|(agent, modifier)| {
+            if world.get_entity(agent).is_none() {
+                // TODO: Maybe print a warning trace?
+                return;
+            }
+
+            match modifier {
+                ApplyAction::Add(config, action) => {
+                    SequentialActionsPlugin::add_action(agent, config, action, world);
+                }
+                ApplyAction::Execute => {
+                    SequentialActionsPlugin::execute_actions(agent, world);
+                }
+                ApplyAction::Next => {
+                    SequentialActionsPlugin::stop_current_action(
+                        agent,
+                        StopReason::Canceled,
+                        world,
+                    );
+                    SequentialActionsPlugin::start_next_action(agent, world);
+                }
+                ApplyAction::Cancel => {
+                    SequentialActionsPlugin::stop_current_action(
+                        agent,
+                        StopReason::Canceled,
+                        world,
+                    );
+                }
+                ApplyAction::Pause => {
+                    SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
+                }
+                ApplyAction::Skip => {
+                    SequentialActionsPlugin::skip_next_action(agent, world);
+                }
+                ApplyAction::Clear => {
+                    SequentialActionsPlugin::clear_actions(agent, world);
+                }
+            };
+        });
+    });
+}
+
 fn apply_actions(mut actions: ResMut<SequentialActions>, mut commands: Commands) {
     actions
         .0
@@ -203,46 +262,64 @@ fn apply_actions(mut actions: ResMut<SequentialActions>, mut commands: Commands)
         .for_each(|(agent, modifier)| match modifier {
             ApplyAction::Add(config, action) => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::add_action(agent, config, action, world);
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::add_action(agent, config, action, world);
+                    }
                 });
             }
             ApplyAction::Execute => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::execute_actions(agent, world);
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::execute_actions(agent, world);
+                    }
                 });
             }
             ApplyAction::Next => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::stop_current_action(
-                        agent,
-                        StopReason::Finished,
-                        world,
-                    );
-                    SequentialActionsPlugin::start_next_action(agent, world);
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::stop_current_action(
+                            agent,
+                            StopReason::Canceled,
+                            world,
+                        );
+                        SequentialActionsPlugin::start_next_action(agent, world);
+                    }
                 });
             }
             ApplyAction::Cancel => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::stop_current_action(
-                        agent,
-                        StopReason::Canceled,
-                        world,
-                    );
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::stop_current_action(
+                            agent,
+                            StopReason::Canceled,
+                            world,
+                        );
+                    }
                 });
             }
             ApplyAction::Pause => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::stop_current_action(
+                            agent,
+                            StopReason::Paused,
+                            world,
+                        );
+                    }
                 });
             }
             ApplyAction::Skip => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::skip_next_action(agent, world);
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::skip_next_action(agent, world);
+                    }
                 });
             }
             ApplyAction::Clear => {
                 commands.add(move |world: &mut World| {
-                    SequentialActionsPlugin::clear_actions(agent, world);
+                    if world.get_entity(agent).is_some() {
+                        SequentialActionsPlugin::clear_actions(agent, world);
+                    }
                 });
             }
         });
