@@ -7,6 +7,8 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
+        // Init the sequential actions buffer
+        .init_resource::<SequentialActions>()
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
             1.0 / 10.0,
         )))
@@ -16,11 +18,11 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut actions: ResMut<SequentialActions>) {
     for i in 0..10 {
         // Spawn agents with id in ascending order
         let agent = commands.spawn((ActionsBundle::new(), Id(i))).id();
-        commands.actions(agent).add(PrintIdAction);
+        actions.entity(agent).add(PrintIdAction);
     }
 }
 

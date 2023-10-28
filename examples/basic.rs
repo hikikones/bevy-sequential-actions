@@ -11,10 +11,10 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut actions: ResMut<SequentialActions>) {
     let agent = commands.spawn(ActionsBundle::new()).id();
-    commands
-        .actions(agent)
+    actions
+        .entity(agent)
         // Add a single action
         .add(DemoAction)
         // Add multiple actions

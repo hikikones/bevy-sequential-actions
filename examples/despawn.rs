@@ -11,9 +11,9 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut actions: ResMut<SequentialActions>) {
     let agent = commands.spawn(ActionsBundle::new()).id();
-    commands.actions(agent).add_many(actions![
+    actions.entity(agent).add_many(actions![
         PrintAction("First action"),
         DespawnAction,
         EmptyAction, // This action does not start, but on_remove and on_drop is called
@@ -31,8 +31,16 @@ impl Action for DespawnAction {
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         println!("Despawn!");
 
-        world.actions(agent).clear();
-        world.despawn(agent);
+        // world.actions(agent).clear();
+        // world.despawn(agent);
+        world
+            .resource_mut::<SequentialActions>()
+            .entity(agent)
+            .clear()
+            .add(|agent, world: &mut World| {
+                world.despawn(agent);
+                true
+            });
 
         // Don't advance the action queue
         false
@@ -50,7 +58,7 @@ impl Action for PrintAction {
 
     fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
-        true
+        false
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

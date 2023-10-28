@@ -210,6 +210,7 @@ fn check_actions_exclusive<F: ReadOnlyWorldQuery>(
 }
 
 // TODO: Marker type for SequentialActions.
+// TODO: Move ActionHandler stuff into Plugin.
 
 fn apply_actions_exclusive(world: &mut World) {
     world.resource_scope::<SequentialActions, _>(|world, mut actions| {

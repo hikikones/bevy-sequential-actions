@@ -22,6 +22,10 @@ fn main() {
             OddSchedule,
             SequentialActionsPlugin::check_actions::<With<OddMarker>>,
         )
+        .add_systems(
+            OddSchedule,
+            SequentialActionsPlugin::check_actions::<With<OddMarker>>,
+        )
         .run();
 }
 
