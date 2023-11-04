@@ -273,9 +273,3 @@ pub enum DropReason {
     /// The action queue was cleared.
     Cleared,
 }
-
-/// Namespace struct containing the system used by [`SequentialActionsPlugin`]
-/// and various static methods for modifying the action queue.
-///
-/// Note that you are not supposed to use this directly.
-pub struct ActionHandler;

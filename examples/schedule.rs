@@ -16,11 +16,11 @@ fn main() {
         .add_systems(Update, run_custom_schedule)
         .add_systems(
             EvenSchedule,
-            ActionHandler::check_actions::<With<EvenMarker>>(),
+            SequentialActionsPlugin::check_actions::<With<EvenMarker>>,
         )
         .add_systems(
             OddSchedule,
-            ActionHandler::check_actions::<With<OddMarker>>(),
+            SequentialActionsPlugin::check_actions::<With<OddMarker>>,
         )
         .run();
 }

@@ -41,7 +41,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let action = action.into();
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::add(agent, config, action, world);
+            SequentialActionsPlugin::add_action(agent, config, action, world);
         });
 
         self
@@ -56,7 +56,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let config = self.config;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::add_many(agent, config, actions, world);
+            SequentialActionsPlugin::add_actions(agent, config, actions, world);
         });
 
         self
@@ -66,7 +66,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::execute(agent, world);
+            SequentialActionsPlugin::execute_actions(agent, world);
         });
 
         self
@@ -76,8 +76,8 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::stop_current(agent, StopReason::Canceled, world);
-            ActionHandler::start_next(agent, world);
+            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
+            SequentialActionsPlugin::start_next_action(agent, world);
         });
 
         self
@@ -87,7 +87,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::stop_current(agent, StopReason::Canceled, world);
+            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
         });
 
         self
@@ -97,7 +97,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::stop_current(agent, StopReason::Paused, world);
+            SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
         });
 
         self
@@ -107,7 +107,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::skip_next(agent, world);
+            SequentialActionsPlugin::skip_next_action(agent, world);
         });
 
         self
@@ -117,7 +117,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            ActionHandler::clear(agent, world);
+            SequentialActionsPlugin::clear_actions(agent, world);
         });
 
         self

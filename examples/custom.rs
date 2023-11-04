@@ -12,7 +12,7 @@ fn main() {
         )))
         .add_systems(Startup, setup)
         // Add custom system for action queue advancement
-        .add_systems(Update, check_actions_exclusive)
+        .add_systems(Last, check_actions_exclusive)
         .run();
 }
 
@@ -48,8 +48,8 @@ fn check_actions_exclusive(
 
     // Advance the action queue
     finished_agents.into_iter().for_each(|(agent, _)| {
-        ActionHandler::stop_current(agent, StopReason::Finished, world);
-        ActionHandler::start_next(agent, world);
+        SequentialActionsPlugin::stop_current_action(agent, StopReason::Finished, world);
+        SequentialActionsPlugin::start_next_action(agent, world);
     });
 }
 
