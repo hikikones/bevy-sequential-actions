@@ -10,15 +10,10 @@ use bevy_sequential_actions::*;
 struct TestApp(App);
 
 impl TestApp {
-    fn default() -> Self {
+    fn new() -> Self {
         let mut app = App::new();
-        app.add_systems(
-            Update,
-            (
-                countdown,
-                ActionHandler::check_actions::<()>().after(countdown),
-            ),
-        );
+        app.add_plugins(SequentialActionsPlugin)
+            .add_systems(Update, countdown);
 
         Self(app)
     }
@@ -155,7 +150,7 @@ struct Cleared;
 
 #[test]
 fn add() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).start(false).add(TestCountdownAction::new(0));
@@ -179,7 +174,7 @@ fn add() {
 
 #[test]
 fn add_many() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).start(false).add_many(actions![
@@ -214,7 +209,7 @@ fn add_many() {
 
 #[test]
 fn next() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).add(TestCountdownAction::new(1));
@@ -235,7 +230,7 @@ fn next() {
 
 #[test]
 fn finish() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).add(TestCountdownAction::new(1));
@@ -260,7 +255,7 @@ fn finish() {
 
 #[test]
 fn cancel() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).add(TestCountdownAction::new(1)).cancel();
@@ -284,7 +279,7 @@ fn cancel() {
 
 #[test]
 fn pause() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).add(TestCountdownAction::new(1)).pause();
@@ -308,7 +303,7 @@ fn pause() {
 
 #[test]
 fn skip() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a)
@@ -335,7 +330,7 @@ fn skip() {
 
 #[test]
 fn clear() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a)
@@ -379,7 +374,7 @@ fn clear() {
 
 #[test]
 fn lifecycle() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).start(false).add(TestCountdownAction::new(1));
@@ -448,7 +443,7 @@ fn order() {
     #[derive(Default, Component)]
     struct C;
 
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     // Back
@@ -506,7 +501,7 @@ fn order() {
 
 #[test]
 fn pause_resume() {
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     fn countdown_value(app: &mut TestApp) -> i32 {
@@ -549,7 +544,7 @@ fn despawn() {
         fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
     }
 
-    let mut app = TestApp::default();
+    let mut app = TestApp::new();
     let a = app.spawn_agent();
 
     app.actions(a).add_many(actions![

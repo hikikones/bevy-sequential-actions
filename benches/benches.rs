@@ -27,7 +27,7 @@ fn run_many_countdowns(agents: u32) {
             .set_executor_kind(ExecutorKind::SingleThreaded)
             .add_systems((
                 countdown,
-                ActionHandler::check_actions::<()>().after(countdown),
+                SequentialActionsPlugin::check_actions::<()>.after(countdown),
             ));
     });
 
