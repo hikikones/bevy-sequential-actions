@@ -6,7 +6,8 @@ use crate::*;
 ///
 /// This plugin adds a system that advances the action queue for each `agent`.
 /// By default, the system is added to the [`Last`] schedule.
-/// For custom scheduling, see [`ActionHandler::check_actions`].
+///
+/// For custom scheduling, see [`check_actions`](Self::check_actions).
 ///
 /// # Example
 ///
@@ -16,7 +17,7 @@ use crate::*;
 /// # use bevy_sequential_actions::*;
 /// # fn main() {
 /// App::new()
-///     .add_plugin(SequentialActionsPlugin)
+///     .add_plugins(SequentialActionsPlugin)
 ///     .run();
 /// # }
 /// ```
@@ -58,8 +59,8 @@ impl SequentialActionsPlugin {
             if let Some(action) = current_action.as_ref() {
                 if action.is_finished(agent, world) {
                     commands.add(move |world: &mut World| {
-                        ActionHandler::stop_current(agent, StopReason::Finished, world);
-                        ActionHandler::start_next(agent, world);
+                        Self::stop_current(agent, StopReason::Finished, world);
+                        Self::start_next(agent, world);
                     });
                 }
             }

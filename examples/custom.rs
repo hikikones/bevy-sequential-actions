@@ -48,8 +48,8 @@ fn check_actions_exclusive(
 
     // Advance the action queue
     finished_agents.into_iter().for_each(|(agent, _)| {
-        ActionHandler::stop_current(agent, StopReason::Finished, world);
-        ActionHandler::start_next(agent, world);
+        SequentialActionsPlugin::stop_current(agent, StopReason::Finished, world);
+        SequentialActionsPlugin::start_next(agent, world);
     });
 }
 
