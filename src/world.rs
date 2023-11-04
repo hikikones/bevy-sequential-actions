@@ -36,7 +36,7 @@ impl ModifyActions for AgentActions<'_> {
     }
 
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
-        SequentialActionsPlugin::add(self.agent, self.config, action, self.world);
+        SequentialActionsPlugin::add_action(self.agent, self.config, action, self.world);
         self
     }
 
@@ -45,38 +45,38 @@ impl ModifyActions for AgentActions<'_> {
         I: IntoIterator<Item = BoxedAction>,
         I::IntoIter: DoubleEndedIterator,
     {
-        SequentialActionsPlugin::add_many(self.agent, self.config, actions, self.world);
+        SequentialActionsPlugin::add_actions(self.agent, self.config, actions, self.world);
         self
     }
 
     fn execute(&mut self) -> &mut Self {
-        SequentialActionsPlugin::execute(self.agent, self.world);
+        SequentialActionsPlugin::execute_actions(self.agent, self.world);
         self
     }
 
     fn next(&mut self) -> &mut Self {
-        SequentialActionsPlugin::stop_current(self.agent, StopReason::Canceled, self.world);
-        SequentialActionsPlugin::start_next(self.agent, self.world);
+        SequentialActionsPlugin::stop_current_action(self.agent, StopReason::Canceled, self.world);
+        SequentialActionsPlugin::start_next_action(self.agent, self.world);
         self
     }
 
     fn cancel(&mut self) -> &mut Self {
-        SequentialActionsPlugin::stop_current(self.agent, StopReason::Canceled, self.world);
+        SequentialActionsPlugin::stop_current_action(self.agent, StopReason::Canceled, self.world);
         self
     }
 
     fn pause(&mut self) -> &mut Self {
-        SequentialActionsPlugin::stop_current(self.agent, StopReason::Paused, self.world);
+        SequentialActionsPlugin::stop_current_action(self.agent, StopReason::Paused, self.world);
         self
     }
 
     fn skip(&mut self) -> &mut Self {
-        SequentialActionsPlugin::skip_next(self.agent, self.world);
+        SequentialActionsPlugin::skip_next_action(self.agent, self.world);
         self
     }
 
     fn clear(&mut self) -> &mut Self {
-        SequentialActionsPlugin::clear(self.agent, self.world);
+        SequentialActionsPlugin::clear_actions(self.agent, self.world);
         self
     }
 }

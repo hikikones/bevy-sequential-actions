@@ -2,12 +2,10 @@ use bevy_ecs::query::ReadOnlyWorldQuery;
 
 use crate::*;
 
-/// The [`Plugin`] for this library that must be added to [`App`] in order for everything to work.
+/// The [`Plugin`] for this library that you can add to your [`App`].
 ///
-/// This plugin adds a system that advances the action queue for each `agent`.
-/// By default, the system is added to the [`Last`] schedule.
-///
-/// For custom scheduling, see [`check_actions`](Self::check_actions).
+/// This plugin adds the system [`check_actions`](Self::check_actions) to the [`Last`] schedule,
+/// It also contains various static methods for modifying the action queue.
 ///
 /// # Example
 ///
@@ -59,8 +57,8 @@ impl SequentialActionsPlugin {
             if let Some(action) = current_action.as_ref() {
                 if action.is_finished(agent, world) {
                     commands.add(move |world: &mut World| {
-                        Self::stop_current(agent, StopReason::Finished, world);
-                        Self::start_next(agent, world);
+                        Self::stop_current_action(agent, StopReason::Finished, world);
+                        Self::start_next_action(agent, world);
                     });
                 }
             }
@@ -68,7 +66,7 @@ impl SequentialActionsPlugin {
     }
 
     /// Adds a single [`action`](Action) to `agent` with specified `config`.
-    pub fn add(
+    pub fn add_action(
         agent: Entity,
         config: AddConfig,
         action: impl Into<BoxedAction>,
@@ -77,19 +75,19 @@ impl SequentialActionsPlugin {
         let mut action = action.into();
         action.on_add(agent, world);
 
-        let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
+        let mut queue = world.get_mut::<ActionQueue>(agent).unwrap();
         match config.order {
-            AddOrder::Back => action_queue.push_back(action),
-            AddOrder::Front => action_queue.push_front(action),
+            AddOrder::Back => queue.push_back(action),
+            AddOrder::Front => queue.push_front(action),
         }
 
         if config.start && world.get::<CurrentAction>(agent).unwrap().is_none() {
-            Self::start_next(agent, world);
+            Self::start_next_action(agent, world);
         }
     }
 
     /// Adds a collection of actions to `agent` with specified `config`.
-    pub fn add_many<I>(agent: Entity, config: AddConfig, actions: I, world: &mut World)
+    pub fn add_actions<I>(agent: Entity, config: AddConfig, actions: I, world: &mut World)
     where
         I: IntoIterator<Item = BoxedAction>,
         I::IntoIter: DoubleEndedIterator,
@@ -116,20 +114,20 @@ impl SequentialActionsPlugin {
         }
 
         if config.start && world.get::<CurrentAction>(agent).unwrap().is_none() {
-            Self::start_next(agent, world);
+            Self::start_next_action(agent, world);
         }
     }
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`,
     /// but only if there is no current action.
-    pub fn execute(agent: Entity, world: &mut World) {
+    pub fn execute_actions(agent: Entity, world: &mut World) {
         if world.get::<CurrentAction>(agent).unwrap().is_none() {
-            Self::start_next(agent, world);
+            Self::start_next_action(agent, world);
         }
     }
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) for `agent` with specified `reason`.
-    pub fn stop_current(agent: Entity, reason: StopReason, world: &mut World) {
+    pub fn stop_current_action(agent: Entity, reason: StopReason, world: &mut World) {
         if let Some(mut action) = world.get_mut::<CurrentAction>(agent).unwrap().take() {
             action.on_stop(agent, world, reason);
 
@@ -149,13 +147,13 @@ impl SequentialActionsPlugin {
     }
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
-    pub fn start_next(agent: Entity, world: &mut World) {
+    pub fn start_next_action(agent: Entity, world: &mut World) {
         if let Some(mut next_action) = world.get_mut::<ActionQueue>(agent).unwrap().pop_front() {
             if next_action.on_start(agent, world) {
                 next_action.on_stop(agent, world, StopReason::Finished);
                 next_action.on_remove(agent, world);
                 next_action.on_drop(agent, world, DropReason::Done);
-                Self::start_next(agent, world);
+                Self::start_next_action(agent, world);
                 return;
             }
 
@@ -166,7 +164,7 @@ impl SequentialActionsPlugin {
     }
 
     /// Skips the next [`action`](Action) in the queue for `agent`.
-    pub fn skip_next(agent: Entity, world: &mut World) {
+    pub fn skip_next_action(agent: Entity, world: &mut World) {
         if let Some(mut action) = world.get_mut::<ActionQueue>(agent).unwrap().pop_front() {
             action.on_remove(agent, world);
             action.on_drop(agent, world, DropReason::Skipped);
@@ -176,7 +174,7 @@ impl SequentialActionsPlugin {
     /// Clears the action queue for `agent`.
     ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
-    pub fn clear(agent: Entity, world: &mut World) {
+    pub fn clear_actions(agent: Entity, world: &mut World) {
         if let Some(mut action) = world.get_mut::<CurrentAction>(agent).unwrap().take() {
             action.on_stop(agent, world, StopReason::Canceled);
             action.on_remove(agent, world);
