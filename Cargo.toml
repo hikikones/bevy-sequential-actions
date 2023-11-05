@@ -7,7 +7,7 @@ authors = ["hikikones"]
 description = "A Bevy library for executing various actions in a sequence."
 repository = "https://github.com/hikikones/bevy-sequential-actions"
 homepage = "https://github.com/hikikones/bevy-sequential-actions"
-keywords = ["bevy", "action", "sequence", "command"]
+keywords = ["gamedev", "bevy", "action", "sequence", "command"]
 categories = ["game-development"]
 readme = "README.md"
 
