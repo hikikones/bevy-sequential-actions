@@ -2,8 +2,10 @@
 
 ## Version 0.9.0-dev
 
+- [Update to Bevy 0.12][91]
 - [Move `ActionHandler` methods to `SequentialActionsPlugin`][90]
 
+[91]: https://github.com/hikikones/bevy-sequential-actions/pull/91
 [90]: https://github.com/hikikones/bevy-sequential-actions/pull/90
 
 ## Version 0.8.0
