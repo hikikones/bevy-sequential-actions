@@ -20,7 +20,7 @@ fn setup(mut commands: Commands) {
         PrintAction("cowboy"),
         |_agent, world: &mut World| -> bool {
             world.send_event(AppExit);
-            true
+            false
         }
     ]));
 }
@@ -84,7 +84,7 @@ impl Action for PrintAction {
 
     fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
-        true
+        false
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}

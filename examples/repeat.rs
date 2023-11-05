@@ -12,22 +12,26 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::new()).id();
-    commands
-        .actions(agent)
-        .add_many(actions![
-            RepeatAction {
-                action: PrintAction("hello"),
-                repeat: 3,
+    commands.actions(agent).add_many(actions![
+        RepeatAction {
+            action: PrintAction("hello"),
+            repeat: 3,
+        },
+        RepeatAction {
+            action: PrintAction("world"),
+            repeat: 1,
+        },
+        RepeatAction {
+            action: |agent, world: &mut World| {
+                // Exit app when action queue is empty
+                if world.get::<ActionQueue>(agent).unwrap().is_empty() {
+                    world.send_event(AppExit);
+                }
+                false
             },
-            RepeatAction {
-                action: PrintAction("world"),
-                repeat: 1,
-            },
-        ])
-        .add(|_agent, world: &mut World| -> bool {
-            world.send_event(AppExit);
-            false
-        });
+            repeat: u32::MAX,
+        },
+    ]);
 }
 
 struct RepeatAction<A: Action> {
@@ -72,7 +76,7 @@ impl Action for PrintAction {
 
     fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
-        true
+        false
     }
 
     fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
