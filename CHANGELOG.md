@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.9.0-dev
+## Version 0.9.0
 
 - [Update to Bevy 0.12][91]
 - [Move `ActionHandler` methods to `SequentialActionsPlugin`][90]
