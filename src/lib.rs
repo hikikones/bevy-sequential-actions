@@ -32,7 +32,7 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugin(SequentialActionsPlugin)
+        .add_plugins(SequentialActionsPlugin)
         .run();
 }
 ```
