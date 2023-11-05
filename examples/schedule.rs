@@ -7,8 +7,8 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_schedule(EvenSchedule, Schedule::new())
-        .add_schedule(OddSchedule, Schedule::new())
+        .init_schedule(EvenSchedule)
+        .init_schedule(OddSchedule)
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
             1.0 / 10.0,
         )))
