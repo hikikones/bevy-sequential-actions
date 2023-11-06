@@ -1,8 +1,4 @@
-#![warn(
-    missing_docs,
-    rustdoc::broken_intra_doc_links,
-    rustdoc::private_intra_doc_links
-)]
+#![warn(missing_docs, rustdoc::all)]
 
 /*!
 <div align="center">
@@ -23,7 +19,7 @@ the next action will start and so on until the queue is empty.
 
 #### Plugin
 
-In order for everything to work, the [`SequentialActionsPlugin`] must be added to your [`App`](bevy_app::App).
+The quickest way for getting started is adding the [`SequentialActionsPlugin`] to your [`App`].
 
 ```rust,no_run
 # use bevy_ecs::prelude::*;
