@@ -4,7 +4,7 @@ use crate::*;
 
 /// The [`Plugin`] for this library that you can add to your [`App`].
 ///
-/// This plugin adds the system [`check_actions`](Self::check_actions) to the [`Last`] schedule,
+/// This plugin adds the system [`check_actions`](Self::check_actions) to the [`Last`] schedule.
 /// It also contains various static methods for modifying the action queue.
 ///
 /// # Example

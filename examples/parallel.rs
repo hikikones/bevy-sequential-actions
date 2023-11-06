@@ -23,7 +23,7 @@ fn setup(mut commands: Commands) {
                 CountdownAction::new(4),
             ],
         })
-        .add(|_, world: &mut World| -> bool {
+        .add(|_agent, world: &mut World| {
             world.send_event(AppExit);
             false
         });

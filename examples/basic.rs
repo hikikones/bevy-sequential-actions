@@ -123,7 +123,7 @@ impl Action for CountdownAction {
         // Take the countdown component from the agent
         let countdown = world.entity_mut(agent).take::<Countdown>();
 
-        // Store current duration when paused
+        // Store current count when paused
         if reason == StopReason::Paused {
             self.current = countdown.unwrap().0.into();
         }

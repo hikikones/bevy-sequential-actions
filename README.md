@@ -19,14 +19,14 @@ https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-
 
 #### Plugin
 
-In order for everything to work, the `SequentialActionsPlugin` must be added to your `App`.
+The quickest way for getting started is adding the `SequentialActionsPlugin` to your `App`.
 
 ```rust
 use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugin(SequentialActionsPlugin)
+        .add_plugins(SequentialActionsPlugin)
         .run();
 }
 ```
