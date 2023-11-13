@@ -201,7 +201,7 @@ fn setup(
                 .set(ScreenshotState::None);
             true
         },
-        WaitAction(1.5),
+        WaitAction(1.0),
         |_agent, world: &mut World| {
             world.send_event(AppExit);
             true
