@@ -1,7 +1,10 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::view::screenshot::ScreenshotManager, window::PrimaryWindow};
 use bevy_sequential_actions::*;
 
 fn main() {
+    std::fs::remove_dir_all("./screenshots").ok();
+    std::fs::create_dir_all("./screenshots").unwrap();
+
     App::new()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
@@ -19,6 +22,7 @@ fn main() {
         .add_systems(
             Update,
             (
+                record_screenshots,
                 wait,
                 lerp_position,
                 lerp_rotation,
@@ -175,6 +179,21 @@ fn setup(
             },
         ]),
     ]);
+}
+
+fn record_screenshots(
+    mut screenshot_manager: ResMut<ScreenshotManager>,
+    primary_window: Query<Entity, With<PrimaryWindow>>,
+    mut frame: Local<u32>,
+) {
+    screenshot_manager
+        .save_screenshot_to_disk(
+            primary_window.single(),
+            format!("screenshots/{:04}.png", *frame),
+        )
+        .unwrap();
+
+    *frame += 1;
 }
 
 struct WaitAction(f32);
