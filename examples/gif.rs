@@ -1,4 +1,5 @@
 use bevy::{prelude::*, render::view::screenshot::ScreenshotManager, window::PrimaryWindow};
+use bevy_app::AppExit;
 use bevy_sequential_actions::*;
 
 fn main() {
@@ -6,6 +7,7 @@ fn main() {
     std::fs::create_dir_all("./screenshots").unwrap();
 
     App::new()
+        .add_state::<ScreenshotState>()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -22,7 +24,7 @@ fn main() {
         .add_systems(
             Update,
             (
-                record_screenshots,
+                record_screenshots.run_if(in_state(ScreenshotState::Active)),
                 wait,
                 lerp_position,
                 lerp_rotation,
@@ -30,6 +32,13 @@ fn main() {
             ),
         )
         .run();
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, States)]
+enum ScreenshotState {
+    #[default]
+    None,
+    Active,
 }
 
 fn setup(
@@ -111,6 +120,13 @@ fn setup(
     let executor = commands.spawn(ActionsBundle::new()).id();
     commands.actions(executor).add_many(actions![
         WaitAction(1.0),
+        |_agent, world: &mut World| {
+            world
+                .resource_mut::<NextState<ScreenshotState>>()
+                .set(ScreenshotState::Active);
+            true
+        },
+        WaitAction(0.5),
         ParallelActions(actions![
             LerpPositionAction {
                 entity: camera,
@@ -178,6 +194,18 @@ fn setup(
                 duration: 1.0,
             },
         ]),
+        WaitAction(0.5),
+        |_agent, world: &mut World| {
+            world
+                .resource_mut::<NextState<ScreenshotState>>()
+                .set(ScreenshotState::None);
+            true
+        },
+        WaitAction(1.5),
+        |_agent, world: &mut World| {
+            world.send_event(AppExit);
+            true
+        },
     ]);
 }
 
