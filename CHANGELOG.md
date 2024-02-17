@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.9.0
+## Version 0.10.0
 
 - [Update to Bevy 0.13][95]
 
