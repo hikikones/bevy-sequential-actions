@@ -54,7 +54,7 @@ impl SequentialActionsPlugin {
         world: &World,
         mut commands: Commands,
     ) {
-        action_q.for_each(|(agent, current_action)| {
+        action_q.iter().for_each(|(agent, current_action)| {
             if let Some(action) = current_action.as_ref() {
                 if action.is_finished(agent, world) {
                     commands.add(move |world: &mut World| {
