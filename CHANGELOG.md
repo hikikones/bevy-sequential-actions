@@ -1,10 +1,12 @@
 # Changelog
 
-## Version 0.10.0-dev
+## Version 0.10.0
 
 - [Update to Bevy 0.13][95]
+- [fix: Removed Unwrap from plugin agent check][94]
 
 [95]: https://github.com/hikikones/bevy-sequential-actions/pull/95
+[94]: https://github.com/hikikones/bevy-sequential-actions/pull/94
 
 ## Version 0.9.0
 
