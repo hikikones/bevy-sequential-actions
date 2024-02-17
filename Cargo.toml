@@ -1,6 +1,6 @@
 [package]
 name = "bevy-sequential-actions"
-version = "0.9.0"
+version = "0.10.0-dev"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["hikikones"]
@@ -12,14 +12,14 @@ categories = ["game-development"]
 readme = "README.md"
 
 [dependencies]
-bevy_ecs = { version = "0.12.1", default-features = false }
-bevy_app = { version = "0.12.1", default-features = false }
-bevy_log = { version = "0.12.1"}
-bevy_derive = { version = "0.12", default-features = false }
+bevy_ecs = { version = "0.13", default-features = false }
+bevy_app = { version = "0.13", default-features = false }
+bevy_log = { version = "0.13", default-features = false }
+bevy_derive = { version = "0.13", default-features = false }
 downcast-rs = { version = "1.2", default-features = false }
 
 [dev-dependencies]
-bevy_utils = { version = "0.12", default-features = false }
+bevy_utils = { version = "0.13", default-features = false }
 criterion = { version = "0.5", default-features = false }
 
 [[bench]]

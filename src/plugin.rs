@@ -1,4 +1,4 @@
-use bevy_ecs::query::ReadOnlyWorldQuery;
+use bevy_ecs::query::QueryFilter;
 use bevy_log::prelude::debug;
 
 use crate::*;
@@ -49,12 +49,12 @@ impl SequentialActionsPlugin {
     ///     .run();
     /// # }
     /// ```
-    pub fn check_actions<F: ReadOnlyWorldQuery>(
+    pub fn check_actions<F: QueryFilter>(
         action_q: Query<(Entity, &CurrentAction), F>,
         world: &World,
         mut commands: Commands,
     ) {
-        action_q.for_each(|(agent, current_action)| {
+        action_q.iter().for_each(|(agent, current_action)| {
             if let Some(action) = current_action.as_ref() {
                 if action.is_finished(agent, world) {
                     commands.add(move |world: &mut World| {
