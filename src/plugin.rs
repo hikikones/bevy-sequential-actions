@@ -1,4 +1,5 @@
 use bevy_ecs::query::ReadOnlyWorldQuery;
+use bevy_log::prelude::debug;
 
 use crate::*;
 
@@ -148,7 +149,12 @@ impl SequentialActionsPlugin {
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
     pub fn start_next_action(agent: Entity, world: &mut World) {
-        if let Some(mut next_action) = world.get_mut::<ActionQueue>(agent).unwrap().pop_front() {
+        let Some(mut action_queue) = world.get_mut::<ActionQueue>(agent) else {
+            debug!("No Action Queue Found on Agent {:?}!", agent);
+            return;
+        };
+
+        if let Some(mut next_action) = action_queue.pop_front() {
             if next_action.on_start(agent, world) {
                 next_action.on_stop(agent, world, StopReason::Finished);
                 next_action.on_remove(agent, world);

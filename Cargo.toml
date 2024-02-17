@@ -12,8 +12,9 @@ categories = ["game-development"]
 readme = "README.md"
 
 [dependencies]
-bevy_ecs = { version = "0.12", default-features = false }
-bevy_app = { version = "0.12", default-features = false }
+bevy_ecs = { version = "0.12.1", default-features = false }
+bevy_app = { version = "0.12.1", default-features = false }
+bevy_log = { version = "0.12.1"}
 bevy_derive = { version = "0.12", default-features = false }
 downcast-rs = { version = "1.2", default-features = false }
 
