@@ -7,13 +7,13 @@ fn main() {
     std::fs::create_dir_all("./screenshots").unwrap();
 
     App::new()
-        .add_state::<ScreenshotState>()
+        .init_state::<ScreenshotState>()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "gif".into(),
                     resolution: bevy::window::WindowResolution::new(720.0, 480.0),
-                    present_mode: bevy::window::PresentMode::AutoVsync,
+                    present_mode: bevy::window::PresentMode::Fifo,
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -49,21 +49,21 @@ fn setup(
     // Capsule guy
     let capsule_guy = commands
         .spawn((PbrBundle {
-            mesh: meshes.add(shape::Capsule::default().into()),
-            material: materials.add(Color::WHITE.into()),
+            mesh: meshes.add(Capsule3d::default()),
+            material: materials.add(Color::WHITE),
             transform: Transform::from_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
             ..Default::default()
         },))
         .with_children(|builder| {
-            let icosphere = meshes.add(shape::Icosphere::default().try_into().unwrap());
-            let black = materials.add(Color::BLACK.into());
+            let sphere = meshes.add(Sphere::default());
+            let black = materials.add(Color::BLACK);
 
             let eye_left = Vec3::new(-0.2, 0.6, -0.4);
             let eye_right = Vec3::new(-eye_left.x, eye_left.y, eye_left.z);
-            let eye_scale = Vec3::splat(0.15);
+            let eye_scale = Vec3::splat(0.25);
 
             builder.spawn(PbrBundle {
-                mesh: icosphere.clone(),
+                mesh: sphere.clone(),
                 material: black.clone(),
                 transform: Transform {
                     translation: eye_left,
@@ -73,7 +73,7 @@ fn setup(
                 ..Default::default()
             });
             builder.spawn(PbrBundle {
-                mesh: icosphere,
+                mesh: sphere,
                 material: black,
                 transform: Transform {
                     translation: eye_right,
@@ -87,8 +87,8 @@ fn setup(
 
     // Floor
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Cube::default().into()),
-        material: materials.add(Color::DARK_GRAY.into()),
+        mesh: meshes.add(Cuboid::default()),
+        material: materials.add(Color::DARK_GRAY),
         transform: Transform {
             translation: Vec3::NEG_Y * 1.5,
             rotation: Quat::IDENTITY,
@@ -292,7 +292,7 @@ fn lerp_position(
     for (mut timer, mut transform, pos) in &mut lerp_q {
         timer.0.tick(time.delta());
 
-        let t = timer.0.percent();
+        let t = timer.0.fraction();
         let smoothstep = 3.0 * t * t - 2.0 * t * t * t;
 
         transform.translation = Vec3::lerp(pos.0, pos.1, smoothstep);
@@ -341,7 +341,7 @@ fn lerp_rotation(
     for (mut timer, mut transform, rot) in &mut lerp_q {
         timer.0.tick(time.delta());
 
-        let t = timer.0.percent();
+        let t = timer.0.fraction();
         let smoothstep = 3.0 * t * t - 2.0 * t * t * t;
 
         transform.rotation = Quat::slerp(rot.0, rot.1, smoothstep);
