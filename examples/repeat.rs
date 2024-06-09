@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
             action: |agent, world: &mut World| {
                 // Exit app when action queue is empty
                 if world.get::<ActionQueue>(agent).unwrap().is_empty() {
-                    world.send_event(AppExit);
+                    world.send_event(AppExit::Success);
                 }
                 false
             },

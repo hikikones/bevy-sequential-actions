@@ -81,7 +81,7 @@ impl Action for EmptyAction {
 
 fn exit_app(mut ew: EventWriter<AppExit>, mut frame: Local<u32>) {
     if *frame == 10 {
-        ew.send(AppExit);
+        ew.send(AppExit::Success);
     }
 
     *frame += 1;

@@ -24,7 +24,7 @@ fn setup(mut commands: Commands) {
             ],
         })
         .add(|_agent, world: &mut World| {
-            world.send_event(AppExit);
+            world.send_event(AppExit::Success);
             false
         });
 }

@@ -19,7 +19,7 @@ fn setup(mut commands: Commands) {
         PrintAction("space"),
         PrintAction("cowboy"),
         |_agent, world: &mut World| -> bool {
-            world.send_event(AppExit);
+            world.send_event(AppExit::Success);
             false
         }
     ]));
