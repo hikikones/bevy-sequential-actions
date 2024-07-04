@@ -26,7 +26,7 @@ fn setup(mut commands: Commands) {
         // Add an anonymous action with a closure
         .add(|_agent, world: &mut World| -> bool {
             // on_start
-            world.send_event(AppExit);
+            world.send_event(AppExit::Success);
             false
         });
 }

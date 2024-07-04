@@ -71,7 +71,7 @@ impl Action for PrintIdAction {
         println!("Agent: {agent:?}, Id: {id}");
 
         if id == 0 {
-            world.send_event(AppExit);
+            world.send_event(AppExit::Success);
         }
     }
 }

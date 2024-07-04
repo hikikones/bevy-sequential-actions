@@ -45,7 +45,7 @@ fn run_custom_schedule(world: &mut World, mut frame_count: Local<u32>) {
     }
 
     if *frame_count == 10 {
-        world.send_event(AppExit);
+        world.send_event(AppExit::Success);
     }
 
     *frame_count += 1;
