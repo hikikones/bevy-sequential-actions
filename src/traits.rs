@@ -229,3 +229,89 @@ impl ModifyActionsExt for EntityCommands<'_> {
         self
     }
 }
+
+impl ModifyActionsExt for EntityWorldMut<'_> {
+    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::add_action(agent, config, action, world);
+        });
+
+        self
+    }
+
+    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + Send + 'static,
+        I::IntoIter: DoubleEndedIterator,
+    {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::add_actions(agent, config, actions, world);
+        });
+
+        self
+    }
+
+    fn execute_actions(&mut self) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::execute_actions(agent, world);
+        });
+
+        self
+    }
+
+    fn next_action(&mut self) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::start_next_action(agent, world);
+        });
+
+        self
+    }
+
+    fn cancel_current_action(&mut self) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
+        });
+
+        self
+    }
+
+    fn pause_current_action(&mut self) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
+        });
+
+        self
+    }
+
+    fn skip_next_action(&mut self) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::skip_next_action(agent, world);
+        });
+
+        self
+    }
+
+    fn clear_actions(&mut self) -> &mut Self {
+        let agent = self.id();
+
+        self.world_scope(move |world| {
+            SequentialActionsPlugin::clear_actions(agent, world);
+        });
+
+        self
+    }
+}
