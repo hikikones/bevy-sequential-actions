@@ -33,10 +33,13 @@ fn run_many_countdowns(agents: u32) {
 
     for i in 0..agents {
         let agent = app.world_mut().spawn(ActionsBundle::new()).id();
-        app.world_mut().actions(agent).add(CountdownAction {
-            count: i,
-            current: None,
-        });
+        app.world_mut().entity_mut(agent).add_action(
+            AddConfig::default(),
+            CountdownAction {
+                count: i,
+                current: None,
+            },
+        );
     }
 
     for _ in 0..10 {

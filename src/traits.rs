@@ -68,6 +68,7 @@ impl std::fmt::Debug for BoxedAction {
     }
 }
 
+#[deprecated]
 /// Proxy method for modifying actions.
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
