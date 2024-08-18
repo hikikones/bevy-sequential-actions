@@ -128,3 +128,19 @@ pub trait ModifyActions {
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(&mut self) -> &mut Self;
 }
+
+pub trait ModifyActionsExt {
+    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self;
+}
+
+impl ModifyActionsExt for EntityCommands<'_> {
+    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
+        let agent = self.id();
+
+        self.commands().add(move |world: &mut World| {
+            SequentialActionsPlugin::add_action(agent, config, action, world);
+        });
+
+        self
+    }
+}

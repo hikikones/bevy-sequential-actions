@@ -160,7 +160,7 @@ use std::collections::VecDeque;
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::*;
+use bevy_ecs::{prelude::*, system::EntityCommands};
 
 mod commands;
 mod macros;
