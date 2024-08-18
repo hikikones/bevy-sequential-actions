@@ -12,21 +12,23 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
-    commands
-        .actions(agent)
-        .add(ParallelActions {
-            actions: actions![
-                PrintAction("hello"),
-                CountdownAction::new(2),
-                PrintAction("world"),
-                CountdownAction::new(4),
-            ],
-        })
-        .add(|_agent, world: &mut World| {
-            world.send_event(AppExit::Success);
-            false
-        });
+    commands.spawn(ActionsBundle::new()).add_actions(
+        AddConfig::default(),
+        actions![
+            ParallelActions {
+                actions: actions![
+                    PrintAction("hello"),
+                    CountdownAction::new(2),
+                    PrintAction("world"),
+                    CountdownAction::new(4),
+                ],
+            },
+            |_agent, world: &mut World| {
+                world.send_event(AppExit::Success);
+                false
+            }
+        ],
+    );
 }
 
 struct ParallelActions<const N: usize> {

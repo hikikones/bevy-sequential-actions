@@ -19,8 +19,9 @@ fn main() {
 fn setup(mut commands: Commands) {
     for i in 0..10 {
         // Spawn agents with id in ascending order
-        let agent = commands.spawn((ActionsBundle::new(), Id(i))).id();
-        commands.actions(agent).add(PrintIdAction);
+        commands
+            .spawn((ActionsBundle::new(), Id(i)))
+            .add_action(AddConfig::default(), PrintIdAction);
     }
 }
 

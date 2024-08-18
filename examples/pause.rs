@@ -17,8 +17,9 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
-    commands.actions(agent).add(CountForeverAction);
+    commands
+        .spawn(ActionsBundle::new())
+        .add_action(AddConfig::default(), CountForeverAction);
 }
 
 fn frame_logic(
@@ -35,11 +36,11 @@ fn frame_logic(
 
     if *frame == PAUSE_FRAME {
         println!("\nPAUSE\n");
-        commands.actions(agent_q.single()).pause();
+        commands.entity(agent_q.single()).pause_current_action();
     }
     if *frame == RESUME_FRAME {
         println!("\nRESUME\n");
-        commands.actions(agent_q.single()).execute();
+        commands.entity(agent_q.single()).execute_actions();
     }
     if *frame == EXIT_FRAME {
         println!(

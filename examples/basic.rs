@@ -12,19 +12,27 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
-        .actions(agent)
+        .spawn(ActionsBundle::new())
         // Add a single action
-        .add(DemoAction)
+        .add_action(
+            AddConfig {
+                start: true,
+                order: AddOrder::Back,
+            },
+            DemoAction,
+        )
         // Add multiple actions
-        .add_many(actions![
-            PrintAction("hello"),
-            PrintAction("there"),
-            CountdownAction::new(10)
-        ])
+        .add_actions(
+            AddConfig::default(),
+            actions![
+                PrintAction("hello"),
+                PrintAction("there"),
+                CountdownAction::new(10)
+            ],
+        )
         // Add an anonymous action with a closure
-        .add(|_agent, world: &mut World| -> bool {
+        .add_action(AddConfig::default(), |_agent, world: &mut World| -> bool {
             // on_start
             world.send_event(AppExit::Success);
             false

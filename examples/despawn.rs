@@ -12,12 +12,14 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
-    commands.actions(agent).add_many(actions![
-        PrintAction("First action"),
-        DespawnAction,
-        EmptyAction, // This action does not start, but on_remove and on_drop is called
-    ]);
+    commands.spawn(ActionsBundle::new()).add_actions(
+        AddConfig::default(),
+        actions![
+            PrintAction("First action"),
+            DespawnAction,
+            EmptyAction, // This action does not start, but on_remove and on_drop is called
+        ],
+    );
 }
 
 struct DespawnAction;
@@ -31,7 +33,7 @@ impl Action for DespawnAction {
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         println!("Despawn!");
 
-        world.actions(agent).clear();
+        world.entity_mut(agent).clear_actions();
         world.despawn(agent);
 
         // Don't advance the action queue
