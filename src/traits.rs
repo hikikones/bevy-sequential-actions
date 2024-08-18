@@ -270,6 +270,7 @@ impl ModifyActionsExt for EntityWorldMut<'_> {
         let agent = self.id();
 
         self.world_scope(move |world| {
+            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
             SequentialActionsPlugin::start_next_action(agent, world);
         });
 
