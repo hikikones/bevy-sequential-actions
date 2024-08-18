@@ -77,6 +77,7 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 
+#[deprecated]
 /// Methods for modifying actions.
 pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
