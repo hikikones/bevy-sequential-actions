@@ -68,6 +68,47 @@ impl std::fmt::Debug for BoxedAction {
     }
 }
 
+/// Methods for modifying actions.
+pub trait ModifyActionsExt {
+    /// Adds a single [`action`](Action) to the queue.
+    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self;
+
+    /// Adds a collection of actions to the queue.
+    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + Send + 'static,
+        I::IntoIter: DoubleEndedIterator;
+
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
+    /// but only if there is no current action.
+    fn execute_actions(&mut self) -> &mut Self;
+
+    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
+    ///
+    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
+    fn next_action(&mut self) -> &mut Self;
+
+    /// [`Stops`](Action::on_stop) the current action as [`canceled`](StopReason::Canceled).
+    ///
+    /// To resume the action queue,
+    /// call either [`execute_actions`](Self::execute_actions) or [`next_actions`](Self::next_actions).
+    fn cancel_current_action(&mut self) -> &mut Self;
+
+    /// [`Stops`](Action::on_stop) the current action as [`paused`](StopReason::Paused).
+    ///
+    /// To resume the action queue,
+    /// call either [`execute_actions`](Self::execute_actions) or [`next_actions`](Self::next_actions).
+    fn pause_current_action(&mut self) -> &mut Self;
+
+    /// Skips the next [`action`](Action) in the queue.
+    fn skip_next_action(&mut self) -> &mut Self;
+
+    /// Clears the action queue.
+    ///
+    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
+    fn clear_actions(&mut self) -> &mut Self;
+}
+
 #[deprecated]
 /// Proxy method for modifying actions.
 pub trait ActionsProxy<'a> {
@@ -129,192 +170,4 @@ pub trait ModifyActions {
     ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(&mut self) -> &mut Self;
-}
-
-pub trait ModifyActionsExt {
-    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self;
-    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator;
-    fn execute_actions(&mut self) -> &mut Self;
-    fn next_action(&mut self) -> &mut Self;
-    fn cancel_current_action(&mut self) -> &mut Self;
-    fn pause_current_action(&mut self) -> &mut Self;
-    fn skip_next_action(&mut self) -> &mut Self;
-    fn clear_actions(&mut self) -> &mut Self;
-}
-
-impl ModifyActionsExt for EntityCommands<'_> {
-    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::add_action(agent, config, action, world);
-        });
-
-        self
-    }
-
-    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator,
-    {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::add_actions(agent, config, actions, world);
-        });
-
-        self
-    }
-
-    fn execute_actions(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::execute_actions(agent, world);
-        });
-
-        self
-    }
-
-    fn next_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
-            SequentialActionsPlugin::start_next_action(agent, world);
-        });
-
-        self
-    }
-
-    fn cancel_current_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
-        });
-
-        self
-    }
-
-    fn pause_current_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
-        });
-
-        self
-    }
-
-    fn skip_next_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::skip_next_action(agent, world);
-        });
-
-        self
-    }
-
-    fn clear_actions(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.commands().add(move |world: &mut World| {
-            SequentialActionsPlugin::clear_actions(agent, world);
-        });
-
-        self
-    }
-}
-
-impl ModifyActionsExt for EntityWorldMut<'_> {
-    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::add_action(agent, config, action, world);
-        });
-
-        self
-    }
-
-    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator,
-    {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::add_actions(agent, config, actions, world);
-        });
-
-        self
-    }
-
-    fn execute_actions(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::execute_actions(agent, world);
-        });
-
-        self
-    }
-
-    fn next_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
-            SequentialActionsPlugin::start_next_action(agent, world);
-        });
-
-        self
-    }
-
-    fn cancel_current_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::stop_current_action(agent, StopReason::Canceled, world);
-        });
-
-        self
-    }
-
-    fn pause_current_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::stop_current_action(agent, StopReason::Paused, world);
-        });
-
-        self
-    }
-
-    fn skip_next_action(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::skip_next_action(agent, world);
-        });
-
-        self
-    }
-
-    fn clear_actions(&mut self) -> &mut Self {
-        let agent = self.id();
-
-        self.world_scope(move |world| {
-            SequentialActionsPlugin::clear_actions(agent, world);
-        });
-
-        self
-    }
 }
