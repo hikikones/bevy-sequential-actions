@@ -2,10 +2,10 @@
 
 ## Version 0.12.0-dev
 
-- [Add `ModifyActionsExt` trait for `EntityCommands` and `EntityWorldMut`][98]
+- [Add `ModifyActionsExt` trait for `EntityCommands` and `EntityWorldMut`][99]
     - Deprecates `ModifyActions` trait
 
-[98]: https://github.com/hikikones/bevy-sequential-actions/pull/98
+[99]: https://github.com/hikikones/bevy-sequential-actions/pull/99
 
 ## Version 0.11.0
 
