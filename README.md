@@ -128,8 +128,7 @@ fn setup(mut commands: Commands) {
             AddConfig::default(),
             |_agent, world: &mut World| -> bool {
                 // on_start
-                world.send_event(AppExit::Success);
-                false
+                true
             },
         );
 }
