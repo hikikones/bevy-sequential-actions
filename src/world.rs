@@ -99,7 +99,10 @@ impl<'a> ActionsProxy<'a> for World {
     }
 }
 
-#[deprecated]
+#[deprecated(
+    since = "0.12.0",
+    note = "Replaced by ModifyActionsExt trait implemented for EntityCommands and EntityWorldMut."
+)]
 /// Modify actions using [`World`].
 pub struct AgentActions<'w> {
     agent: Entity,

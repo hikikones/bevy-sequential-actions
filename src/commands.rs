@@ -99,7 +99,10 @@ impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
     }
 }
 
-#[deprecated]
+#[deprecated(
+    since = "0.12.0",
+    note = "Replaced by ModifyActionsExt trait implemented for EntityCommands and EntityWorldMut."
+)]
 /// Modify actions using [`Commands`].
 pub struct AgentCommands<'c, 'w, 's> {
     agent: Entity,

@@ -13,12 +13,13 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands
+        // Spawn entity with the bundle
         .spawn(ActionsBundle::new())
         // Add a single action
         .add_action(
             AddConfig {
-                start: true,
-                order: AddOrder::Back,
+                start: true,           // Start next action in the queue if nothing is currently running
+                order: AddOrder::Back, // Add the action to the back of the queue
             },
             DemoAction,
         )

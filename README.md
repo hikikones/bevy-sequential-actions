@@ -26,37 +26,15 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(SequentialActionsPlugin)
+        .add_plugins((DefaultPlugins, SequentialActionsPlugin))
         .run();
-}
-```
-
-#### Modifying Actions
-
-An action is anything that implements the `Action` trait,
-and can be added to any `Entity` that contains the `ActionsBundle`.
-An entity with actions is referred to as an `agent`.
-See the `ModifyActions` trait for available methods.
-
-```rust
-fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
-    commands
-        .actions(agent)
-        .add(action_a)
-        .add_many(actions![
-            action_b,
-            action_c
-        ])
-        .order(AddOrder::Front)
-        .add(action_d)
-        // ...
 }
 ```
 
 #### Implementing an Action
 
-The `Action` trait contains 3 required methods:
+An action is anything that implements the `Action` trait.
+The trait contains 3 required methods:
 
 * `is_finished` to determine if an action is finished or not.
 * `on_start` which is called when an action is started.
@@ -68,6 +46,8 @@ In addition, there are 3 optional methods:
 * `on_remove` which is called when an action is removed from the queue.
 * `on_drop` which is the last method to be called with full ownership.
 
+An entity with actions is referred to as an `agent`.
+
 A simple wait action follows.
 
 ```rust
@@ -75,6 +55,9 @@ pub struct WaitAction {
     duration: f32, // Seconds
     current: Option<f32>, // None
 }
+
+#[derive(Component)]
+struct WaitTimer(f32);
 
 impl Action for WaitAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
@@ -106,13 +89,49 @@ impl Action for WaitAction {
     }
 }
 
-#[derive(Component)]
-struct WaitTimer(f32);
-
 fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
     for mut wait_timer in &mut wait_timer_q {
         wait_timer.0 -= time.delta_seconds();
     }
+}
+```
+
+#### Modifying Actions
+
+Actions can be added to any `Entity` that contains the `ActionsBundle`.
+See the `ModifyActionsExt` trait for available methods.
+The extension trait is implemented for both `EntityCommands` and `EntityWorldMut`.
+
+```rust
+fn setup(mut commands: Commands) {
+    commands
+        // Spawn entity with the bundle
+        .spawn(ActionsBundle::new())
+        // Add a single action
+        .add_action(
+            AddConfig {
+                start: true, // Start next action if nothing is currently running
+                order: AddOrder::Back, // Add the action to the back of the queue
+            },
+            action_a,
+        )
+        // Add multiple actions
+        .add_actions(
+            AddConfig::default(),
+            actions![
+                action_b,
+                action_c
+            ],
+        )
+        // Add an anonymous action with a closure
+        .add_action(
+            AddConfig::default(),
+            |_agent, world: &mut World| -> bool {
+                // on_start
+                world.send_event(AppExit::Success);
+                false
+            },
+        );
 }
 ```
 
@@ -126,9 +145,9 @@ the logic for advancing the action queue might not work properly.
 
 In general, there are two rules when modifying actions for an `agent` inside the action trait:
 
-* When adding new actions, you should either set the `start` property to `false`,
+* When adding new actions, you should either set the `start` property in `AddConfig` to `false`,
     or push to the `ActionQueue` component directly.
-* The `execute` and `next` methods should not be used.
+* The `execute_actions` and `next_action` methods should not be used.
 
 ## 📎 Examples
 

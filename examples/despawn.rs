@@ -17,7 +17,7 @@ fn setup(mut commands: Commands) {
         actions![
             PrintAction("First action"),
             DespawnAction,
-            EmptyAction, // This action does not start, but on_remove and on_drop is called
+            EmptyAction, // This action does not start, but on_remove and on_drop are called
         ],
     );
 }
