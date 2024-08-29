@@ -92,13 +92,13 @@ pub trait ModifyActionsExt {
     ///
     /// To resume the action queue,
     /// call either [`execute_actions`](`Self::execute_actions`) or [`next_action`](`Self::next_action`).
-    fn cancel_current_action(&mut self) -> &mut Self;
+    fn cancel_action(&mut self) -> &mut Self;
 
     /// [`Stops`](Action::on_stop) the current action as [`paused`](StopReason::Paused).
     ///
     /// To resume the action queue,
     /// call either [`execute_actions`](`Self::execute_actions`) or [`next_action`](`Self::next_action`).
-    fn pause_current_action(&mut self) -> &mut Self;
+    fn pause_action(&mut self) -> &mut Self;
 
     /// Skips the next [`action`](Action) in the queue.
     fn skip_next_action(&mut self) -> &mut Self;

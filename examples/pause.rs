@@ -36,7 +36,7 @@ fn frame_logic(
 
     if *frame == PAUSE_FRAME {
         println!("\nPAUSE\n");
-        commands.entity(agent_q.single()).pause_current_action();
+        commands.entity(agent_q.single()).pause_action();
     }
     if *frame == RESUME_FRAME {
         println!("\nRESUME\n");

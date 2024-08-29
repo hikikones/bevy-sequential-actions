@@ -308,7 +308,7 @@ fn cancel() {
             },
             TestCountdownAction::new(1),
         )
-        .cancel_current_action();
+        .cancel_action();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
@@ -340,7 +340,7 @@ fn pause() {
             },
             TestCountdownAction::new(1),
         )
-        .pause_current_action();
+        .pause_action();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 1);
@@ -470,7 +470,7 @@ fn lifecycle() {
     assert_eq!(app.world().entity(e).contains::<Removed>(), false);
     assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
 
-    app.entity_mut(a).pause_current_action();
+    app.entity_mut(a).pause_action();
 
     assert_eq!(app.world().entity(e).contains::<Added>(), true);
     assert_eq!(app.world().entity(e).contains::<Started>(), true);
@@ -610,7 +610,7 @@ fn pause_resume() {
 
     assert_eq!(countdown_value(&mut app), 9);
 
-    app.entity_mut(a).pause_current_action().add_action(
+    app.entity_mut(a).pause_action().add_action(
         AddConfig {
             start: true,
             order: AddOrder::Front,

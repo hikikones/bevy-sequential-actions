@@ -46,7 +46,7 @@ impl ModifyActionsExt for EntityWorldMut<'_> {
         self
     }
 
-    fn cancel_current_action(&mut self) -> &mut Self {
+    fn cancel_action(&mut self) -> &mut Self {
         let agent = self.id();
 
         self.world_scope(move |world| {
@@ -56,7 +56,7 @@ impl ModifyActionsExt for EntityWorldMut<'_> {
         self
     }
 
-    fn pause_current_action(&mut self) -> &mut Self {
+    fn pause_action(&mut self) -> &mut Self {
         let agent = self.id();
 
         self.world_scope(move |world| {
