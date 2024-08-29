@@ -56,9 +56,6 @@ pub struct WaitAction {
     current: Option<f32>, // None
 }
 
-#[derive(Component)]
-struct WaitTimer(f32);
-
 impl Action for WaitAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if wait timer has reached zero.
@@ -88,6 +85,9 @@ impl Action for WaitAction {
         }
     }
 }
+
+#[derive(Component)]
+struct WaitTimer(f32);
 
 fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
     for mut wait_timer in &mut wait_timer_q {
