@@ -11,29 +11,26 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(ActionsBundle::new()).add_actions(
-        AddConfig::default(),
-        actions![
-            RepeatAction {
-                action: PrintAction("hello"),
-                repeat: 3,
+    commands.spawn(ActionsBundle::new()).add_actions(actions![
+        RepeatAction {
+            action: PrintAction("hello"),
+            repeat: 3,
+        },
+        RepeatAction {
+            action: PrintAction("world"),
+            repeat: 1,
+        },
+        RepeatAction {
+            action: |agent, world: &mut World| {
+                // Exit app when action queue is empty
+                if world.get::<ActionQueue>(agent).unwrap().is_empty() {
+                    world.send_event(AppExit::Success);
+                }
+                false
             },
-            RepeatAction {
-                action: PrintAction("world"),
-                repeat: 1,
-            },
-            RepeatAction {
-                action: |agent, world: &mut World| {
-                    // Exit app when action queue is empty
-                    if world.get::<ActionQueue>(agent).unwrap().is_empty() {
-                        world.send_event(AppExit::Success);
-                    }
-                    false
-                },
-                repeat: u32::MAX,
-            },
-        ],
-    );
+            repeat: u32::MAX,
+        },
+    ]);
 }
 
 struct RepeatAction<A: Action> {

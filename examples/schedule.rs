@@ -54,21 +54,19 @@ fn run_custom_schedule(world: &mut World, mut frame_count: Local<u32>) {
 fn setup(mut commands: Commands) {
     // Spawn agent with even marker for even schedule
     let agent_even = commands.spawn((ActionsBundle::new(), EvenMarker)).id();
-    commands.entity(agent_even).add_action(
-        AddConfig::default(),
-        PrintForeverAction(format!(
+    commands
+        .entity(agent_even)
+        .add_action(PrintForeverAction(format!(
             "Even: is_finished is called every even frame for agent {agent_even:?}."
-        )),
-    );
+        )));
 
     // Spawn agent with odd marker for odd schedule
     let agent_odd = commands.spawn((ActionsBundle::new(), OddMarker)).id();
-    commands.entity(agent_odd).add_action(
-        AddConfig::default(),
-        PrintForeverAction(format!(
+    commands
+        .entity(agent_odd)
+        .add_action(PrintForeverAction(format!(
             "Odd:  is_finished is called every odd  frame for agent {agent_odd:?}."
-        )),
-    );
+        )));
 }
 
 struct PrintForeverAction(String);

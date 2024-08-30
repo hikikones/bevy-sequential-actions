@@ -11,9 +11,9 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(ActionsBundle::new()).add_action(
-        AddConfig::default(),
-        ActionSequence::new(actions![
+    commands
+        .spawn(ActionsBundle::new())
+        .add_action(ActionSequence::new(actions![
             PrintAction("see"),
             PrintAction("you"),
             PrintAction("in"),
@@ -23,8 +23,7 @@ fn setup(mut commands: Commands) {
                 world.send_event(AppExit::Success);
                 false
             }
-        ]),
-    );
+        ]));
 }
 
 struct ActionSequence<const N: usize> {

@@ -22,6 +22,10 @@ impl TestApp {
         self.world_mut().spawn(ActionsBundle::new()).id()
     }
 
+    fn entity(&self, entity: Entity) -> EntityRef<'_> {
+        self.world().entity(entity)
+    }
+
     fn entity_mut(&mut self, entity: Entity) -> EntityWorldMut<'_> {
         self.world_mut().entity_mut(entity)
     }
@@ -153,7 +157,7 @@ fn add() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action(
+    app.entity_mut(a).add_action_with_config(
         AddConfig {
             start: false,
             order: AddOrder::Back,
@@ -164,7 +168,7 @@ fn add() {
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 1);
 
-    app.entity_mut(a).clear_actions().add_action(
+    app.entity_mut(a).clear_actions().add_action_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -175,7 +179,7 @@ fn add() {
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 0);
 
-    app.entity_mut(a).clear_actions().add_action(
+    app.entity_mut(a).clear_actions().add_action_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -192,7 +196,7 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_actions(
+    app.entity_mut(a).add_actions_with_config(
         AddConfig {
             start: false,
             order: AddOrder::Back,
@@ -203,7 +207,7 @@ fn add_many() {
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 2);
 
-    app.entity_mut(a).clear_actions().add_actions(
+    app.entity_mut(a).clear_actions().add_actions_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -214,7 +218,7 @@ fn add_many() {
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 0);
 
-    app.entity_mut(a).add_actions(
+    app.entity_mut(a).add_actions_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -225,7 +229,7 @@ fn add_many() {
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 1);
 
-    app.entity_mut(a).add_actions(
+    app.entity_mut(a).add_actions_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -242,7 +246,7 @@ fn next() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action(
+    app.entity_mut(a).add_action_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -255,13 +259,13 @@ fn next() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), false);
+    assert_eq!(app.entity(e).contains::<Started>(), true);
+    assert_eq!(app.entity(e).contains::<Canceled>(), false);
 
     app.entity_mut(a).next_action();
 
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), true);
+    assert_eq!(app.entity(e).contains::<Started>(), true);
+    assert_eq!(app.entity(e).contains::<Canceled>(), true);
 }
 
 #[test]
@@ -269,7 +273,7 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action(
+    app.entity_mut(a).add_action_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -286,13 +290,13 @@ fn finish() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
-    assert_eq!(app.world().entity(e).contains::<Finished>(), true);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.world().entity(e).contains::<Paused>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Done>(), true);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    assert_eq!(app.entity(e).contains::<Finished>(), true);
+    assert_eq!(app.entity(e).contains::<Canceled>(), false);
+    assert_eq!(app.entity(e).contains::<Paused>(), false);
+    assert_eq!(app.entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.entity(e).contains::<Done>(), true);
+    assert_eq!(app.entity(e).contains::<Skipped>(), false);
+    assert_eq!(app.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -301,7 +305,7 @@ fn cancel() {
     let a = app.spawn_agent();
 
     app.entity_mut(a)
-        .add_action(
+        .add_action_with_config(
             AddConfig {
                 start: true,
                 order: AddOrder::Back,
@@ -318,13 +322,13 @@ fn cancel() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
-    assert_eq!(app.world().entity(e).contains::<Finished>(), false);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), true);
-    assert_eq!(app.world().entity(e).contains::<Paused>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Done>(), true);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    assert_eq!(app.entity(e).contains::<Finished>(), false);
+    assert_eq!(app.entity(e).contains::<Canceled>(), true);
+    assert_eq!(app.entity(e).contains::<Paused>(), false);
+    assert_eq!(app.entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.entity(e).contains::<Done>(), true);
+    assert_eq!(app.entity(e).contains::<Skipped>(), false);
+    assert_eq!(app.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -333,7 +337,7 @@ fn pause() {
     let a = app.spawn_agent();
 
     app.entity_mut(a)
-        .add_action(
+        .add_action_with_config(
             AddConfig {
                 start: true,
                 order: AddOrder::Back,
@@ -350,13 +354,13 @@ fn pause() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
-    assert_eq!(app.world().entity(e).contains::<Finished>(), false);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.world().entity(e).contains::<Paused>(), true);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Done>(), false);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    assert_eq!(app.entity(e).contains::<Finished>(), false);
+    assert_eq!(app.entity(e).contains::<Canceled>(), false);
+    assert_eq!(app.entity(e).contains::<Paused>(), true);
+    assert_eq!(app.entity(e).contains::<Dropped>(), false);
+    assert_eq!(app.entity(e).contains::<Done>(), false);
+    assert_eq!(app.entity(e).contains::<Skipped>(), false);
+    assert_eq!(app.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -365,7 +369,7 @@ fn skip() {
     let a = app.spawn_agent();
 
     app.entity_mut(a)
-        .add_action(
+        .add_action_with_config(
             AddConfig {
                 start: false,
                 order: AddOrder::Back,
@@ -381,14 +385,14 @@ fn skip() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), false);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), true);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Done>(), false);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    assert_eq!(app.entity(e).contains::<Added>(), true);
+    assert_eq!(app.entity(e).contains::<Started>(), false);
+    assert_eq!(app.entity(e).contains::<Stopped>(), false);
+    assert_eq!(app.entity(e).contains::<Removed>(), true);
+    assert_eq!(app.entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.entity(e).contains::<Done>(), false);
+    assert_eq!(app.entity(e).contains::<Skipped>(), true);
+    assert_eq!(app.entity(e).contains::<Cleared>(), false);
 }
 
 #[test]
@@ -397,7 +401,7 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.entity_mut(a)
-        .add_actions(
+        .add_actions_with_config(
             AddConfig {
                 start: true,
                 order: AddOrder::Back,
@@ -443,7 +447,7 @@ fn lifecycle() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action(
+    app.entity_mut(a).add_action_with_config(
         AddConfig {
             start: false,
             order: AddOrder::Back,
@@ -456,35 +460,35 @@ fn lifecycle() {
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), false);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
+    assert_eq!(app.entity(e).contains::<Added>(), true);
+    assert_eq!(app.entity(e).contains::<Started>(), false);
+    assert_eq!(app.entity(e).contains::<Stopped>(), false);
+    assert_eq!(app.entity(e).contains::<Removed>(), false);
+    assert_eq!(app.entity(e).contains::<Dropped>(), false);
 
     app.entity_mut(a).execute_actions();
 
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
+    assert_eq!(app.entity(e).contains::<Added>(), true);
+    assert_eq!(app.entity(e).contains::<Started>(), true);
+    assert_eq!(app.entity(e).contains::<Stopped>(), false);
+    assert_eq!(app.entity(e).contains::<Removed>(), false);
+    assert_eq!(app.entity(e).contains::<Dropped>(), false);
 
     app.entity_mut(a).pause_action();
 
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
+    assert_eq!(app.entity(e).contains::<Added>(), true);
+    assert_eq!(app.entity(e).contains::<Started>(), true);
+    assert_eq!(app.entity(e).contains::<Stopped>(), true);
+    assert_eq!(app.entity(e).contains::<Removed>(), false);
+    assert_eq!(app.entity(e).contains::<Dropped>(), false);
 
     app.entity_mut(a).clear_actions();
 
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), true);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
+    assert_eq!(app.entity(e).contains::<Added>(), true);
+    assert_eq!(app.entity(e).contains::<Started>(), true);
+    assert_eq!(app.entity(e).contains::<Stopped>(), true);
+    assert_eq!(app.entity(e).contains::<Removed>(), true);
+    assert_eq!(app.entity(e).contains::<Dropped>(), true);
 }
 
 #[test]
@@ -519,7 +523,7 @@ fn order() {
     let a = app.spawn_agent();
 
     // Back
-    app.entity_mut(a).add_actions(
+    app.entity_mut(a).add_actions_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -531,33 +535,33 @@ fn order() {
         ],
     );
 
-    assert_eq!(app.world().entity(a).contains::<A>(), true);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), true);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), true);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), true);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), true);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), true);
 
     // Front
     app.entity_mut(a)
         .clear_actions()
-        .add_action(
+        .add_action_with_config(
             AddConfig {
                 start: false,
                 order: AddOrder::Back,
             },
             TestCountdownAction::new(0),
         )
-        .add_actions(
+        .add_actions_with_config(
             AddConfig {
                 start: false,
                 order: AddOrder::Front,
@@ -570,21 +574,21 @@ fn order() {
         )
         .execute_actions();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), true);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), true);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), true);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), true);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), true);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), true);
 }
 
 #[test]
@@ -596,7 +600,7 @@ fn pause_resume() {
         app.world_mut().query::<&Countdown>().single(app.world()).0
     }
 
-    app.entity_mut(a).add_action(
+    app.entity_mut(a).add_action_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,
@@ -610,7 +614,7 @@ fn pause_resume() {
 
     assert_eq!(countdown_value(&mut app), 9);
 
-    app.entity_mut(a).pause_action().add_action(
+    app.entity_mut(a).pause_action().add_action_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Front,
@@ -644,7 +648,7 @@ fn despawn() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_actions(
+    app.entity_mut(a).add_actions_with_config(
         AddConfig {
             start: true,
             order: AddOrder::Back,

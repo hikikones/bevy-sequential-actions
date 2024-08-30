@@ -21,7 +21,7 @@ fn setup(mut commands: Commands) {
         // Spawn agents with id in ascending order
         commands
             .spawn((ActionsBundle::new(), Id(i)))
-            .add_action(AddConfig::default(), PrintIdAction);
+            .add_action(PrintIdAction);
     }
 }
 

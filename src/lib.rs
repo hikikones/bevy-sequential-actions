@@ -134,29 +134,24 @@ fn setup(mut commands: Commands) {
         // Spawn entity with the bundle
         .spawn(ActionsBundle::new())
         // Add a single action
-        .add_action(
+        .add_action(action_a)
+        // Add multiple actions with a specified config
+        .add_actions_with_config(
             AddConfig {
                 start: true, // Start next action if nothing is currently running
                 order: AddOrder::Back, // Add the action to the back of the queue
             },
-            action_a,
-        )
-        // Add multiple actions
-        .add_actions(
-            AddConfig::default(),
+            // Helper macro for creating an array of boxed actions
             actions![
                 action_b,
                 action_c
             ],
         )
         // Add an anonymous action with a closure
-        .add_action(
-            AddConfig::default(),
-            |_agent, world: &mut World| -> bool {
-                // on_start
-                true
-            },
-        );
+        .add_action(|_agent, world: &mut World| -> bool {
+            // on_start
+            true
+        });
 }
 ```
 

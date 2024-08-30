@@ -19,7 +19,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands
         .spawn(ActionsBundle::new())
-        .add_action(AddConfig::default(), CountForeverAction);
+        .add_action(CountForeverAction);
 }
 
 fn frame_logic(

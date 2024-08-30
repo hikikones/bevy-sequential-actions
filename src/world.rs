@@ -1,7 +1,7 @@
 use crate::*;
 
 impl ModifyActionsExt for EntityWorldMut<'_> {
-    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
+    fn add_action_with_config(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
         let agent = self.id();
 
         self.world_scope(move |world| {
@@ -11,7 +11,7 @@ impl ModifyActionsExt for EntityWorldMut<'_> {
         self
     }
 
-    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
+    fn add_actions_with_config<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
         I::IntoIter: DoubleEndedIterator,

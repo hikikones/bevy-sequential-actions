@@ -12,14 +12,11 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(ActionsBundle::new()).add_actions(
-        AddConfig::default(),
-        actions![
-            PrintAction("First action"),
-            DespawnAction,
-            EmptyAction, // This action does not start, but on_remove and on_drop are called
-        ],
-    );
+    commands.spawn(ActionsBundle::new()).add_actions(actions![
+        PrintAction("First action"),
+        DespawnAction,
+        EmptyAction, // This action does not start, but on_remove and on_drop are called
+    ]);
 }
 
 struct DespawnAction;

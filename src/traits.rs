@@ -70,14 +70,28 @@ impl std::fmt::Debug for BoxedAction {
 
 /// Methods for modifying actions.
 pub trait ModifyActionsExt {
-    /// Adds a single [`action`](Action) to the queue.
-    fn add_action(&mut self, config: AddConfig, action: impl Action) -> &mut Self;
+    /// Adds a single [`action`](Action) to the queue with a specified [`config`](AddConfig).
+    fn add_action_with_config(&mut self, config: AddConfig, action: impl Action) -> &mut Self;
 
-    /// Adds a collection of actions to the queue.
-    fn add_actions<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
+    /// Adds a collection of actions to the queue with a specified [`config`](AddConfig).
+    fn add_actions_with_config<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
         I::IntoIter: DoubleEndedIterator;
+
+    /// Adds a single [`action`](Action) to the queue with a default [`config`](AddConfig).
+    fn add_action(&mut self, action: impl Action) -> &mut Self {
+        Self::add_action_with_config(self, AddConfig::default(), action)
+    }
+
+    /// Adds a collection of actions to the queue with a default [`config`](AddConfig).
+    fn add_actions<I>(&mut self, actions: I) -> &mut Self
+    where
+        I: IntoIterator<Item = BoxedAction> + Send + 'static,
+        I::IntoIter: DoubleEndedIterator,
+    {
+        Self::add_actions_with_config(self, AddConfig::default(), actions)
+    }
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no current action.
