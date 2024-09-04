@@ -51,13 +51,13 @@ impl<const N: usize> Action for ParallelActions<N> {
             .all(|b| b)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         self.actions
             .iter_mut()
             .for_each(|action| action.on_stop(agent, world, reason));
     }
 
-    fn on_remove(&mut self, agent: Entity, world: &mut World) {
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
         self.actions
             .iter_mut()
             .for_each(|action| action.on_remove(agent, world));
@@ -76,7 +76,7 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
 struct CountdownAction {
@@ -115,13 +115,13 @@ impl Action for CountdownAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, _agent: Option<Entity>, world: &mut World, reason: StopReason) {
         if reason == StopReason::Paused {
             world.entity_mut(self.entity).insert(Paused);
         }
     }
 
-    fn on_remove(&mut self, _agent: Entity, world: &mut World) {
+    fn on_remove(&mut self, _agent: Option<Entity>, world: &mut World) {
         world.despawn(self.entity);
     }
 }

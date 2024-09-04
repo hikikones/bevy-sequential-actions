@@ -65,8 +65,8 @@ impl Action for PrintIdAction {
         false
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-        let id = world.get::<Id>(agent).unwrap().0;
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, _reason: StopReason) {
+        let id = world.get::<Id>(agent.unwrap()).unwrap().0;
 
         // Observe that id is printed in descending order
         println!("Agent: {agent:?}, Id: {id}");

@@ -37,7 +37,7 @@ impl Action for DespawnAction {
         false
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
 struct PrintAction(&'static str);
@@ -52,7 +52,7 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
 struct EmptyAction;
@@ -67,13 +67,13 @@ impl Action for EmptyAction {
         true
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 
-    fn on_remove(&mut self, _agent: Entity, _world: &mut World) {
+    fn on_remove(&mut self, _agent: Option<Entity>, _world: &mut World) {
         println!("EmptyAction: on_remove")
     }
 
-    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World, _reason: DropReason) {
+    fn on_drop(self: Box<Self>, _agent: Option<Entity>, _world: &mut World, _reason: DropReason) {
         println!("EmptyAction: on_drop")
     }
 }

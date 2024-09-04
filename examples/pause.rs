@@ -76,13 +76,13 @@ impl Action for CountForeverAction {
         false
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         match reason {
             StopReason::Finished | StopReason::Canceled => {
-                world.entity_mut(agent).remove::<Count>();
+                world.entity_mut(agent.unwrap()).remove::<Count>();
             }
             StopReason::Paused => {
-                world.entity_mut(agent).insert(Paused);
+                world.entity_mut(agent.unwrap()).insert(Paused);
             }
         }
     }

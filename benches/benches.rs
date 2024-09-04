@@ -62,8 +62,8 @@ fn run_many_countdowns(agents: u32) {
             self.is_finished(agent, world)
         }
 
-        fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
-            let countdown = world.entity_mut(agent).take::<Countdown>();
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            let countdown = world.entity_mut(agent.unwrap()).take::<Countdown>();
             if reason == StopReason::Paused {
                 self.current = countdown.unwrap().0.into();
             }

@@ -73,7 +73,7 @@ impl Action for TestCountdownAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, _agent: Option<Entity>, world: &mut World, reason: StopReason) {
         let mut e = world.entity_mut(self.entity.unwrap());
         let countdown = e.insert(Stopped).take::<Countdown>();
 
@@ -91,11 +91,11 @@ impl Action for TestCountdownAction {
         };
     }
 
-    fn on_remove(&mut self, _agent: Entity, world: &mut World) {
+    fn on_remove(&mut self, _agent: Option<Entity>, world: &mut World) {
         world.entity_mut(self.entity.unwrap()).insert(Removed);
     }
 
-    fn on_drop(self: Box<Self>, _agent: Entity, world: &mut World, reason: DropReason) {
+    fn on_drop(self: Box<Self>, _agent: Option<Entity>, world: &mut World, reason: DropReason) {
         let mut e = world.entity_mut(self.entity.unwrap());
         e.insert(Dropped);
 
@@ -507,8 +507,8 @@ fn order() {
             world.entity_mut(agent).insert(M::default());
             false
         }
-        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(agent).remove::<M>();
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, _reason: StopReason) {
+            world.entity_mut(agent.unwrap()).remove::<M>();
         }
     }
 
@@ -642,7 +642,7 @@ fn despawn() {
             false
         }
 
-        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
     }
 
     let mut app = TestApp::new();

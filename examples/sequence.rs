@@ -52,7 +52,7 @@ impl<const N: usize> Action for ActionSequence<N> {
         self.actions[self.index].on_start(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         self.actions[self.index].on_stop(agent, world, reason);
 
         if reason == StopReason::Canceled {
@@ -60,7 +60,7 @@ impl<const N: usize> Action for ActionSequence<N> {
         }
     }
 
-    fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {
+    fn on_drop(mut self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
         self.index += 1;
 
         if self.index >= self.actions.len() || reason != DropReason::Done {
@@ -68,6 +68,7 @@ impl<const N: usize> Action for ActionSequence<N> {
                 .iter_mut()
                 .for_each(|action| action.on_remove(agent, world));
         } else {
+            let Some(agent) = agent else { return };
             world
                 .get_mut::<ActionQueue>(agent)
                 .unwrap()
@@ -88,5 +89,5 @@ impl Action for PrintAction {
         false
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }

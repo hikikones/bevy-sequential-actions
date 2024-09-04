@@ -79,5 +79,5 @@ impl Action for PrintForeverAction {
     fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         false
     }
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
