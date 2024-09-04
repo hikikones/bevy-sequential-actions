@@ -170,11 +170,15 @@ In general, there are two rules when modifying actions for an `agent` inside the
 * The [`execute_actions`](ModifyActionsExt::execute_actions) and [`next_action`](ModifyActionsExt::next_action) methods should not be used.
 */
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, ops::DerefMut};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::{prelude::*, system::EntityCommands};
+use bevy_ecs::{
+    component::{ComponentHooks, StorageType},
+    prelude::*,
+    system::EntityCommands,
+};
 
 mod commands;
 mod macros;
@@ -219,14 +223,50 @@ impl ActionsBundle {
 /// The current action for an `agent`.
 ///
 /// Note that you are not supposed to use this directly.
-#[derive(Default, Component, Deref, DerefMut)]
+#[derive(Default, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
+
+impl Component for CurrentAction {
+    const STORAGE_TYPE: StorageType = StorageType::Table;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.on_remove(|mut world, agent, _component_id| {
+            if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent).unwrap().take()
+            {
+                world.commands().add(move |world: &mut World| {
+                    current_action.on_stop(None, world, StopReason::Canceled);
+                    current_action.on_remove(None, world);
+                    current_action.on_drop(None, world, DropReason::Done);
+                });
+            }
+        });
+    }
+}
 
 /// The action queue for an `agent`.
 ///
 /// Note that you are not supposed to use this directly.
-#[derive(Default, Component, Deref, DerefMut)]
+#[derive(Default, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
+
+impl Component for ActionQueue {
+    const STORAGE_TYPE: StorageType = StorageType::Table;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.on_remove(|mut world, agent, _component_id| {
+            let action_queue = std::mem::take(&mut **world.get_mut::<ActionQueue>(agent).unwrap());
+            if !action_queue.is_empty() {
+                world.commands().add(move |world: &mut World| {
+                    for mut action in action_queue {
+                        action.on_stop(None, world, StopReason::Canceled);
+                        action.on_remove(None, world);
+                        action.on_drop(None, world, DropReason::Done);
+                    }
+                });
+            }
+        });
+    }
+}
 
 /// Configuration for actions to be added.
 #[derive(Debug, Clone, Copy)]
