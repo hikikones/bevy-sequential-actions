@@ -130,12 +130,12 @@ impl SequentialActionsPlugin {
     /// [`Stops`](Action::on_stop) the current [`action`](Action) for `agent` with specified `reason`.
     pub fn stop_current_action(agent: Entity, reason: StopReason, world: &mut World) {
         if let Some(mut action) = world.get_mut::<CurrentAction>(agent).unwrap().take() {
-            action.on_stop(agent, world, reason);
+            action.on_stop(agent.into(), world, reason);
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
-                    action.on_remove(agent, world);
-                    action.on_drop(agent, world, DropReason::Done);
+                    action.on_remove(agent.into(), world);
+                    action.on_drop(agent.into(), world, DropReason::Done);
                 }
                 StopReason::Paused => {
                     world
@@ -156,9 +156,9 @@ impl SequentialActionsPlugin {
 
         if let Some(mut next_action) = action_queue.pop_front() {
             if next_action.on_start(agent, world) {
-                next_action.on_stop(agent, world, StopReason::Finished);
-                next_action.on_remove(agent, world);
-                next_action.on_drop(agent, world, DropReason::Done);
+                next_action.on_stop(agent.into(), world, StopReason::Finished);
+                next_action.on_remove(agent.into(), world);
+                next_action.on_drop(agent.into(), world, DropReason::Done);
                 Self::start_next_action(agent, world);
                 return;
             }
@@ -172,8 +172,8 @@ impl SequentialActionsPlugin {
     /// Skips the next [`action`](Action) in the queue for `agent`.
     pub fn skip_next_action(agent: Entity, world: &mut World) {
         if let Some(mut action) = world.get_mut::<ActionQueue>(agent).unwrap().pop_front() {
-            action.on_remove(agent, world);
-            action.on_drop(agent, world, DropReason::Skipped);
+            action.on_remove(agent.into(), world);
+            action.on_drop(agent.into(), world, DropReason::Skipped);
         }
     }
 
@@ -182,9 +182,9 @@ impl SequentialActionsPlugin {
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     pub fn clear_actions(agent: Entity, world: &mut World) {
         if let Some(mut action) = world.get_mut::<CurrentAction>(agent).unwrap().take() {
-            action.on_stop(agent, world, StopReason::Canceled);
-            action.on_remove(agent, world);
-            action.on_drop(agent, world, DropReason::Cleared);
+            action.on_stop(agent.into(), world, StopReason::Canceled);
+            action.on_remove(agent.into(), world);
+            action.on_drop(agent.into(), world, DropReason::Cleared);
         }
 
         world
@@ -194,8 +194,8 @@ impl SequentialActionsPlugin {
             .collect::<Vec<_>>()
             .into_iter()
             .for_each(|mut action| {
-                action.on_remove(agent, world);
-                action.on_drop(agent, world, DropReason::Cleared);
+                action.on_remove(agent.into(), world);
+                action.on_drop(agent.into(), world, DropReason::Cleared);
             });
     }
 }

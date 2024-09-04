@@ -18,17 +18,17 @@ pub trait Action: Downcast + Send + Sync + 'static {
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool;
 
     /// The method that is called when an action is stopped.
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason);
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason);
 
     /// The method that is called when an action is added to the queue.
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
 
     /// The method that is called when an action is removed from the queue.
-    fn on_remove(&mut self, agent: Entity, world: &mut World) {}
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {}
 
     /// The last method that is called for an action.
     /// Full ownership is given here, hence the name.
-    fn on_drop(self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {}
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {}
 
     /// Returns the type name of an action.
     fn type_name(&self) -> &'static str {
@@ -59,7 +59,7 @@ where
         (self)(agent, world)
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
 impl std::fmt::Debug for BoxedAction {
