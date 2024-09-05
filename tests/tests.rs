@@ -2,7 +2,10 @@ use std::marker::PhantomData;
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::*;
+use bevy_ecs::{
+    prelude::*,
+    query::{QueryData, QueryFilter},
+};
 
 use bevy_sequential_actions::*;
 
@@ -36,6 +39,18 @@ impl TestApp {
 
     fn action_queue(&self, agent: Entity) -> &ActionQueue {
         self.world().get::<ActionQueue>(agent).unwrap()
+    }
+
+    fn query_filtered<D: QueryData, F: QueryFilter>(&mut self) -> QueryState<D, F> {
+        self.world_mut().query_filtered()
+    }
+
+    fn despawn(&mut self, entity: Entity) -> bool {
+        self.world_mut().despawn(entity)
+    }
+
+    fn get_entity(&self, entity: Entity) -> Option<EntityRef<'_>> {
+        self.world().get_entity(entity)
     }
 }
 
@@ -255,7 +270,6 @@ fn next() {
     );
 
     let e = app
-        .world_mut()
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
@@ -286,7 +300,6 @@ fn finish() {
     assert!(app.action_queue(a).is_empty());
 
     let e = app
-        .world_mut()
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
@@ -318,7 +331,6 @@ fn cancel() {
     assert!(app.action_queue(a).is_empty());
 
     let e = app
-        .world_mut()
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
@@ -350,7 +362,6 @@ fn pause() {
     assert!(app.action_queue(a).len() == 1);
 
     let e = app
-        .world_mut()
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
@@ -381,7 +392,6 @@ fn skip() {
     assert!(app.action_queue(a).is_empty());
 
     let e = app
-        .world_mut()
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
@@ -413,29 +423,25 @@ fn clear() {
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
     assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Canceled>>()
+        app.query_filtered::<Entity, With<Canceled>>()
             .iter(app.world())
             .len(),
         1
     );
     assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Removed>>()
+        app.query_filtered::<Entity, With<Removed>>()
             .iter(app.world())
             .len(),
         2
     );
     assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Dropped>>()
+        app.query_filtered::<Entity, With<Dropped>>()
             .iter(app.world())
             .len(),
         2
     );
     assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Cleared>>()
+        app.query_filtered::<Entity, With<Cleared>>()
             .iter(app.world())
             .len(),
         2
@@ -456,7 +462,6 @@ fn lifecycle() {
     );
 
     let e = app
-        .world_mut()
         .query_filtered::<Entity, With<CountdownMarker>>()
         .single(app.world());
 
@@ -630,7 +635,93 @@ fn pause_resume() {
 }
 
 #[test]
-fn despawn() {
+fn despawn_running() {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    app.entity_mut(a).add_actions_with_config(
+        AddConfig {
+            start: true,
+            order: AddOrder::Back,
+        },
+        actions![
+            TestCountdownAction::new(10),
+            TestCountdownAction::new(1),
+            TestCountdownAction::new(1),
+        ],
+    );
+
+    app.update();
+
+    assert!(app.get_entity(a).is_some());
+    assert_eq!(
+        app.query_filtered::<Entity, With<Added>>()
+            .iter(app.world())
+            .len(),
+        3
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Started>>()
+            .iter(app.world())
+            .len(),
+        1
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Canceled>>()
+            .iter(app.world())
+            .len(),
+        0
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Removed>>()
+            .iter(app.world())
+            .len(),
+        0
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Dropped>>()
+            .iter(app.world())
+            .len(),
+        0
+    );
+
+    app.despawn(a);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.query_filtered::<Entity, With<Added>>()
+            .iter(app.world())
+            .len(),
+        3
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Started>>()
+            .iter(app.world())
+            .len(),
+        1
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Canceled>>()
+            .iter(app.world())
+            .len(),
+        3
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Removed>>()
+            .iter(app.world())
+            .len(),
+        3
+    );
+    assert_eq!(
+        app.query_filtered::<Entity, With<Dropped>>()
+            .iter(app.world())
+            .len(),
+        3
+    );
+}
+
+#[test]
+fn despawn_action() {
     struct DespawnAction;
     impl Action for DespawnAction {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
@@ -662,5 +753,5 @@ fn despawn() {
 
     app.update();
 
-    assert!(app.world().get_entity(a).is_none());
+    assert!(app.get_entity(a).is_none());
 }
