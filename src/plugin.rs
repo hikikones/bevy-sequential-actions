@@ -149,22 +149,24 @@ impl SequentialActionsPlugin {
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
     pub fn start_next_action(agent: Entity, world: &mut World) {
-        let Some(mut action_queue) = world.get_mut::<ActionQueue>(agent) else {
-            debug!("No Action Queue Found on Agent {:?}!", agent);
-            return;
-        };
+        let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
 
-        if let Some(mut next_action) = action_queue.pop_front() {
-            if next_action.on_start(agent, world) {
-                next_action.on_stop(agent.into(), world, StopReason::Finished);
-                next_action.on_remove(agent.into(), world);
-                next_action.on_drop(agent.into(), world, DropReason::Done);
-                Self::start_next_action(agent, world);
-                return;
-            }
-
-            if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) {
-                current_action.0 = Some(next_action);
+        if let Some(mut action) = action_queue.pop_front() {
+            if action.on_start(agent, world) {
+                if world.get_entity(agent).is_some() {
+                    action.on_stop(Some(agent), world, StopReason::Finished);
+                    action.on_remove(Some(agent), world);
+                    action.on_drop(Some(agent), world, DropReason::Done);
+                    Self::start_next_action(agent, world);
+                } else {
+                    action.on_stop(None, world, StopReason::Finished);
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Done);
+                }
+            } else {
+                if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) {
+                    current_action.0 = Some(action);
+                }
             }
         }
     }

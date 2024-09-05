@@ -725,12 +725,12 @@ fn despawn_action() {
     struct DespawnAction;
     impl Action for DespawnAction {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
+            true
         }
 
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world.despawn(agent);
-            false
+            true
         }
 
         fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
