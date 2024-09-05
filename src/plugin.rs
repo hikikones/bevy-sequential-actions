@@ -1,5 +1,4 @@
 use bevy_ecs::query::QueryFilter;
-use bevy_log::prelude::debug;
 
 use crate::*;
 
@@ -163,15 +162,12 @@ impl SequentialActionsPlugin {
                 break;
             };
 
-            fn maybe_agent(agent: Entity, world: &World) -> Option<Entity> {
-                world.get_entity(agent).map(|_| agent)
-            }
+            let agent = world.get_entity(agent).map(|_| agent);
+            action.on_stop(agent, world, StopReason::Finished);
+            action.on_remove(agent, world);
+            action.on_drop(agent, world, DropReason::Done);
 
-            action.on_stop(maybe_agent(agent, world), world, StopReason::Finished);
-            action.on_remove(maybe_agent(agent, world), world);
-            action.on_drop(maybe_agent(agent, world), world, DropReason::Done);
-
-            if maybe_agent(agent, world).is_none() {
+            if agent.is_none() {
                 break;
             }
         }
