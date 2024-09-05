@@ -231,12 +231,11 @@ impl Component for CurrentAction {
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_remove(|mut world, agent, _component_id| {
-            if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent).unwrap().take()
-            {
+            if let Some(mut action) = world.get_mut::<CurrentAction>(agent).unwrap().take() {
                 world.commands().add(move |world: &mut World| {
-                    current_action.on_stop(None, world, StopReason::Canceled);
-                    current_action.on_remove(None, world);
-                    current_action.on_drop(None, world, DropReason::Done);
+                    action.on_stop(None, world, StopReason::Canceled);
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Done);
                 });
             }
         });
@@ -254,10 +253,10 @@ impl Component for ActionQueue {
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks.on_remove(|mut world, agent, _component_id| {
-            let action_queue = std::mem::take(&mut **world.get_mut::<ActionQueue>(agent).unwrap());
-            if !action_queue.is_empty() {
+            let queue = std::mem::take(&mut **world.get_mut::<ActionQueue>(agent).unwrap());
+            if !queue.is_empty() {
                 world.commands().add(move |world: &mut World| {
-                    for mut action in action_queue {
+                    for mut action in queue {
                         action.on_stop(None, world, StopReason::Canceled);
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Done);

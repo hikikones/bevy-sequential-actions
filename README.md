@@ -157,7 +157,6 @@ Each example can be run with `cargo run --example <example>`.
 | `sequence` | Shows how to create an action with a sequence of actions. |
 | `schedule` | Shows how to use the plugin with two different schedules. |
 | `custom` | Shows how to use a custom system for advancing the action queue. |
-| `despawn` | Shows how to properly despawn an `agent`. |
 
 ## 📌 Compatibility
 
