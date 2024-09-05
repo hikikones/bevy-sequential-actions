@@ -2,9 +2,13 @@
 
 ## Version 0.12.0-dev
 
+- [Add `on_remove` hook for `CurrentAction` and `ActionQueue`][100]
+    - `on_stop`, `on_remove` and `on_drop` in the `Action` trait
+    now take `Option<Entity>` for `agent` in order to respond to despawns
 - [Add `ModifyActionsExt` trait for `EntityCommands` and `EntityWorldMut`][99]
     - Deprecates `ModifyActions` trait
 
+[100]: https://github.com/hikikones/bevy-sequential-actions/pull/100
 [99]: https://github.com/hikikones/bevy-sequential-actions/pull/99
 
 ## Version 0.11.0
