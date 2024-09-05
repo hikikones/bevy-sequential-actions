@@ -149,24 +149,30 @@ impl SequentialActionsPlugin {
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
     pub fn start_next_action(agent: Entity, world: &mut World) {
-        let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
+        loop {
+            let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
 
-        if let Some(mut action) = action_queue.pop_front() {
-            if action.on_start(agent, world) {
-                if world.get_entity(agent).is_some() {
-                    action.on_stop(Some(agent), world, StopReason::Finished);
-                    action.on_remove(Some(agent), world);
-                    action.on_drop(Some(agent), world, DropReason::Done);
-                    Self::start_next_action(agent, world);
-                } else {
-                    action.on_stop(None, world, StopReason::Finished);
-                    action.on_remove(None, world);
-                    action.on_drop(None, world, DropReason::Done);
-                }
-            } else {
+            let Some(mut action) = action_queue.pop_front() else {
+                break;
+            };
+
+            if !action.on_start(agent, world) {
                 if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) {
                     current_action.0 = Some(action);
                 }
+                break;
+            };
+
+            fn maybe_agent(agent: Entity, world: &World) -> Option<Entity> {
+                world.get_entity(agent).map(|_| agent)
+            }
+
+            action.on_stop(maybe_agent(agent, world), world, StopReason::Finished);
+            action.on_remove(maybe_agent(agent, world), world);
+            action.on_drop(maybe_agent(agent, world), world, DropReason::Done);
+
+            if maybe_agent(agent, world).is_none() {
+                break;
             }
         }
     }
