@@ -75,7 +75,10 @@ impl Action for WaitAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        // Do nothing if agent has been despawned.
+        let Some(agent) = agent else { return };
+
         // Take the wait timer component from the agent.
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 

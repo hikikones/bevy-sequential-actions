@@ -87,7 +87,10 @@ impl Action for WaitAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        // Do nothing if agent has been despawned.
+        let Some(agent) = agent else { return };
+
         // Take the wait timer component from the agent.
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
@@ -122,7 +125,7 @@ The extension trait is implemented for both [`EntityCommands`] and [`EntityWorld
 # impl Action for EmptyAction {
 #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
 #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
-#   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
+#   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
 # }
 #
 fn setup(mut commands: Commands) {
@@ -170,7 +173,7 @@ In general, there are two rules when modifying actions for an `agent` inside the
 * The [`execute_actions`](ModifyActionsExt::execute_actions) and [`next_action`](ModifyActionsExt::next_action) methods should not be used.
 */
 
-use std::{collections::VecDeque, ops::DerefMut};
+use std::collections::VecDeque;
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
@@ -222,7 +225,8 @@ impl ActionsBundle {
 
 /// The current action for an `agent`.
 ///
-/// Note that you are not supposed to use this directly.
+/// The [`on_remove`](ComponentHooks::on_remove) hook is implemented for this component so that
+/// you can despawn an agent without worrying about cleaning up the current action.
 #[derive(Default, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
 
@@ -244,7 +248,8 @@ impl Component for CurrentAction {
 
 /// The action queue for an `agent`.
 ///
-/// Note that you are not supposed to use this directly.
+/// The [`on_remove`](ComponentHooks::on_remove) hook is implemented for this component so that
+/// you can despawn an agent without worrying about cleaning up the actions in the queue.
 #[derive(Default, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
