@@ -264,7 +264,7 @@ impl Component for ActionQueue {
             if !queue.is_empty() {
                 world.commands().add(move |world: &mut World| {
                     for mut action in queue {
-                        action.on_stop(None, world, StopReason::Canceled);
+                        action.on_stop(None, world, StopReason::Canceled); // FIXME. no stop here. Make test for this.
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Done);
                     }
@@ -323,8 +323,10 @@ pub enum DropReason {
     /// The action is considered done as it was either finished or canceled
     /// without being skipped or cleared from the action queue.
     Done,
-    /// The action was skipped.
+    /// The action was skipped. This happens either deliberately,
+    /// or because an action was added to an `agent` that does not exist or is missing the [`ActionsBundle`].
     Skipped,
-    /// The action queue was cleared.
+    /// The action queue was cleared. This happens either deliberately,
+    /// or because an `agent` was despawned.
     Cleared,
 }

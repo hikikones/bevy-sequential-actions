@@ -71,15 +71,22 @@ impl SequentialActionsPlugin {
         world: &mut World,
     ) {
         let mut action = action.into();
-        debug!("Adding action {action:?} to agent {agent}.");
         action.on_add(agent, world);
 
-        let Some(mut queue) = world.get_mut::<ActionQueue>(agent) else {
-            error!("todo");
+        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+            error!("Cannot enqueue action {action:?} to non-existent agent {agent}. Action is therefore dropped immediately.");
+            action.on_remove(None, world);
+            action.on_drop(None, world, DropReason::Skipped);
             return;
         };
 
-        let mut queue = world.get_mut::<ActionQueue>(agent).unwrap();
+        let Some(mut queue) = agent_ref.get_mut::<ActionQueue>() else {
+            error!("Could not enqueue action {action:?} to agent {agent} due to missing ActionQueue component. Action is therefore dropped immediately.");
+            action.on_remove(agent.into(), world);
+            action.on_drop(agent.into(), world, DropReason::Skipped);
+            return;
+        };
+
         match config.order {
             AddOrder::Back => queue.push_back(action),
             AddOrder::Front => queue.push_front(action),
