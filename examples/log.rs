@@ -18,8 +18,8 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands
         // Spawn entity with the bundle
-        .spawn(ActionsBundle::new())
-        // .spawn_empty()
+        // .spawn(ActionsBundle::new())
+        .spawn_empty()
         // Add a single action
         .add_action(DemoAction)
         // Add multiple actions with a specified config

@@ -721,9 +721,54 @@ fn despawn_running() {
 }
 
 #[test]
-fn despawn_action() {
-    struct DespawnAction;
-    impl Action for DespawnAction {
+fn despawn_active_action() {
+    struct DespawnActiveAction;
+    impl Action for DespawnActiveAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            assert!(world.get_entity(agent).is_some());
+            world.despawn(agent);
+            false
+        }
+
+        fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert!(agent.is_none());
+            assert_eq!(reason, StopReason::Finished);
+        }
+
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
+            assert!(agent.is_none());
+            assert_eq!(reason, DropReason::Done);
+        }
+    }
+
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    app.entity_mut(a).add_actions_with_config(
+        AddConfig {
+            start: true,
+            order: AddOrder::Back,
+        },
+        actions![
+            DespawnActiveAction,
+            TestCountdownAction::new(1),
+            TestCountdownAction::new(1),
+        ],
+    );
+
+    app.update();
+
+    assert!(app.get_entity(a).is_none());
+}
+
+#[test]
+fn despawn_queue_action() {
+    struct DespawnQueueAction;
+    impl Action for DespawnQueueAction {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
             true
         }
@@ -755,7 +800,7 @@ fn despawn_action() {
         },
         actions![
             TestCountdownAction::new(1),
-            DespawnAction,
+            DespawnQueueAction,
             TestCountdownAction::new(0),
         ],
     );
