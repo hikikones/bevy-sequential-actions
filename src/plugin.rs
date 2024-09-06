@@ -1,6 +1,4 @@
-use bevy_ecs::query::QueryFilter;
-
-use crate::*;
+use super::*;
 
 /// The [`Plugin`] for this library that you can add to your [`App`].
 ///
@@ -73,7 +71,13 @@ impl SequentialActionsPlugin {
         world: &mut World,
     ) {
         let mut action = action.into();
+        debug!("Adding action {action:?} to agent {agent}.");
         action.on_add(agent, world);
+
+        let Some(mut queue) = world.get_mut::<ActionQueue>(agent) else {
+            error!("todo");
+            return;
+        };
 
         let mut queue = world.get_mut::<ActionQueue>(agent).unwrap();
         match config.order {

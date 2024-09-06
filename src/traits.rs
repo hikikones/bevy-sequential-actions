@@ -1,10 +1,8 @@
-use downcast_rs::{impl_downcast, Downcast};
-
-use crate::*;
+use super::*;
 
 /// The trait that all actions must implement.
 #[allow(unused_variables)]
-pub trait Action: Downcast + Send + Sync + 'static {
+pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
     /// Determines if an action is finished or not.
     /// Advances the action queue when returning `true`.
     ///
@@ -36,7 +34,7 @@ pub trait Action: Downcast + Send + Sync + 'static {
     }
 }
 
-impl_downcast!(Action);
+downcast_rs::impl_downcast!(Action);
 
 impl<T> From<T> for BoxedAction
 where

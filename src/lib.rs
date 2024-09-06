@@ -180,8 +180,10 @@ use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     component::{ComponentHooks, StorageType},
     prelude::*,
+    query::QueryFilter,
     system::EntityCommands,
 };
+use bevy_log::{debug, error, warn};
 
 mod commands;
 mod macros;

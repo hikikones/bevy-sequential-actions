@@ -1,4 +1,4 @@
-use crate::*;
+use super::*;
 
 impl ModifyActionsExt for EntityWorldMut<'_> {
     fn add_action_with_config(&mut self, config: AddConfig, action: impl Action) -> &mut Self {
