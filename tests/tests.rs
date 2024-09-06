@@ -667,7 +667,7 @@ fn despawn_running() {
         1
     );
     assert_eq!(
-        app.query_filtered::<Entity, With<Canceled>>()
+        app.query_filtered::<Entity, With<Stopped>>()
             .iter(app.world())
             .len(),
         0
@@ -701,10 +701,10 @@ fn despawn_running() {
         1
     );
     assert_eq!(
-        app.query_filtered::<Entity, With<Canceled>>()
+        app.query_filtered::<Entity, With<Stopped>>()
             .iter(app.world())
             .len(),
-        3
+        1
     );
     assert_eq!(
         app.query_filtered::<Entity, With<Removed>>()
@@ -729,11 +729,20 @@ fn despawn_action() {
         }
 
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            assert!(world.get_entity(agent).is_some());
             world.despawn(agent);
             true
         }
 
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
+        fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert!(agent.is_none());
+            assert_eq!(reason, StopReason::Finished);
+        }
+
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
+            assert!(agent.is_none());
+            assert_eq!(reason, DropReason::Done);
+        }
     }
 
     let mut app = TestApp::new();
@@ -754,4 +763,170 @@ fn despawn_action() {
     app.update();
 
     assert!(app.get_entity(a).is_none());
+}
+
+#[test]
+fn reasons() {
+    struct FinishedAction;
+    impl Action for FinishedAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            true
+        }
+
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert_eq!(reason, StopReason::Finished);
+        }
+
+        fn on_drop(
+            self: Box<Self>,
+            _agent: Option<Entity>,
+            _world: &mut World,
+            reason: DropReason,
+        ) {
+            assert_eq!(reason, DropReason::Done);
+        }
+    }
+
+    struct CanceledAction;
+    impl Action for CanceledAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            false
+        }
+
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert_eq!(reason, StopReason::Canceled);
+        }
+
+        fn on_drop(
+            self: Box<Self>,
+            _agent: Option<Entity>,
+            _world: &mut World,
+            reason: DropReason,
+        ) {
+            assert_eq!(reason, DropReason::Done);
+        }
+    }
+
+    struct PausedAction;
+    impl Action for PausedAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            false
+        }
+
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert_eq!(reason, StopReason::Paused);
+        }
+
+        fn on_drop(
+            self: Box<Self>,
+            _agent: Option<Entity>,
+            _world: &mut World,
+            reason: DropReason,
+        ) {
+            assert_eq!(reason, DropReason::Skipped);
+        }
+    }
+
+    struct ClearedAction;
+    impl Action for ClearedAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            false
+        }
+
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert_eq!(reason, StopReason::Canceled);
+        }
+
+        fn on_drop(
+            self: Box<Self>,
+            _agent: Option<Entity>,
+            _world: &mut World,
+            reason: DropReason,
+        ) {
+            assert_eq!(reason, DropReason::Cleared);
+        }
+    }
+
+    struct ActiveAction;
+    impl Action for ActiveAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            false
+        }
+
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert_eq!(reason, StopReason::Canceled);
+        }
+
+        fn on_drop(
+            self: Box<Self>,
+            _agent: Option<Entity>,
+            _world: &mut World,
+            reason: DropReason,
+        ) {
+            assert_eq!(reason, DropReason::Done);
+        }
+    }
+
+    struct InQueueAction;
+    impl Action for InQueueAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            false
+        }
+
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            false
+        }
+
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {
+            panic!("this should not be called")
+        }
+
+        fn on_drop(
+            self: Box<Self>,
+            _agent: Option<Entity>,
+            _world: &mut World,
+            reason: DropReason,
+        ) {
+            assert_eq!(reason, DropReason::Cleared);
+        }
+    }
+
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    app.entity_mut(a)
+        .add_actions(actions![
+            FinishedAction,
+            CanceledAction,
+            PausedAction,
+            ClearedAction
+        ])
+        .cancel_action()
+        .execute_actions()
+        .pause_action()
+        .skip_next_action()
+        .clear_actions()
+        .add_actions(actions![ActiveAction, InQueueAction, InQueueAction]);
+
+    app.despawn(a);
 }

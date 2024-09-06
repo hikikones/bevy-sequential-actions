@@ -183,7 +183,7 @@ use bevy_ecs::{
     query::QueryFilter,
     system::EntityCommands,
 };
-use bevy_log::{debug, error, warn};
+use bevy_log::{error, warn};
 
 mod commands;
 mod macros;
@@ -264,9 +264,8 @@ impl Component for ActionQueue {
             if !queue.is_empty() {
                 world.commands().add(move |world: &mut World| {
                     for mut action in queue {
-                        action.on_stop(None, world, StopReason::Canceled); // FIXME. no stop here. Make test for this.
                         action.on_remove(None, world);
-                        action.on_drop(None, world, DropReason::Done);
+                        action.on_drop(None, world, DropReason::Cleared);
                     }
                 });
             }
