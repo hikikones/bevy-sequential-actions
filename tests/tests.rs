@@ -720,50 +720,50 @@ fn despawn_running() {
     );
 }
 
-#[test]
-fn despawn_active_action() {
-    struct DespawnActiveAction;
-    impl Action for DespawnActiveAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
+// #[test]
+// fn despawn_active_action() {
+//     struct DespawnActiveAction;
+//     impl Action for DespawnActiveAction {
+//         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+//             false
+//         }
 
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            assert!(world.get_entity(agent).is_some());
-            world.despawn(agent);
-            false
-        }
+//         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+//             assert!(world.get_entity(agent).is_some());
+//             world.despawn(agent);
+//             false
+//         }
 
-        fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert!(agent.is_none());
-            assert_eq!(reason, StopReason::Finished);
-        }
+//         fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+//             assert!(agent.is_none());
+//             assert_eq!(reason, StopReason::Finished);
+//         }
 
-        fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
-            assert!(agent.is_none());
-            assert_eq!(reason, DropReason::Done);
-        }
-    }
+//         fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
+//             assert!(agent.is_none());
+//             assert_eq!(reason, DropReason::Done);
+//         }
+//     }
 
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+//     let mut app = TestApp::new();
+//     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![
-            DespawnActiveAction,
-            TestCountdownAction::new(1),
-            TestCountdownAction::new(1),
-        ],
-    );
+//     app.entity_mut(a).add_actions_with_config(
+//         AddConfig {
+//             start: true,
+//             order: AddOrder::Back,
+//         },
+//         actions![
+//             DespawnActiveAction,
+//             TestCountdownAction::new(1),
+//             TestCountdownAction::new(1),
+//         ],
+//     );
 
-    app.update();
+//     app.update();
 
-    assert!(app.get_entity(a).is_none());
-}
+//     assert!(app.get_entity(a).is_none());
+// }
 
 #[test]
 fn despawn_queue_action() {
@@ -974,4 +974,48 @@ fn reasons() {
         .add_actions(actions![ActiveAction, InQueueAction, InQueueAction]);
 
     app.despawn(a);
+}
+
+#[test]
+fn despawn_true_false() {
+    struct DespawnAction<const B: bool>;
+
+    impl<const B: bool> Action for DespawnAction<B> {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            assert!(world.get_entity(agent).is_some());
+            world.despawn(agent);
+            B
+        }
+
+        fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
+            assert!(agent.is_none());
+            match B {
+                true => assert_eq!(reason, StopReason::Finished),
+                false => assert_eq!(reason, StopReason::Canceled),
+            }
+        }
+
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
+            assert!(agent.is_none());
+            assert_eq!(reason, DropReason::Done);
+        }
+    }
+
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+    let b = app.spawn_agent();
+
+    // app.entity_mut(a).add_action(DespawnAction::<true>);
+    // app.entity_mut(b).add_action(DespawnAction::<false>);
+    app.world_mut().actions(a).add(DespawnAction::<true>);
+    app.world_mut().actions(b).add(DespawnAction::<false>);
+
+    app.update();
+
+    assert!(app.get_entity(a).is_none());
+    assert!(app.get_entity(b).is_none());
 }

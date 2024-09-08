@@ -18,10 +18,11 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands
         // Spawn entity with the bundle
-        // .spawn(ActionsBundle::new())
-        .spawn_empty()
+        .spawn(ActionsBundle::new())
+        .add_action(DespawnAction)
+        // .spawn_empty()
         // Add a single action
-        .add_action(DemoAction)
+        // .add_action(DemoAction)
         // Add multiple actions with a specified config
         // .add_actions_with_config(
         //     AddConfig {
@@ -36,11 +37,31 @@ fn setup(mut commands: Commands) {
         //     ],
         // )
         // Add an anonymous action with a closure
-        .add_action(|_agent, world: &mut World| -> bool {
+        .add_action(|agent, world: &mut World| -> bool {
             // on_start
-            world.send_event(AppExit::Success);
-            false
+            // world.send_event(AppExit::Success);
+            // world.despawn(agent);
+            // println!("despawn");
+            true
         });
+}
+
+struct DespawnAction;
+
+impl Action for DespawnAction {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        true
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        println!("despawn start");
+        world.despawn(agent);
+        true
+    }
+
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        println!("despawn stop {reason:?}");
+    }
 }
 
 struct DemoAction;

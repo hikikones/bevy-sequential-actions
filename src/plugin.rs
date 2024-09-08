@@ -256,14 +256,18 @@ impl SequentialActionsPlugin {
             };
 
             if !action.on_start(agent, world) {
-                // No logging needed here. If despawning occurs, this is the place it should happen.
-                if let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) {
-                    current_action.0 = Some(action);
+                match world.get_mut::<CurrentAction>(agent) {
+                    Some(mut current_action) => {
+                        current_action.0 = Some(action)
+                    },
+                    None => {
+                        action.on_stop(None, world, StopReason::Canceled);
+                        action.on_remove(None, world);
+                        action.on_drop(None, world, DropReason::Done);
+                    },
                 }
                 break;
             };
-
-            // TODO: check if called twice due to remove hook
 
             let agent = world.get_entity(agent).map(|_| agent);
             action.on_stop(agent, world, StopReason::Finished);
