@@ -30,7 +30,7 @@ pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
 
     /// Returns the type name of an action.
     fn type_name(&self) -> &'static str {
-        type_name::<Self>()
+        std::any::type_name::<Self>()
     }
 }
 

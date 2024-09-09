@@ -88,7 +88,7 @@ impl SequentialActionsPlugin {
             warn!(
                 "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
                 Action is therefore dropped immediately.",
-                type_name::<ActionQueue>()
+                std::any::type_name::<ActionQueue>()
             );
             action.on_remove(agent.into(), world);
             action.on_drop(agent.into(), world, DropReason::Skipped);
@@ -104,7 +104,7 @@ impl SequentialActionsPlugin {
             let Some(current_action) = agent_ref.get::<CurrentAction>() else {
                 warn!(
                     "Could not start next action for agent {agent} due to missing component {}.",
-                    type_name::<CurrentAction>()
+                    std::any::type_name::<CurrentAction>()
                 );
                 return;
             };
@@ -137,7 +137,7 @@ impl SequentialActionsPlugin {
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
             warn!(
                 "Cannot add actions {actions:?} to agent {agent} due to missing component {}.",
-                type_name::<ActionQueue>()
+                std::any::type_name::<ActionQueue>()
             );
             return;
         };
@@ -162,7 +162,7 @@ impl SequentialActionsPlugin {
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                         warn!(
                             "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-                            Action is therefore dropped immediately.", type_name::<ActionQueue>()
+                            Action is therefore dropped immediately.", std::any::type_name::<ActionQueue>()
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
@@ -189,7 +189,7 @@ impl SequentialActionsPlugin {
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                         warn!(
                             "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-                            Action is therefore dropped immediately.", type_name::<ActionQueue>()
+                            Action is therefore dropped immediately.", std::any::type_name::<ActionQueue>()
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
@@ -205,7 +205,7 @@ impl SequentialActionsPlugin {
             let Some(current_action) = world.get::<CurrentAction>(agent) else {
                 warn!(
                     "Could not start next action for agent {agent} due to missing component {}.",
-                    type_name::<CurrentAction>()
+                    std::any::type_name::<CurrentAction>()
                 );
                 return;
             };
@@ -227,7 +227,7 @@ impl SequentialActionsPlugin {
         let Some(current_action) = agent_ref.get::<CurrentAction>() else {
             warn!(
                 "Cannot execute actions for agent {agent} due to missing component {}.",
-                type_name::<CurrentAction>()
+                std::any::type_name::<CurrentAction>()
             );
             return;
         };
@@ -244,7 +244,7 @@ impl SequentialActionsPlugin {
             warn!(
                 "Cannot stop current action for agent {agent} with reason {reason:?} \
                 due to missing component {}.",
-                type_name::<CurrentAction>()
+                std::any::type_name::<CurrentAction>()
             );
             return;
         };
@@ -272,7 +272,7 @@ impl SequentialActionsPlugin {
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                         warn!(
                             "Cannot enqueue paused action {action:?} to agent {agent} due to missing component {}. \
-                            Action is therefore dropped immediately.", type_name::<ActionQueue>()
+                            Action is therefore dropped immediately.", std::any::type_name::<ActionQueue>()
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
@@ -296,7 +296,7 @@ impl SequentialActionsPlugin {
             let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                 warn!(
                     "Cannot start next action for agent {agent} due to missing component {}.",
-                    type_name::<ActionQueue>()
+                    std::any::type_name::<ActionQueue>()
                 );
                 break;
             };
@@ -340,7 +340,7 @@ impl SequentialActionsPlugin {
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
             warn!(
                 "Cannot skip next action for agent {agent} due to missing component {}.",
-                type_name::<ActionQueue>()
+                std::any::type_name::<ActionQueue>()
             );
             return;
         };
@@ -364,7 +364,7 @@ impl SequentialActionsPlugin {
         let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
             warn!(
                 "Cannot clear current action for agent {agent} due to missing component {}.",
-                type_name::<CurrentAction>()
+                std::any::type_name::<CurrentAction>()
             );
             return;
         };
@@ -384,7 +384,7 @@ impl SequentialActionsPlugin {
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
             warn!(
                 "Cannot clear action queue for agent {agent} due to missing component {}.",
-                type_name::<ActionQueue>()
+                std::any::type_name::<ActionQueue>()
             );
             return;
         };

@@ -173,7 +173,7 @@ In general, there are two rules when modifying actions for an `agent` inside the
 * The [`execute_actions`](ModifyActionsExt::execute_actions) and [`next_action`](ModifyActionsExt::next_action) methods should not be used.
 */
 
-use std::{any::type_name, collections::VecDeque, fmt::Debug};
+use std::{collections::VecDeque, fmt::Debug};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
