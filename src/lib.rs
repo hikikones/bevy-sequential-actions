@@ -183,7 +183,7 @@ use bevy_ecs::{
     query::QueryFilter,
     system::EntityCommands,
 };
-use bevy_log::{debug, error, warn};
+use bevy_log::{debug, warn};
 
 mod commands;
 mod macros;
