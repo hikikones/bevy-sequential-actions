@@ -75,16 +75,21 @@ impl SequentialActionsPlugin {
         action.on_add(agent, world);
 
         let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-            error!("Cannot enqueue action {action:?} to non-existent agent {agent}. \
-            Action is therefore dropped immediately.");
+            error!(
+                "Cannot enqueue action {action:?} to non-existent agent {agent}. \
+                Action is therefore dropped immediately."
+            );
             action.on_remove(None, world);
             action.on_drop(None, world, DropReason::Skipped);
             return;
         };
 
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            error!("Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-            Action is therefore dropped immediately.", type_name::<ActionQueue>());
+            error!(
+                "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
+                Action is therefore dropped immediately.",
+                type_name::<ActionQueue>()
+            );
             action.on_remove(agent.into(), world);
             action.on_drop(agent.into(), world, DropReason::Skipped);
             return;
@@ -97,7 +102,10 @@ impl SequentialActionsPlugin {
 
         if config.start {
             let Some(current_action) = agent_ref.get::<CurrentAction>() else {
-                error!("Could not start next action for agent {agent} due to missing component {}.", type_name::<CurrentAction>());
+                error!(
+                    "Could not start next action for agent {agent} due to missing component {}.",
+                    type_name::<CurrentAction>()
+                );
                 return;
             };
 
@@ -116,7 +124,7 @@ impl SequentialActionsPlugin {
         let actions = actions.into_iter();
         debug!("Adding actions {actions:?} for agent {agent} with {config:?}.");
         let len = actions.len();
-        
+
         if len == 0 {
             return;
         }
@@ -127,7 +135,10 @@ impl SequentialActionsPlugin {
         };
 
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            error!("Cannot add actions {actions:?} to agent {agent} due to missing component {}.", type_name::<ActionQueue>());
+            error!(
+                "Cannot add actions {actions:?} to agent {agent} due to missing component {}.",
+                type_name::<ActionQueue>()
+            );
             return;
         };
 
@@ -135,56 +146,67 @@ impl SequentialActionsPlugin {
 
         match config.order {
             AddOrder::Back => {
-                actions.for_each(|mut action| {
+                for mut action in actions {
                     action.on_add(agent, world);
 
                     let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-                        error!("Cannot enqueue action {action:?} to non-existent agent {agent}. \
-                        Action is therefore dropped immediately.");
+                        error!(
+                            "Cannot enqueue action {action:?} to non-existent agent {agent}. \
+                            Action is therefore dropped immediately."
+                        );
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Skipped);
                         return;
                     };
-            
+
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-                        error!("Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-                        Action is therefore dropped immediately.", type_name::<ActionQueue>());
+                        error!(
+                            "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
+                            Action is therefore dropped immediately.", type_name::<ActionQueue>()
+                        );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
                         return;
                     };
 
                     action_queue.push_back(action);
-                });
+                }
             }
             AddOrder::Front => {
-                actions.rev().for_each(|mut action| {
+                for mut action in actions.rev() {
                     action.on_add(agent, world);
 
                     let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-                        error!("Cannot enqueue action {action:?} to non-existent agent {agent}. \
-                        Action is therefore dropped immediately.");
+                        error!(
+                            "Cannot enqueue action {action:?} to non-existent agent {agent}. \
+                            Action is therefore dropped immediately."
+                        );
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Skipped);
                         return;
                     };
-            
+
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-                        error!("Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-                        Action is therefore dropped immediately.", type_name::<ActionQueue>());
+                        error!(
+                            "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
+                            Action is therefore dropped immediately.", type_name::<ActionQueue>()
+                        );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
                         return;
                     };
 
                     action_queue.push_front(action);
-                });
+                }
             }
         }
 
         if config.start {
             let Some(current_action) = world.get::<CurrentAction>(agent) else {
-                error!("Could not start next action for agent {agent} due to missing component {}.", type_name::<CurrentAction>());
+                error!(
+                    "Could not start next action for agent {agent} due to missing component {}.",
+                    type_name::<CurrentAction>()
+                );
                 return;
             };
 
@@ -201,12 +223,15 @@ impl SequentialActionsPlugin {
             error!("Cannot execute actions for non-existent agent {agent}.");
             return;
         };
-        
+
         let Some(current_action) = agent_ref.get::<CurrentAction>() else {
-            error!("Cannot execute actions for agent {agent} due to missing component {}.", type_name::<CurrentAction>());
+            error!(
+                "Cannot execute actions for agent {agent} due to missing component {}.",
+                type_name::<CurrentAction>()
+            );
             return;
         };
-        
+
         if current_action.is_none() {
             debug!("Executing actions for agent {agent}.");
             Self::start_next_action(agent, world);
@@ -216,7 +241,11 @@ impl SequentialActionsPlugin {
     /// [`Stops`](Action::on_stop) the current [`action`](Action) for `agent` with specified `reason`.
     pub fn stop_current_action(agent: Entity, reason: StopReason, world: &mut World) {
         let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) else {
-            error!("Cannot stop current action for agent {agent} with reason {reason:?} due to missing component {}.", type_name::<CurrentAction>());
+            error!(
+                "Cannot stop current action for agent {agent} with reason {reason:?} \
+                due to missing component {}.",
+                type_name::<CurrentAction>()
+            );
             return;
         };
 
@@ -231,23 +260,26 @@ impl SequentialActionsPlugin {
                 }
                 StopReason::Paused => {
                     let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-                        error!("Cannot enqueue paused action {action:?} to non-existent agent {agent}. \
-                        Action is therefore dropped immediately.");
+                        error!(
+                            "Cannot enqueue paused action {action:?} to non-existent agent {agent}. \
+                            Action is therefore dropped immediately."
+                        );
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Skipped);
                         return;
                     };
 
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-                        error!("Cannot enqueue paused action {action:?} to agent {agent} due to missing component {}. \
-                        Action is therefore dropped immediately.", type_name::<ActionQueue>());
+                        error!(
+                            "Cannot enqueue paused action {action:?} to agent {agent} due to missing component {}. \
+                            Action is therefore dropped immediately.", type_name::<ActionQueue>()
+                        );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
                         return;
                     };
 
-                    action_queue
-                    .push_front(action);
+                    action_queue.push_front(action);
                 }
             }
         }
@@ -262,7 +294,10 @@ impl SequentialActionsPlugin {
             };
 
             let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-                error!("Cannot start next action for agent {agent} due to missing component {}.", type_name::<ActionQueue>());
+                error!(
+                    "Cannot start next action for agent {agent} due to missing component {}.",
+                    type_name::<ActionQueue>()
+                );
                 break;
             };
 
@@ -274,14 +309,12 @@ impl SequentialActionsPlugin {
 
             if !action.on_start(agent, world) {
                 match world.get_mut::<CurrentAction>(agent) {
-                    Some(mut current_action) => {
-                        current_action.0 = Some(action)
-                    },
+                    Some(mut current_action) => current_action.0 = Some(action),
                     None => {
                         action.on_stop(None, world, StopReason::Canceled);
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Done);
-                    },
+                    }
                 }
                 break;
             };
@@ -305,7 +338,10 @@ impl SequentialActionsPlugin {
         };
 
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            error!("Cannot skip next action for agent {agent} due to missing component {}.", type_name::<ActionQueue>());
+            error!(
+                "Cannot skip next action for agent {agent} due to missing component {}.",
+                type_name::<ActionQueue>()
+            );
             return;
         };
 
@@ -326,7 +362,10 @@ impl SequentialActionsPlugin {
         };
 
         let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
-            error!("Cannot clear current action for agent {agent} due to missing component {}.", type_name::<CurrentAction>());
+            error!(
+                "Cannot clear current action for agent {agent} due to missing component {}.",
+                type_name::<CurrentAction>()
+            );
             return;
         };
 
@@ -343,7 +382,10 @@ impl SequentialActionsPlugin {
         };
 
         let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            error!("Cannot clear action queue for agent {agent} due to missing component {}.", type_name::<ActionQueue>());
+            error!(
+                "Cannot clear action queue for agent {agent} due to missing component {}.",
+                type_name::<ActionQueue>()
+            );
             return;
         };
 
