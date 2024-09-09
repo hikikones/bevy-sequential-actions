@@ -75,7 +75,7 @@ pub trait ModifyActionsExt {
     fn add_actions_with_config<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator;
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug;
 
     /// Adds a single [`action`](Action) to the queue with a default [`config`](AddConfig).
     fn add_action(&mut self, action: impl Action) -> &mut Self {
@@ -86,7 +86,7 @@ pub trait ModifyActionsExt {
     fn add_actions<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         Self::add_actions_with_config(self, AddConfig::default(), actions)
     }
@@ -160,7 +160,7 @@ pub trait ModifyActions {
     fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator;
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no current action.

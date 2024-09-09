@@ -14,7 +14,7 @@ impl ModifyActionsExt for EntityWorldMut<'_> {
     fn add_actions_with_config<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         let agent = self.id();
 
@@ -134,7 +134,7 @@ impl ModifyActions for AgentActions<'_> {
     fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         SequentialActionsPlugin::add_actions(self.agent, self.config, actions, self.world);
         self

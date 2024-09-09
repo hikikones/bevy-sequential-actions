@@ -96,7 +96,7 @@ impl SequentialActionsPlugin {
         }
 
         if config.start {
-            let Some(current_action) = world.get::<CurrentAction>(agent) else {
+            let Some(current_action) = agent_ref.get::<CurrentAction>() else {
                 error!("Could not start next action for agent {agent} due to missing component {}.", type_name::<CurrentAction>());
                 return;
             };
@@ -111,14 +111,31 @@ impl SequentialActionsPlugin {
     pub fn add_actions<I>(agent: Entity, config: AddConfig, actions: I, world: &mut World)
     where
         I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
-        debug!("Adding a collection of actions for agent {agent} with {config:?}.");
+        let actions = actions.into_iter();
+        debug!("Adding actions {actions:?} for agent {agent} with {config:?}.");
+        let len = actions.len();
+        
+        if len == 0 {
+            return;
+        }
+
+        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+            error!("Cannot add actions {actions:?} to non-existent agent {agent}.");
+            return;
+        };
+
+        let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
+            error!("Cannot add actions {actions:?} to agent {agent} due to missing component {}.", type_name::<ActionQueue>());
+            return;
+        };
+
+        action_queue.reserve(len);
 
         match config.order {
             AddOrder::Back => {
-                actions.into_iter().for_each(|mut action| {
-                    debug!("Adding action {action:?}.");
+                actions.for_each(|mut action| {
                     action.on_add(agent, world);
 
                     let Some(mut agent_ref) = world.get_entity_mut(agent) else {
@@ -141,8 +158,7 @@ impl SequentialActionsPlugin {
                 });
             }
             AddOrder::Front => {
-                actions.into_iter().rev().for_each(|mut action| {
-                    debug!("Adding action {action:?}.");
+                actions.rev().for_each(|mut action| {
                     action.on_add(agent, world);
 
                     let Some(mut agent_ref) = world.get_entity_mut(agent) else {
@@ -305,7 +321,7 @@ impl SequentialActionsPlugin {
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     pub fn clear_actions(agent: Entity, world: &mut World) {
         let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-            error!("Cannot clear actions for non-existent agent {agent}.");
+            error!("Cannot clear current action for non-existent agent {agent}.");
             return;
         };
 
@@ -315,14 +331,14 @@ impl SequentialActionsPlugin {
         };
 
         if let Some(mut action) = current_action.take() {
-            debug!("Clearing action {action:?}.");
+            debug!("Clearing current action {action:?} for agent {agent}.");
             action.on_stop(agent.into(), world, StopReason::Canceled);
             action.on_remove(agent.into(), world);
             action.on_drop(agent.into(), world, DropReason::Cleared);
         }
 
         let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-            error!("Cannot clear actions for non-existent agent {agent}.");
+            error!("Cannot clear action queue for non-existent agent {agent}.");
             return;
         };
 
@@ -331,14 +347,17 @@ impl SequentialActionsPlugin {
             return;
         };
 
-        debug!("Clearing action queue for agent {agent}.");
+        if action_queue.is_empty() {
+            return;
+        }
+
+        debug!("Clearing {action_queue:?} for {agent}.");
 
         action_queue
             .drain(..)
             .collect::<Vec<_>>()
             .into_iter()
             .for_each(|mut action| {
-                debug!("Clearing action {action:?}.");
                 action.on_remove(agent.into(), world);
                 action.on_drop(agent.into(), world, DropReason::Cleared);
             });
