@@ -1,11 +1,8 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Deref};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::{
-    prelude::*,
-    query::{QueryData, QueryFilter},
-};
+use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
 
@@ -15,7 +12,8 @@ struct TestApp(App);
 impl TestApp {
     fn new() -> Self {
         let mut app = App::new();
-        app.add_plugins(SequentialActionsPlugin)
+        app.init_resource::<Lifecycles>()
+            .add_plugins(SequentialActionsPlugin)
             .add_systems(Update, countdown);
 
         Self(app)
@@ -27,6 +25,14 @@ impl TestApp {
 
     fn actions(&mut self, agent: Entity) -> AgentActions<'_> {
         self.world_mut().actions(agent)
+    }
+
+    fn lifecycles(&self) -> &Lifecycles {
+        self.world().resource::<Lifecycles>()
+    }
+
+    fn lifecycles_mut(&mut self) -> Mut<'_, Lifecycles> {
+        self.world_mut().resource_mut::<Lifecycles>()
     }
 
     fn entity(&self, entity: Entity) -> EntityRef<'_> {
@@ -41,10 +47,6 @@ impl TestApp {
         self.world().get::<ActionQueue>(agent).unwrap()
     }
 
-    fn query_filtered<D: QueryData, F: QueryFilter>(&mut self) -> QueryState<D, F> {
-        self.world_mut().query_filtered()
-    }
-
     fn despawn(&mut self, entity: Entity) -> bool {
         self.world_mut().despawn(entity)
     }
@@ -54,71 +56,65 @@ impl TestApp {
     }
 }
 
-struct TestCountdownAction {
+struct TestAction {
     count: i32,
-    entity: Option<Entity>,
     current: Option<i32>,
 }
 
-impl TestCountdownAction {
+impl TestAction {
     const fn new(count: i32) -> Self {
         Self {
             count,
-            entity: None,
             current: None,
         }
     }
 }
 
-impl Action for TestCountdownAction {
-    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
-        world.get::<Countdown>(self.entity.unwrap()).unwrap().0 <= 0
+impl Action for TestAction {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        world.get::<Countdown>(agent).unwrap().0 <= 0
     }
 
-    fn on_add(&mut self, _agent: Entity, world: &mut World) {
-        self.entity = world.spawn((Added, CountdownMarker)).id().into();
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        world
+            .resource_mut::<Lifecycles>()
+            .push(Lifecycle::Add(agent));
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let count = self.current.take().unwrap_or(self.count);
+        world.entity_mut(agent).insert(Countdown(count));
         world
-            .entity_mut(self.entity.unwrap())
-            .insert((Started, Countdown(count)));
+            .resource_mut::<Lifecycles>()
+            .push(Lifecycle::Start(agent));
 
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, _agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        let mut e = world.entity_mut(self.entity.unwrap());
-        let countdown = e.insert(Stopped).take::<Countdown>();
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        world
+            .resource_mut::<Lifecycles>()
+            .push(Lifecycle::Stop(agent, reason));
 
-        match reason {
-            StopReason::Finished => {
-                e.insert(Finished);
-            }
-            StopReason::Canceled => {
-                e.insert(Canceled);
-            }
-            StopReason::Paused => {
-                e.insert(Paused);
-                self.current = countdown.unwrap().0.into();
-            }
-        };
+        let Some(agent) = agent else { return };
+
+        let countdown = world.entity_mut(agent).take::<Countdown>();
+
+        if reason == StopReason::Paused {
+            self.current = Some(countdown.unwrap().0);
+        }
     }
 
-    fn on_remove(&mut self, _agent: Option<Entity>, world: &mut World) {
-        world.entity_mut(self.entity.unwrap()).insert(Removed);
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+        world
+            .resource_mut::<Lifecycles>()
+            .push(Lifecycle::Remove(agent));
     }
 
-    fn on_drop(self: Box<Self>, _agent: Option<Entity>, world: &mut World, reason: DropReason) {
-        let mut e = world.entity_mut(self.entity.unwrap());
-        e.insert(Dropped);
-
-        match reason {
-            DropReason::Done => e.insert(Done),
-            DropReason::Skipped => e.insert(Skipped),
-            DropReason::Cleared => e.insert(Cleared),
-        };
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+        world
+            .resource_mut::<Lifecycles>()
+            .push(Lifecycle::Drop(agent, reason));
     }
 }
 
@@ -131,61 +127,37 @@ fn countdown(mut countdown_q: Query<&mut Countdown>) {
     }
 }
 
-#[derive(Component)]
-struct CountdownMarker;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Lifecycle {
+    Add(Entity),
+    Start(Entity),
+    Stop(Option<Entity>, StopReason),
+    Remove(Option<Entity>),
+    Drop(Option<Entity>, DropReason),
+}
 
-#[derive(Component)]
-struct Added;
-
-#[derive(Component)]
-struct Started;
-
-#[derive(Component)]
-struct Stopped;
-
-#[derive(Component)]
-struct Finished;
-
-#[derive(Component)]
-struct Canceled;
-
-#[derive(Component)]
-struct Paused;
-
-#[derive(Component)]
-struct Removed;
-
-#[derive(Component)]
-struct Dropped;
-
-#[derive(Component)]
-struct Done;
-
-#[derive(Component)]
-struct Skipped;
-
-#[derive(Component)]
-struct Cleared;
+#[derive(Debug, Default, Resource, Deref, DerefMut)]
+struct Lifecycles(Vec<Lifecycle>);
 
 #[test]
 fn add() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add(TestCountdownAction::new(0));
+    app.actions(a).start(false).add(TestAction::new(0));
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 1);
+    assert_eq!(app.action_queue(a).len(), 1);
 
-    app.actions(a).clear().add(TestCountdownAction::new(0));
+    app.actions(a).clear().add(TestAction::new(0));
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
+    assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a).clear().add(TestCountdownAction::new(1));
+    app.actions(a).clear().add(TestAction::new(1));
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 0);
+    assert_eq!(app.action_queue(a).len(), 0);
 }
 
 #[test]
@@ -193,54 +165,30 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .start(false)
+        .add_many(actions![TestAction::new(0), TestAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 2);
+    assert_eq!(app.action_queue(a).len(), 2);
 
-    app.actions(a).clear().add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .clear()
+        .add_many(actions![TestAction::new(0), TestAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
+    assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
-    ]);
+    app.actions(a)
+        .add_many(actions![TestAction::new(1), TestAction::new(1)]);
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
+    assert_eq!(app.action_queue(a).len(), 1);
 
     app.actions(a).add_many(actions![]);
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
-}
-
-#[test]
-fn next() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).add(TestCountdownAction::new(1));
-
-    let e = app
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.entity(e).contains::<Started>(), true);
-    assert_eq!(app.entity(e).contains::<Canceled>(), false);
-
-    app.actions(a).next();
-
-    assert_eq!(app.entity(e).contains::<Started>(), true);
-    assert_eq!(app.entity(e).contains::<Canceled>(), true);
+    assert_eq!(app.action_queue(a).len(), 1);
 }
 
 #[test]
@@ -248,23 +196,21 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1));
+    app.actions(a).add(TestAction::new(1));
     app.update();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
-
-    let e = app
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.entity(e).contains::<Finished>(), true);
-    assert_eq!(app.entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.entity(e).contains::<Paused>(), false);
-    assert_eq!(app.entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.entity(e).contains::<Done>(), true);
-    assert_eq!(app.entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.entity(e).contains::<Cleared>(), false);
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(Some(a), StopReason::Finished),
+            Lifecycle::Remove(Some(a)),
+            Lifecycle::Drop(Some(a), DropReason::Done)
+        ]
+    );
 }
 
 #[test]
@@ -272,22 +218,20 @@ fn cancel() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).cancel();
+    app.actions(a).add(TestAction::new(1)).cancel();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
-
-    let e = app
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.entity(e).contains::<Finished>(), false);
-    assert_eq!(app.entity(e).contains::<Canceled>(), true);
-    assert_eq!(app.entity(e).contains::<Paused>(), false);
-    assert_eq!(app.entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.entity(e).contains::<Done>(), true);
-    assert_eq!(app.entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.entity(e).contains::<Cleared>(), false);
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(Some(a), StopReason::Canceled),
+            Lifecycle::Remove(Some(a)),
+            Lifecycle::Drop(Some(a), DropReason::Done)
+        ]
+    );
 }
 
 #[test]
@@ -295,22 +239,39 @@ fn pause() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).pause();
+    app.actions(a).add(TestAction::new(1)).pause();
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 1);
+    assert_eq!(app.action_queue(a).len(), 1);
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(Some(a), StopReason::Paused)
+        ]
+    );
+}
 
-    let e = app
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
+#[test]
+fn next() {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
 
-    assert_eq!(app.entity(e).contains::<Finished>(), false);
-    assert_eq!(app.entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.entity(e).contains::<Paused>(), true);
-    assert_eq!(app.entity(e).contains::<Dropped>(), false);
-    assert_eq!(app.entity(e).contains::<Done>(), false);
-    assert_eq!(app.entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.entity(e).contains::<Cleared>(), false);
+    app.actions(a).add(TestAction::new(1)).next();
+
+    assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 0);
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(Some(a), StopReason::Canceled),
+            Lifecycle::Remove(Some(a)),
+            Lifecycle::Drop(Some(a), DropReason::Done)
+        ]
+    );
 }
 
 #[test]
@@ -318,25 +279,18 @@ fn skip() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a)
-        .start(false)
-        .add(TestCountdownAction::new(0))
-        .skip();
+    app.actions(a).start(false).add(TestAction::new(1)).skip();
 
-    assert!(app.action_queue(a).is_empty());
-
-    let e = app
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.entity(e).contains::<Added>(), true);
-    assert_eq!(app.entity(e).contains::<Started>(), false);
-    assert_eq!(app.entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.entity(e).contains::<Removed>(), true);
-    assert_eq!(app.entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.entity(e).contains::<Done>(), false);
-    assert_eq!(app.entity(e).contains::<Skipped>(), true);
-    assert_eq!(app.entity(e).contains::<Cleared>(), false);
+    assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 0);
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Remove(Some(a)),
+            Lifecycle::Drop(Some(a), DropReason::Skipped)
+        ]
+    );
 }
 
 #[test]
@@ -345,80 +299,24 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![
-            TestCountdownAction::new(1),
-            TestCountdownAction::new(1)
-        ])
+        .add_many(actions![TestAction::new(1), TestAction::new(1)])
         .clear();
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).is_empty());
+    assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
-        app.query_filtered::<Entity, With<Canceled>>()
-            .iter(app.world())
-            .len(),
-        1
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(Some(a), StopReason::Canceled),
+            Lifecycle::Remove(Some(a)),
+            Lifecycle::Drop(Some(a), DropReason::Cleared),
+            Lifecycle::Remove(Some(a)),
+            Lifecycle::Drop(Some(a), DropReason::Cleared)
+        ]
     );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Removed>>()
-            .iter(app.world())
-            .len(),
-        2
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Dropped>>()
-            .iter(app.world())
-            .len(),
-        2
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Cleared>>()
-            .iter(app.world())
-            .len(),
-        2
-    );
-}
-
-#[test]
-fn lifecycle() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).start(false).add(TestCountdownAction::new(1));
-
-    let e = app
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.entity(e).contains::<Added>(), true);
-    assert_eq!(app.entity(e).contains::<Started>(), false);
-    assert_eq!(app.entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.entity(e).contains::<Removed>(), false);
-    assert_eq!(app.entity(e).contains::<Dropped>(), false);
-
-    app.actions(a).execute();
-
-    assert_eq!(app.entity(e).contains::<Added>(), true);
-    assert_eq!(app.entity(e).contains::<Started>(), true);
-    assert_eq!(app.entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.entity(e).contains::<Removed>(), false);
-    assert_eq!(app.entity(e).contains::<Dropped>(), false);
-
-    app.actions(a).pause();
-
-    assert_eq!(app.entity(e).contains::<Added>(), true);
-    assert_eq!(app.entity(e).contains::<Started>(), true);
-    assert_eq!(app.entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.entity(e).contains::<Removed>(), false);
-    assert_eq!(app.entity(e).contains::<Dropped>(), false);
-
-    app.actions(a).clear();
-
-    assert_eq!(app.entity(e).contains::<Added>(), true);
-    assert_eq!(app.entity(e).contains::<Started>(), true);
-    assert_eq!(app.entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.entity(e).contains::<Removed>(), true);
-    assert_eq!(app.entity(e).contains::<Dropped>(), true);
 }
 
 #[test]
@@ -479,14 +377,13 @@ fn order() {
     app.actions(a)
         .clear()
         .start(false)
-        .add(TestCountdownAction::new(0))
-        .order(AddOrder::Front)
+        .add(|_a, _w: &mut World| false)
+        .config(AddConfig::new(true, AddOrder::Front))
         .add_many(actions![
             MarkerAction::<A>::new(),
             MarkerAction::<B>::new(),
             MarkerAction::<C>::new(),
-        ])
-        .execute();
+        ]);
 
     assert_eq!(app.entity(a).contains::<A>(), true);
     assert_eq!(app.entity(a).contains::<B>(), false);
@@ -510,28 +407,137 @@ fn pause_resume() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    fn countdown_value(app: &mut TestApp) -> i32 {
-        app.world_mut().query::<&Countdown>().single(app.world()).0
-    }
+    app.actions(a).add(TestAction::new(10));
 
-    app.actions(a).add(TestCountdownAction::new(10));
-
-    assert_eq!(countdown_value(&mut app), 10);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 10);
 
     app.update();
 
-    assert_eq!(countdown_value(&mut app), 9);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 9);
 
     app.actions(a)
         .pause()
         .order(AddOrder::Front)
-        .add(TestCountdownAction::new(1));
+        .add(TestAction::new(1));
 
-    assert_eq!(countdown_value(&mut app), 1);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 1);
 
     app.update();
 
-    assert_eq!(countdown_value(&mut app), 9);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 9);
+}
+
+#[test]
+fn despawn() {
+    struct DespawnAction<const B: bool>;
+    impl<const B: bool> Action for DespawnAction<B> {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            world
+                .resource_mut::<Lifecycles>()
+                .push(Lifecycle::Add(agent));
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            world
+                .resource_mut::<Lifecycles>()
+                .push(Lifecycle::Start(agent));
+            world.despawn(agent);
+            B
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            world
+                .resource_mut::<Lifecycles>()
+                .push(Lifecycle::Stop(agent, reason));
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            world
+                .resource_mut::<Lifecycles>()
+                .push(Lifecycle::Remove(agent));
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            world
+                .resource_mut::<Lifecycles>()
+                .push(Lifecycle::Drop(agent, reason));
+        }
+    }
+
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+    app.actions(a).add(DespawnAction::<true>);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(None, StopReason::Finished),
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Done)
+        ]
+    );
+
+    app.lifecycles_mut().clear();
+    let a = app.spawn_agent();
+    app.actions(a).add(DespawnAction::<false>);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(None, StopReason::Canceled),
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Done)
+        ]
+    );
+
+    app.lifecycles_mut().clear();
+    let a = app.spawn_agent();
+    app.actions(a)
+        .add_many(actions![DespawnAction::<true>, TestAction::new(1)]);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            // After despawn, the on_remove component lifecycle hook is triggered for ActionQueue containing TestAction
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Cleared),
+            // Back to DespawnAction
+            Lifecycle::Stop(None, StopReason::Finished),
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Done)
+        ]
+    );
+
+    app.lifecycles_mut().clear();
+    let a = app.spawn_agent();
+    app.actions(a)
+        .add_many(actions![DespawnAction::<false>, TestAction::new(1)]);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            // After despawn, the on_remove component lifecycle hook is triggered for ActionQueue containing TestAction
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Cleared),
+            // Back to DespawnAction
+            Lifecycle::Stop(None, StopReason::Canceled),
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Done)
+        ]
+    );
 }
 
 #[test]
@@ -539,324 +545,31 @@ fn despawn_running() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(10),
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1),
-    ]);
+    app.actions(a)
+        .add_many(actions![TestAction::new(10), TestAction::new(1)]);
 
     app.update();
 
     assert!(app.get_entity(a).is_some());
     assert_eq!(
-        app.query_filtered::<Entity, With<Added>>()
-            .iter(app.world())
-            .len(),
-        3
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Started>>()
-            .iter(app.world())
-            .len(),
-        1
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Stopped>>()
-            .iter(app.world())
-            .len(),
-        0
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Removed>>()
-            .iter(app.world())
-            .len(),
-        0
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Dropped>>()
-            .iter(app.world())
-            .len(),
-        0
+        app.lifecycles().deref().clone(),
+        vec![Lifecycle::Add(a), Lifecycle::Add(a), Lifecycle::Start(a)]
     );
 
     app.despawn(a);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
-        app.query_filtered::<Entity, With<Added>>()
-            .iter(app.world())
-            .len(),
-        3
+        app.lifecycles().deref().clone(),
+        vec![
+            Lifecycle::Add(a),
+            Lifecycle::Add(a),
+            Lifecycle::Start(a),
+            Lifecycle::Stop(None, StopReason::Canceled),
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Done),
+            Lifecycle::Remove(None),
+            Lifecycle::Drop(None, DropReason::Cleared)
+        ]
     );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Started>>()
-            .iter(app.world())
-            .len(),
-        1
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Stopped>>()
-            .iter(app.world())
-            .len(),
-        1
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Removed>>()
-            .iter(app.world())
-            .len(),
-        3
-    );
-    assert_eq!(
-        app.query_filtered::<Entity, With<Dropped>>()
-            .iter(app.world())
-            .len(),
-        3
-    );
-}
-
-#[test]
-fn despawn_queue_action() {
-    struct DespawnQueueAction;
-    impl Action for DespawnQueueAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            true
-        }
-
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            assert!(world.get_entity(agent).is_some());
-            world.despawn(agent);
-            true
-        }
-
-        fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert!(agent.is_none());
-            assert_eq!(reason, StopReason::Finished);
-        }
-
-        fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
-            assert!(agent.is_none());
-            assert_eq!(reason, DropReason::Done);
-        }
-    }
-
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        DespawnQueueAction,
-        TestCountdownAction::new(0),
-    ]);
-
-    app.update();
-
-    assert!(app.get_entity(a).is_none());
-}
-
-#[test]
-fn reasons() {
-    struct FinishedAction;
-    impl Action for FinishedAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            true
-        }
-
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-            true
-        }
-
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert_eq!(reason, StopReason::Finished);
-        }
-
-        fn on_drop(
-            self: Box<Self>,
-            _agent: Option<Entity>,
-            _world: &mut World,
-            reason: DropReason,
-        ) {
-            assert_eq!(reason, DropReason::Done);
-        }
-    }
-
-    struct CanceledAction;
-    impl Action for CanceledAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
-
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-            false
-        }
-
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert_eq!(reason, StopReason::Canceled);
-        }
-
-        fn on_drop(
-            self: Box<Self>,
-            _agent: Option<Entity>,
-            _world: &mut World,
-            reason: DropReason,
-        ) {
-            assert_eq!(reason, DropReason::Done);
-        }
-    }
-
-    struct PausedAction;
-    impl Action for PausedAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
-
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-            false
-        }
-
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert_eq!(reason, StopReason::Paused);
-        }
-
-        fn on_drop(
-            self: Box<Self>,
-            _agent: Option<Entity>,
-            _world: &mut World,
-            reason: DropReason,
-        ) {
-            assert_eq!(reason, DropReason::Skipped);
-        }
-    }
-
-    struct ClearedAction;
-    impl Action for ClearedAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
-
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-            false
-        }
-
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert_eq!(reason, StopReason::Canceled);
-        }
-
-        fn on_drop(
-            self: Box<Self>,
-            _agent: Option<Entity>,
-            _world: &mut World,
-            reason: DropReason,
-        ) {
-            assert_eq!(reason, DropReason::Cleared);
-        }
-    }
-
-    struct ActiveAction;
-    impl Action for ActiveAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
-
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-            false
-        }
-
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert_eq!(reason, StopReason::Canceled);
-        }
-
-        fn on_drop(
-            self: Box<Self>,
-            _agent: Option<Entity>,
-            _world: &mut World,
-            reason: DropReason,
-        ) {
-            assert_eq!(reason, DropReason::Done);
-        }
-    }
-
-    struct InQueueAction;
-    impl Action for InQueueAction {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
-        }
-
-        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-            false
-        }
-
-        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {
-            panic!("this should not be called")
-        }
-
-        fn on_drop(
-            self: Box<Self>,
-            _agent: Option<Entity>,
-            _world: &mut World,
-            reason: DropReason,
-        ) {
-            assert_eq!(reason, DropReason::Cleared);
-        }
-    }
-
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a)
-        .add_many(actions![
-            FinishedAction,
-            CanceledAction,
-            PausedAction,
-            ClearedAction
-        ])
-        .cancel()
-        .execute()
-        .pause()
-        .skip()
-        .clear()
-        .add_many(actions![ActiveAction, InQueueAction, InQueueAction]);
-
-    app.despawn(a);
-}
-
-#[test]
-fn despawn_true_false() {
-    struct DespawnAction<const B: bool>;
-
-    impl<const B: bool> Action for DespawnAction<B> {
-        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            true
-        }
-
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            assert!(world.get_entity(agent).is_some());
-            world.despawn(agent);
-            B
-        }
-
-        fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-            assert!(agent.is_none());
-            match B {
-                true => assert_eq!(reason, StopReason::Finished),
-                false => assert_eq!(reason, StopReason::Canceled),
-            }
-        }
-
-        fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
-            assert!(agent.is_none());
-            assert_eq!(reason, DropReason::Done);
-        }
-    }
-
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-    let b = app.spawn_agent();
-
-    app.world_mut().actions(a).add(DespawnAction::<true>);
-    app.world_mut().actions(b).add(DespawnAction::<false>);
-
-    app.update();
-
-    assert!(app.get_entity(a).is_none());
-    assert!(app.get_entity(b).is_none());
 }
