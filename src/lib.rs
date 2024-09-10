@@ -114,10 +114,12 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 #### Modifying Actions
 
 Actions can be added to any [`Entity`] that contains the [`ActionsBundle`].
-See the [`ModifyActionsExt`] trait for available methods.
-The extension trait is implemented for both [`EntityCommands`] and [`EntityWorldMut`].
+This is is done through the [`actions(agent)`](ActionsProxy::actions)
+extension method implemented for both [`Commands`] and [`World`].
+See the [`ModifyActions`] trait for available methods.
 
 ```rust,no_run
+# use bevy_app::AppExit;
 # use bevy_ecs::prelude::*;
 # use bevy_sequential_actions::*;
 #
@@ -132,27 +134,24 @@ fn setup(mut commands: Commands) {
 #   let action_a = EmptyAction;
 #   let action_b = EmptyAction;
 #   let action_c = EmptyAction;
+#   let action_d = EmptyAction;
 #
+    // Spawn entity with the bundle
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
-        // Spawn entity with the bundle
-        .spawn(ActionsBundle::new())
+        .actions(agent)
         // Add a single action
-        .add_action(action_a)
-        // Add multiple actions with a specified config
-        .add_actions_with_config(
-            AddConfig {
-                start: true, // Start next action if nothing is currently running
-                order: AddOrder::Back, // Add the action to the back of the queue
-            },
-            // Helper macro for creating an array of boxed actions
-            actions![
-                action_b,
-                action_c
-            ],
-        )
+        .add(action_a)
+        // Add multiple actions
+        .add_many(actions![
+            action_b,
+            action_c,
+            action_d
+        ])
         // Add an anonymous action with a closure
-        .add_action(|_agent, world: &mut World| -> bool {
+        .add(|_agent, world: &mut World| -> bool {
             // on_start
+            world.send_event(AppExit::Success);
             true
         });
 }
@@ -170,7 +169,7 @@ In general, there are two rules when modifying actions for an `agent` inside the
 
 * When adding new actions, you should either set the [`start`](AddConfig::start) property in [`AddConfig`] to `false`,
     or push to the [`ActionQueue`] component directly.
-* The [`execute_actions`](ModifyActionsExt::execute_actions) and [`next_action`](ModifyActionsExt::next_action) methods should not be used.
+* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be used.
 */
 
 use std::{collections::VecDeque, fmt::Debug};
@@ -181,7 +180,6 @@ use bevy_ecs::{
     component::{ComponentHooks, StorageType},
     prelude::*,
     query::QueryFilter,
-    system::EntityCommands,
 };
 use bevy_log::{debug, warn};
 

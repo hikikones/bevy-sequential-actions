@@ -25,12 +25,12 @@ impl TestApp {
         self.world_mut().spawn(ActionsBundle::new()).id()
     }
 
-    fn entity(&self, entity: Entity) -> EntityRef<'_> {
-        self.world().entity(entity)
+    fn actions(&mut self, agent: Entity) -> AgentActions<'_> {
+        self.world_mut().actions(agent)
     }
 
-    fn entity_mut(&mut self, entity: Entity) -> EntityWorldMut<'_> {
-        self.world_mut().entity_mut(entity)
+    fn entity(&self, entity: Entity) -> EntityRef<'_> {
+        self.world().entity(entity)
     }
 
     fn current_action(&self, agent: Entity) -> &CurrentAction {
@@ -172,35 +172,17 @@ fn add() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action_with_config(
-        AddConfig {
-            start: false,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(0),
-    );
+    app.actions(a).start(false).add(TestCountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 1);
 
-    app.entity_mut(a).clear_actions().add_action_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(0),
-    );
+    app.actions(a).clear().add(TestCountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 0);
 
-    app.entity_mut(a).clear_actions().add_action_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(1),
-    );
+    app.actions(a).clear().add(TestCountdownAction::new(1));
 
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 0);
@@ -211,46 +193,31 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: false,
-            order: AddOrder::Back,
-        },
-        actions![TestCountdownAction::new(0), TestCountdownAction::new(0)],
-    );
+    app.actions(a).start(false).add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
+    ]);
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 2);
 
-    app.entity_mut(a).clear_actions().add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![TestCountdownAction::new(0), TestCountdownAction::new(0)],
-    );
+    app.actions(a).clear().add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
+    ]);
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 0);
 
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![TestCountdownAction::new(1), TestCountdownAction::new(1)],
-    );
+    app.actions(a).add_many(actions![
+        TestCountdownAction::new(1),
+        TestCountdownAction::new(1)
+    ]);
 
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 1);
 
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![],
-    );
+    app.actions(a).add_many(actions![]);
 
     assert!(app.current_action(a).is_some());
     assert!(app.action_queue(a).len() == 1);
@@ -261,13 +228,7 @@ fn next() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(1),
-    );
+    app.actions(a).add(TestCountdownAction::new(1));
 
     let e = app
         .query_filtered::<Entity, With<CountdownMarker>>()
@@ -276,7 +237,7 @@ fn next() {
     assert_eq!(app.entity(e).contains::<Started>(), true);
     assert_eq!(app.entity(e).contains::<Canceled>(), false);
 
-    app.entity_mut(a).next_action();
+    app.actions(a).next();
 
     assert_eq!(app.entity(e).contains::<Started>(), true);
     assert_eq!(app.entity(e).contains::<Canceled>(), true);
@@ -287,13 +248,7 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(1),
-    );
+    app.actions(a).add(TestCountdownAction::new(1));
     app.update();
 
     assert!(app.current_action(a).is_none());
@@ -317,15 +272,7 @@ fn cancel() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a)
-        .add_action_with_config(
-            AddConfig {
-                start: true,
-                order: AddOrder::Back,
-            },
-            TestCountdownAction::new(1),
-        )
-        .cancel_action();
+    app.actions(a).add(TestCountdownAction::new(1)).cancel();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
@@ -348,15 +295,7 @@ fn pause() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a)
-        .add_action_with_config(
-            AddConfig {
-                start: true,
-                order: AddOrder::Back,
-            },
-            TestCountdownAction::new(1),
-        )
-        .pause_action();
+    app.actions(a).add(TestCountdownAction::new(1)).pause();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).len() == 1);
@@ -379,15 +318,10 @@ fn skip() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a)
-        .add_action_with_config(
-            AddConfig {
-                start: false,
-                order: AddOrder::Back,
-            },
-            TestCountdownAction::new(0),
-        )
-        .skip_next_action();
+    app.actions(a)
+        .start(false)
+        .add(TestCountdownAction::new(0))
+        .skip();
 
     assert!(app.action_queue(a).is_empty());
 
@@ -410,15 +344,12 @@ fn clear() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a)
-        .add_actions_with_config(
-            AddConfig {
-                start: true,
-                order: AddOrder::Back,
-            },
-            actions![TestCountdownAction::new(1), TestCountdownAction::new(1)],
-        )
-        .clear_actions();
+    app.actions(a)
+        .add_many(actions![
+            TestCountdownAction::new(1),
+            TestCountdownAction::new(1)
+        ])
+        .clear();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
@@ -453,13 +384,7 @@ fn lifecycle() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_action_with_config(
-        AddConfig {
-            start: false,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(1),
-    );
+    app.actions(a).start(false).add(TestCountdownAction::new(1));
 
     let e = app
         .query_filtered::<Entity, With<CountdownMarker>>()
@@ -471,7 +396,7 @@ fn lifecycle() {
     assert_eq!(app.entity(e).contains::<Removed>(), false);
     assert_eq!(app.entity(e).contains::<Dropped>(), false);
 
-    app.entity_mut(a).execute_actions();
+    app.actions(a).execute();
 
     assert_eq!(app.entity(e).contains::<Added>(), true);
     assert_eq!(app.entity(e).contains::<Started>(), true);
@@ -479,7 +404,7 @@ fn lifecycle() {
     assert_eq!(app.entity(e).contains::<Removed>(), false);
     assert_eq!(app.entity(e).contains::<Dropped>(), false);
 
-    app.entity_mut(a).pause_action();
+    app.actions(a).pause();
 
     assert_eq!(app.entity(e).contains::<Added>(), true);
     assert_eq!(app.entity(e).contains::<Started>(), true);
@@ -487,7 +412,7 @@ fn lifecycle() {
     assert_eq!(app.entity(e).contains::<Removed>(), false);
     assert_eq!(app.entity(e).contains::<Dropped>(), false);
 
-    app.entity_mut(a).clear_actions();
+    app.actions(a).clear();
 
     assert_eq!(app.entity(e).contains::<Added>(), true);
     assert_eq!(app.entity(e).contains::<Started>(), true);
@@ -528,17 +453,11 @@ fn order() {
     let a = app.spawn_agent();
 
     // Back
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![
-            MarkerAction::<A>::new(),
-            MarkerAction::<B>::new(),
-            MarkerAction::<C>::new(),
-        ],
-    );
+    app.actions(a).add_many(actions![
+        MarkerAction::<A>::new(),
+        MarkerAction::<B>::new(),
+        MarkerAction::<C>::new(),
+    ]);
 
     assert_eq!(app.entity(a).contains::<A>(), true);
     assert_eq!(app.entity(a).contains::<B>(), false);
@@ -557,27 +476,17 @@ fn order() {
     assert_eq!(app.entity(a).contains::<C>(), true);
 
     // Front
-    app.entity_mut(a)
-        .clear_actions()
-        .add_action_with_config(
-            AddConfig {
-                start: false,
-                order: AddOrder::Back,
-            },
-            TestCountdownAction::new(0),
-        )
-        .add_actions_with_config(
-            AddConfig {
-                start: false,
-                order: AddOrder::Front,
-            },
-            actions![
-                MarkerAction::<A>::new(),
-                MarkerAction::<B>::new(),
-                MarkerAction::<C>::new(),
-            ],
-        )
-        .execute_actions();
+    app.actions(a)
+        .clear()
+        .start(false)
+        .add(TestCountdownAction::new(0))
+        .order(AddOrder::Front)
+        .add_many(actions![
+            MarkerAction::<A>::new(),
+            MarkerAction::<B>::new(),
+            MarkerAction::<C>::new(),
+        ])
+        .execute();
 
     assert_eq!(app.entity(a).contains::<A>(), true);
     assert_eq!(app.entity(a).contains::<B>(), false);
@@ -605,13 +514,7 @@ fn pause_resume() {
         app.world_mut().query::<&Countdown>().single(app.world()).0
     }
 
-    app.entity_mut(a).add_action_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        TestCountdownAction::new(10),
-    );
+    app.actions(a).add(TestCountdownAction::new(10));
 
     assert_eq!(countdown_value(&mut app), 10);
 
@@ -619,13 +522,10 @@ fn pause_resume() {
 
     assert_eq!(countdown_value(&mut app), 9);
 
-    app.entity_mut(a).pause_action().add_action_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Front,
-        },
-        TestCountdownAction::new(1),
-    );
+    app.actions(a)
+        .pause()
+        .order(AddOrder::Front)
+        .add(TestCountdownAction::new(1));
 
     assert_eq!(countdown_value(&mut app), 1);
 
@@ -639,17 +539,11 @@ fn despawn_running() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![
-            TestCountdownAction::new(10),
-            TestCountdownAction::new(1),
-            TestCountdownAction::new(1),
-        ],
-    );
+    app.actions(a).add_many(actions![
+        TestCountdownAction::new(10),
+        TestCountdownAction::new(1),
+        TestCountdownAction::new(1),
+    ]);
 
     app.update();
 
@@ -720,51 +614,6 @@ fn despawn_running() {
     );
 }
 
-// #[test]
-// fn despawn_active_action() {
-//     struct DespawnActiveAction;
-//     impl Action for DespawnActiveAction {
-//         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-//             false
-//         }
-
-//         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-//             assert!(world.get_entity(agent).is_some());
-//             world.despawn(agent);
-//             false
-//         }
-
-//         fn on_stop(&mut self, agent: Option<Entity>, _world: &mut World, reason: StopReason) {
-//             assert!(agent.is_none());
-//             assert_eq!(reason, StopReason::Finished);
-//         }
-
-//         fn on_drop(self: Box<Self>, agent: Option<Entity>, _world: &mut World, reason: DropReason) {
-//             assert!(agent.is_none());
-//             assert_eq!(reason, DropReason::Done);
-//         }
-//     }
-
-//     let mut app = TestApp::new();
-//     let a = app.spawn_agent();
-
-//     app.entity_mut(a).add_actions_with_config(
-//         AddConfig {
-//             start: true,
-//             order: AddOrder::Back,
-//         },
-//         actions![
-//             DespawnActiveAction,
-//             TestCountdownAction::new(1),
-//             TestCountdownAction::new(1),
-//         ],
-//     );
-
-//     app.update();
-
-//     assert!(app.get_entity(a).is_none());
-// }
-
 #[test]
 fn despawn_queue_action() {
     struct DespawnQueueAction;
@@ -793,17 +642,11 @@ fn despawn_queue_action() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a).add_actions_with_config(
-        AddConfig {
-            start: true,
-            order: AddOrder::Back,
-        },
-        actions![
-            TestCountdownAction::new(1),
-            DespawnQueueAction,
-            TestCountdownAction::new(0),
-        ],
-    );
+    app.actions(a).add_many(actions![
+        TestCountdownAction::new(1),
+        DespawnQueueAction,
+        TestCountdownAction::new(0),
+    ]);
 
     app.update();
 
@@ -959,19 +802,19 @@ fn reasons() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.entity_mut(a)
-        .add_actions(actions![
+    app.actions(a)
+        .add_many(actions![
             FinishedAction,
             CanceledAction,
             PausedAction,
             ClearedAction
         ])
-        .cancel_action()
-        .execute_actions()
-        .pause_action()
-        .skip_next_action()
-        .clear_actions()
-        .add_actions(actions![ActiveAction, InQueueAction, InQueueAction]);
+        .cancel()
+        .execute()
+        .pause()
+        .skip()
+        .clear()
+        .add_many(actions![ActiveAction, InQueueAction, InQueueAction]);
 
     app.despawn(a);
 }
@@ -1009,8 +852,6 @@ fn despawn_true_false() {
     let a = app.spawn_agent();
     let b = app.spawn_agent();
 
-    // app.entity_mut(a).add_action(DespawnAction::<true>);
-    // app.entity_mut(b).add_action(DespawnAction::<false>);
     app.world_mut().actions(a).add(DespawnAction::<true>);
     app.world_mut().actions(b).add(DespawnAction::<false>);
 

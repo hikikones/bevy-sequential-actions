@@ -19,9 +19,8 @@ fn main() {
 fn setup(mut commands: Commands) {
     for i in 0..10 {
         // Spawn agents with id in ascending order
-        commands
-            .spawn((ActionsBundle::new(), Id(i)))
-            .add_action(PrintIdAction);
+        let agent = commands.spawn((ActionsBundle::new(), Id(i))).id();
+        commands.actions(agent).add(PrintIdAction);
     }
 }
 
@@ -66,10 +65,11 @@ impl Action for PrintIdAction {
     }
 
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, _reason: StopReason) {
-        let id = world.get::<Id>(agent.unwrap()).unwrap().0;
+        let agent = agent.unwrap();
+        let id = world.get::<Id>(agent).unwrap().0;
 
         // Observe that id is printed in descending order
-        println!("Agent: {agent:?}, Id: {id}");
+        println!("Agent: {agent}, Id: {id}");
 
         if id == 0 {
             world.send_event(AppExit::Success);

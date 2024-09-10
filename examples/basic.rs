@@ -12,29 +12,23 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
+    // Spawn entity with the bundle
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
-        // Spawn entity with the bundle
-        .spawn(ActionsBundle::new())
+        .actions(agent)
         // Add a single action
-        .add_action(DemoAction)
-        // Add multiple actions with a specified config
-        .add_actions_with_config(
-            AddConfig {
-                start: true,           // Start next action in the queue if nothing is currently running
-                order: AddOrder::Back, // Add the action to the back of the queue
-            },
-            // Helper macro for creating an array of boxed actions
-            actions![
-                PrintAction("hello"),
-                PrintAction("there"),
-                CountdownAction::new(10)
-            ],
-        )
+        .add(DemoAction)
+        // Add multiple actions
+        .add_many(actions![
+            PrintAction("hello"),
+            PrintAction("there"),
+            CountdownAction::new(10)
+        ])
         // Add an anonymous action with a closure
-        .add_action(|_agent, world: &mut World| -> bool {
+        .add(|_agent, world: &mut World| -> bool {
             // on_start
             world.send_event(AppExit::Success);
-            false
+            true
         });
 }
 

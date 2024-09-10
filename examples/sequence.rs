@@ -11,19 +11,18 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands
-        .spawn(ActionsBundle::new())
-        .add_action(ActionSequence::new(actions![
-            PrintAction("see"),
-            PrintAction("you"),
-            PrintAction("in"),
-            PrintAction("space"),
-            PrintAction("cowboy"),
-            |_agent, world: &mut World| -> bool {
-                world.send_event(AppExit::Success);
-                false
-            }
-        ]));
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands.actions(agent).add(ActionSequence::new(actions![
+        PrintAction("see"),
+        PrintAction("you"),
+        PrintAction("in"),
+        PrintAction("space"),
+        PrintAction("cowboy"),
+        |_agent, world: &mut World| -> bool {
+            world.send_event(AppExit::Success);
+            false
+        }
+    ]));
 }
 
 struct ActionSequence<const N: usize> {

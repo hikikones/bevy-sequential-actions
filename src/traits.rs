@@ -66,65 +66,6 @@ impl std::fmt::Debug for BoxedAction {
     }
 }
 
-/// Methods for modifying actions.
-pub trait ModifyActionsExt {
-    /// Adds a single [`action`](Action) to the queue with a specified [`config`](AddConfig).
-    fn add_action_with_config(&mut self, config: AddConfig, action: impl Action) -> &mut Self;
-
-    /// Adds a collection of actions to the queue with a specified [`config`](AddConfig).
-    fn add_actions_with_config<I>(&mut self, config: AddConfig, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug;
-
-    /// Adds a single [`action`](Action) to the queue with a default [`config`](AddConfig).
-    fn add_action(&mut self, action: impl Action) -> &mut Self {
-        Self::add_action_with_config(self, AddConfig::default(), action)
-    }
-
-    /// Adds a collection of actions to the queue with a default [`config`](AddConfig).
-    fn add_actions<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
-    {
-        Self::add_actions_with_config(self, AddConfig::default(), actions)
-    }
-
-    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
-    /// but only if there is no current action.
-    fn execute_actions(&mut self) -> &mut Self;
-
-    /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue.
-    ///
-    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
-    fn next_action(&mut self) -> &mut Self;
-
-    /// [`Stops`](Action::on_stop) the current action as [`canceled`](StopReason::Canceled).
-    ///
-    /// To resume the action queue,
-    /// call either [`execute_actions`](`Self::execute_actions`) or [`next_action`](`Self::next_action`).
-    fn cancel_action(&mut self) -> &mut Self;
-
-    /// [`Stops`](Action::on_stop) the current action as [`paused`](StopReason::Paused).
-    ///
-    /// To resume the action queue,
-    /// call either [`execute_actions`](`Self::execute_actions`) or [`next_action`](`Self::next_action`).
-    fn pause_action(&mut self) -> &mut Self;
-
-    /// Skips the next [`action`](Action) in the queue.
-    fn skip_next_action(&mut self) -> &mut Self;
-
-    /// Clears the action queue.
-    ///
-    /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
-    fn clear_actions(&mut self) -> &mut Self;
-}
-
-#[deprecated(
-    since = "0.12.0",
-    note = "Replaced by ModifyActionsExt trait implemented for EntityCommands and EntityWorldMut."
-)]
 /// Proxy method for modifying actions.
 pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
@@ -134,10 +75,6 @@ pub trait ActionsProxy<'a> {
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 
-#[deprecated(
-    since = "0.12.0",
-    note = "Replaced by ModifyActionsExt trait implemented for EntityCommands and EntityWorldMut."
-)]
 /// Methods for modifying actions.
 pub trait ModifyActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.

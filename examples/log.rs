@@ -16,10 +16,11 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
+    let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         // Spawn entity with the bundle
-        .spawn(ActionsBundle::new())
-        .add_action(DespawnAction)
+        .actions(agent)
+        .add(DespawnAction)
         // .spawn_empty()
         // Add a single action
         // .add_action(DemoAction)
@@ -37,7 +38,7 @@ fn setup(mut commands: Commands) {
         //     ],
         // )
         // Add an anonymous action with a closure
-        .add_action(|agent, world: &mut World| -> bool {
+        .add(|agent, world: &mut World| -> bool {
             // on_start
             // world.send_event(AppExit::Success);
             // world.despawn(agent);

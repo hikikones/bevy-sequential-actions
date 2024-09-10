@@ -12,7 +12,8 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(ActionsBundle::new()).add_actions(actions![
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands.actions(agent).add_many(actions![
         ParallelActions {
             actions: actions![
                 PrintAction("hello"),
@@ -109,7 +110,7 @@ impl Action for CountdownAction {
             entity.remove::<Paused>();
         } else {
             entity.insert(Countdown(self.count));
-            println!("Countdown({:?}): {}", self.entity, self.count);
+            println!("Countdown({}): {}", self.entity, self.count);
         }
 
         self.is_finished(agent, world)
@@ -135,6 +136,6 @@ struct Paused;
 fn countdown(mut countdown_q: Query<(Entity, &mut Countdown), Without<Paused>>) {
     for (entity, mut countdown) in &mut countdown_q {
         countdown.0 = countdown.0.saturating_sub(1);
-        println!("Countdown({:?}): {}", entity, countdown.0);
+        println!("Countdown({}): {}", entity, countdown.0);
     }
 }

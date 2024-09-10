@@ -11,7 +11,8 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(ActionsBundle::new()).add_actions(actions![
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands.actions(agent).add_many(actions![
         RepeatAction {
             action: PrintAction("hello"),
             repeat: 3,
