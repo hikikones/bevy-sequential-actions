@@ -70,6 +70,7 @@ impl SequentialActionsPlugin {
         action: impl Into<BoxedAction>,
         world: &mut World,
     ) {
+        // TODO: Check for agent first. Take action queue?
         let mut action = action.into();
         debug!("Adding action {action:?} for agent {agent} with {config:?}.");
         action.on_add(agent, world);
@@ -122,7 +123,6 @@ impl SequentialActionsPlugin {
         I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         let actions = actions.into_iter();
-        debug!("Adding actions {actions:?} for agent {agent} with {config:?}.");
         let len = actions.len();
 
         if len == 0 {
@@ -142,6 +142,7 @@ impl SequentialActionsPlugin {
             return;
         };
 
+        debug!("Adding actions {actions:?} for agent {agent} with {config:?}.");
         action_queue.reserve(len);
 
         match config.order {

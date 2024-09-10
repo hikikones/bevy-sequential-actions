@@ -39,6 +39,10 @@ impl TestApp {
         self.world().entity(entity)
     }
 
+    fn get_entity(&self, entity: Entity) -> Option<EntityRef<'_>> {
+        self.world().get_entity(entity)
+    }
+
     fn current_action(&self, agent: Entity) -> &CurrentAction {
         self.world().get::<CurrentAction>(agent).unwrap()
     }
@@ -51,17 +55,18 @@ impl TestApp {
         self.world_mut().despawn(entity)
     }
 
-    fn get_entity(&self, entity: Entity) -> Option<EntityRef<'_>> {
-        self.world().get_entity(entity)
+    fn reset(&mut self) {
+        self.0.world_mut().clear_all();
+        self.0.init_resource::<Lifecycles>();
     }
 }
 
-struct TestAction {
+struct TestCountdownAction {
     count: i32,
     current: Option<i32>,
 }
 
-impl TestAction {
+impl TestCountdownAction {
     const fn new(count: i32) -> Self {
         Self {
             count,
@@ -70,7 +75,7 @@ impl TestAction {
     }
 }
 
-impl Action for TestAction {
+impl Action for TestCountdownAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         world.get::<Countdown>(agent).unwrap().0 <= 0
     }
@@ -144,20 +149,27 @@ fn add() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add(TestAction::new(0));
+    app.actions(a).start(false).add(TestCountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 1);
 
-    app.actions(a).clear().add(TestAction::new(0));
+    app.actions(a).clear().add(TestCountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a).clear().add(TestAction::new(1));
+    app.actions(a).clear().add(TestCountdownAction::new(1));
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 0);
+
+    app.reset();
+
+    app.actions(a).add(TestCountdownAction::new(1));
+
+    // TODO: Resulting lifecycles should probably be empty vec[]
+    assert_eq!(app.lifecycles().deref().clone(), vec![Lifecycle::Add(a)]);
 }
 
 #[test]
@@ -165,22 +177,26 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a)
-        .start(false)
-        .add_many(actions![TestAction::new(0), TestAction::new(0)]);
+    app.actions(a).start(false).add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
+    ]);
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 2);
 
-    app.actions(a)
-        .clear()
-        .add_many(actions![TestAction::new(0), TestAction::new(0)]);
+    app.actions(a).clear().add_many(actions![
+        TestCountdownAction::new(0),
+        TestCountdownAction::new(0)
+    ]);
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a)
-        .add_many(actions![TestAction::new(1), TestAction::new(1)]);
+    app.actions(a).add_many(actions![
+        TestCountdownAction::new(1),
+        TestCountdownAction::new(1)
+    ]);
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);
@@ -196,7 +212,7 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestAction::new(1));
+    app.actions(a).add(TestCountdownAction::new(1));
     app.update();
 
     assert!(app.current_action(a).is_none());
@@ -218,7 +234,7 @@ fn cancel() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestAction::new(1)).cancel();
+    app.actions(a).add(TestCountdownAction::new(1)).cancel();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
@@ -239,7 +255,7 @@ fn pause() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestAction::new(1)).pause();
+    app.actions(a).add(TestCountdownAction::new(1)).pause();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 1);
@@ -258,7 +274,7 @@ fn next() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestAction::new(1)).next();
+    app.actions(a).add(TestCountdownAction::new(1)).next();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
@@ -279,7 +295,10 @@ fn skip() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add(TestAction::new(1)).skip();
+    app.actions(a)
+        .start(false)
+        .add(TestCountdownAction::new(1))
+        .skip();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
@@ -299,7 +318,10 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![TestAction::new(1), TestAction::new(1)])
+        .add_many(actions![
+            TestCountdownAction::new(1),
+            TestCountdownAction::new(1)
+        ])
         .clear();
 
     assert!(app.current_action(a).is_none());
@@ -407,7 +429,7 @@ fn pause_resume() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestAction::new(10));
+    app.actions(a).add(TestCountdownAction::new(10));
 
     assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 10);
 
@@ -418,7 +440,7 @@ fn pause_resume() {
     app.actions(a)
         .pause()
         .order(AddOrder::Front)
-        .add(TestAction::new(1));
+        .add(TestCountdownAction::new(1));
 
     assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 1);
 
@@ -464,6 +486,7 @@ fn despawn() {
     }
 
     let mut app = TestApp::new();
+
     let a = app.spawn_agent();
     app.actions(a).add(DespawnAction::<true>);
 
@@ -479,7 +502,8 @@ fn despawn() {
         ]
     );
 
-    app.lifecycles_mut().clear();
+    app.reset();
+
     let a = app.spawn_agent();
     app.actions(a).add(DespawnAction::<false>);
 
@@ -495,10 +519,11 @@ fn despawn() {
         ]
     );
 
-    app.lifecycles_mut().clear();
+    app.reset();
+
     let a = app.spawn_agent();
     app.actions(a)
-        .add_many(actions![DespawnAction::<true>, TestAction::new(1)]);
+        .add_many(actions![DespawnAction::<true>, TestCountdownAction::new(1)]);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
@@ -507,7 +532,8 @@ fn despawn() {
             Lifecycle::Add(a),
             Lifecycle::Add(a),
             Lifecycle::Start(a),
-            // After despawn, the on_remove component lifecycle hook is triggered for ActionQueue containing TestAction
+            // After despawn, the on_remove component lifecycle hook
+            // is triggered for ActionQueue containing TestCountdownAction
             Lifecycle::Remove(None),
             Lifecycle::Drop(None, DropReason::Cleared),
             // Back to DespawnAction
@@ -517,10 +543,12 @@ fn despawn() {
         ]
     );
 
-    app.lifecycles_mut().clear();
+    app.reset();
     let a = app.spawn_agent();
-    app.actions(a)
-        .add_many(actions![DespawnAction::<false>, TestAction::new(1)]);
+    app.actions(a).add_many(actions![
+        DespawnAction::<false>,
+        TestCountdownAction::new(1)
+    ]);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
@@ -529,7 +557,8 @@ fn despawn() {
             Lifecycle::Add(a),
             Lifecycle::Add(a),
             Lifecycle::Start(a),
-            // After despawn, the on_remove component lifecycle hook is triggered for ActionQueue containing TestAction
+            // After despawn, the on_remove component lifecycle hook
+            // is triggered for ActionQueue containing TestCountdownAction
             Lifecycle::Remove(None),
             Lifecycle::Drop(None, DropReason::Cleared),
             // Back to DespawnAction
@@ -545,8 +574,10 @@ fn despawn_running() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a)
-        .add_many(actions![TestAction::new(10), TestAction::new(1)]);
+    app.actions(a).add_many(actions![
+        TestCountdownAction::new(10),
+        TestCountdownAction::new(1)
+    ]);
 
     app.update();
 
