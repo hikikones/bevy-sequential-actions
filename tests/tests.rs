@@ -12,9 +12,9 @@ struct TestApp(App);
 impl TestApp {
     fn new() -> Self {
         let mut app = App::new();
-        app.init_resource::<Lifecycles>()
+        app.init_resource::<Hooks>()
             .add_plugins(SequentialActionsPlugin)
-            .add_systems(Update, countdown);
+            .add_systems(Update, (countdown, countup));
 
         Self(app)
     }
@@ -27,8 +27,8 @@ impl TestApp {
         self.world_mut().actions(agent)
     }
 
-    fn lifecycles(&self) -> &Lifecycles {
-        self.world().resource::<Lifecycles>()
+    fn hooks(&self) -> &Hooks {
+        self.world().resource::<Hooks>()
     }
 
     fn entity(&self, entity: Entity) -> EntityRef<'_> {
@@ -53,17 +53,17 @@ impl TestApp {
 
     fn reset(&mut self) -> &mut Self {
         self.world_mut().clear_entities();
-        self.world_mut().resource_mut::<Lifecycles>().clear();
+        self.world_mut().resource_mut::<Hooks>().clear();
         self
     }
 }
 
-struct TestCountdownAction {
+struct CountdownAction {
     count: i32,
     current: Option<i32>,
 }
 
-impl TestCountdownAction {
+impl CountdownAction {
     const fn new(count: i32) -> Self {
         Self {
             count,
@@ -72,31 +72,31 @@ impl TestCountdownAction {
     }
 }
 
-impl Action for TestCountdownAction {
+impl Action for CountdownAction {
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         world.get::<Countdown>(agent).unwrap().0 <= 0
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
         world
-            .resource_mut::<Lifecycles>()
-            .push(Lifecycle::Add(agent));
+            .resource_mut::<Hooks>()
+            .push(Hook::Add(Name::Countdown, agent));
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         let count = self.current.take().unwrap_or(self.count);
         world.entity_mut(agent).insert(Countdown(count));
         world
-            .resource_mut::<Lifecycles>()
-            .push(Lifecycle::Start(agent));
+            .resource_mut::<Hooks>()
+            .push(Hook::Start(Name::Countdown, agent));
 
         self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         world
-            .resource_mut::<Lifecycles>()
-            .push(Lifecycle::Stop(agent, reason));
+            .resource_mut::<Hooks>()
+            .push(Hook::Stop(Name::Countdown, agent, reason));
 
         let Some(agent) = agent else { return };
 
@@ -109,14 +109,14 @@ impl Action for TestCountdownAction {
 
     fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
         world
-            .resource_mut::<Lifecycles>()
-            .push(Lifecycle::Remove(agent));
+            .resource_mut::<Hooks>()
+            .push(Hook::Remove(Name::Countdown, agent));
     }
 
     fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
         world
-            .resource_mut::<Lifecycles>()
-            .push(Lifecycle::Drop(agent, reason));
+            .resource_mut::<Hooks>()
+            .push(Hook::Drop(Name::Countdown, agent, reason));
     }
 }
 
@@ -129,16 +129,94 @@ fn countdown(mut countdown_q: Query<&mut Countdown>) {
     }
 }
 
+struct CountupAction {
+    count: i32,
+    current: Option<i32>,
+}
+
+impl CountupAction {
+    const fn new(count: i32) -> Self {
+        Self {
+            count,
+            current: None,
+        }
+    }
+}
+
+impl Action for CountupAction {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        world.get::<Countup>(agent).unwrap().0 >= self.count
+    }
+
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Add(Name::Countup, agent));
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        let count = self.current.take().unwrap_or_default();
+        world.entity_mut(agent).insert(Countup(count));
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Start(Name::Countup, agent));
+
+        self.is_finished(agent, world)
+    }
+
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Stop(Name::Countup, agent, reason));
+
+        let Some(agent) = agent else { return };
+
+        let countup = world.entity_mut(agent).take::<Countup>();
+
+        if reason == StopReason::Paused {
+            self.current = Some(countup.unwrap().0);
+        }
+    }
+
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Remove(Name::Countup, agent));
+    }
+
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Drop(Name::Countup, agent, reason));
+    }
+}
+
+#[derive(Component)]
+struct Countup(i32);
+
+fn countup(mut countup_q: Query<&mut Countup>) {
+    for mut countup in &mut countup_q {
+        countup.0 += 1;
+    }
+}
+
 #[derive(Debug, Default, Resource, Deref, DerefMut)]
-struct Lifecycles(Vec<Lifecycle>);
+struct Hooks(Vec<Hook>);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Lifecycle {
-    Add(Entity),
-    Start(Entity),
-    Stop(Option<Entity>, StopReason),
-    Remove(Option<Entity>),
-    Drop(Option<Entity>, DropReason),
+enum Hook {
+    Add(Name, Entity),
+    Start(Name, Entity),
+    Stop(Name, Option<Entity>, StopReason),
+    Remove(Name, Option<Entity>),
+    Drop(Name, Option<Entity>, DropReason),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Name {
+    Countdown,
+    Countup,
+    Despawn,
 }
 
 #[test]
@@ -146,26 +224,29 @@ fn add() {
     let mut app = TestApp::new();
 
     let a = app.spawn_agent();
-    app.actions(a).start(false).add(TestCountdownAction::new(0));
+    app.actions(a).start(false).add(CountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 1);
-    assert_eq!(app.lifecycles().deref().clone(), vec![Lifecycle::Add(a)]);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![Hook::Add(Name::Countdown, a)]
+    );
 
-    app.actions(a).clear().add(TestCountdownAction::new(0));
+    app.actions(a).clear().add(CountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a).clear().add(TestCountdownAction::new(1));
+    app.actions(a).clear().add(CountdownAction::new(1));
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 0);
 
-    app.reset().actions(a).add(TestCountdownAction::new(1));
+    app.reset().actions(a).add(CountdownAction::new(1));
 
     assert!(app.get_entity(a).is_none());
-    assert_eq!(app.lifecycles().deref().clone(), vec![]);
+    assert_eq!(app.hooks().deref().clone(), vec![]);
 }
 
 #[test]
@@ -173,30 +254,26 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .start(false)
+        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 2);
     assert_eq!(
-        app.lifecycles().deref().clone(),
-        vec![Lifecycle::Add(a), Lifecycle::Add(a)]
+        app.hooks().deref().clone(),
+        vec![Hook::Add(Name::Countdown, a), Hook::Add(Name::Countup, a)]
     );
 
-    app.actions(a).clear().add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .clear()
+        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
-    ]);
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);
@@ -206,13 +283,12 @@ fn add_many() {
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);
 
-    app.reset().actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
-    ]);
+    app.reset()
+        .actions(a)
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
 
     assert!(app.get_entity(a).is_none());
-    assert_eq!(app.lifecycles().deref().clone(), vec![]);
+    assert_eq!(app.hooks().deref().clone(), vec![]);
 }
 
 #[test]
@@ -220,81 +296,77 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(0));
+    app.actions(a).add(CountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Finished),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done)
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
     );
 
     let a = app.reset().spawn_agent();
-    app.actions(a).add(TestCountdownAction::new(1));
+    app.actions(a).add(CountdownAction::new(1));
     app.update();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Finished),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done)
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
     );
 
     let a = app.reset().spawn_agent();
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Finished),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Finished),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done)
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done),
+            Hook::Start(Name::Countup, a),
+            Hook::Stop(Name::Countup, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countup, Some(a)),
+            Hook::Drop(Name::Countup, Some(a), DropReason::Done)
         ]
     );
 
     let a = app.reset().spawn_agent();
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
-    ]);
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
     app.update();
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Finished),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done),
-            Lifecycle::Start(a)
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done),
+            Hook::Start(Name::Countup, a)
         ]
     );
 }
@@ -304,18 +376,18 @@ fn cancel() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).cancel();
+    app.actions(a).add(CountdownAction::new(1)).cancel();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Canceled),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done)
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
     );
 
@@ -327,16 +399,16 @@ fn pause() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).pause();
+    app.actions(a).add(CountdownAction::new(1)).pause();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 1);
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Paused)
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Paused)
         ]
     );
 
@@ -348,18 +420,18 @@ fn next() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).next();
+    app.actions(a).add(CountdownAction::new(1)).next();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Canceled),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Done)
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
     );
 
@@ -373,17 +445,17 @@ fn skip() {
 
     app.actions(a)
         .start(false)
-        .add(TestCountdownAction::new(1))
+        .add(CountdownAction::new(1))
         .skip();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Skipped)
+            Hook::Add(Name::Countdown, a),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Skipped)
         ]
     );
 
@@ -396,25 +468,22 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![
-            TestCountdownAction::new(1),
-            TestCountdownAction::new(1)
-        ])
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)])
         .clear();
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(Some(a), StopReason::Canceled),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Cleared),
-            Lifecycle::Remove(Some(a)),
-            Lifecycle::Drop(Some(a), DropReason::Cleared)
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Cleared),
+            Hook::Remove(Name::Countup, Some(a)),
+            Hook::Drop(Name::Countup, Some(a), DropReason::Cleared)
         ]
     );
 
@@ -506,7 +575,7 @@ fn pause_resume() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(10));
+    app.actions(a).add(CountdownAction::new(10));
 
     assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 10);
 
@@ -517,7 +586,7 @@ fn pause_resume() {
     app.actions(a)
         .pause()
         .order(AddOrder::Front)
-        .add(TestCountdownAction::new(1));
+        .add(CountdownAction::new(1));
 
     assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 1);
 
@@ -531,33 +600,23 @@ fn despawn() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(10),
-        TestCountdownAction::new(1)
-    ]);
-
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(10), CountupAction::new(10)]);
     app.update();
-
-    assert!(app.get_entity(a).is_some());
-    assert_eq!(
-        app.lifecycles().deref().clone(),
-        vec![Lifecycle::Add(a), Lifecycle::Add(a), Lifecycle::Start(a)]
-    );
-
     app.despawn(a);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(None, StopReason::Canceled),
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Done),
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Cleared)
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, None, StopReason::Canceled),
+            Hook::Remove(Name::Countdown, None),
+            Hook::Drop(Name::Countdown, None, DropReason::Done),
+            Hook::Remove(Name::Countup, None),
+            Hook::Drop(Name::Countup, None, DropReason::Cleared)
         ]
     );
 }
@@ -571,30 +630,30 @@ fn despawn_action() {
         }
         fn on_add(&mut self, agent: Entity, world: &mut World) {
             world
-                .resource_mut::<Lifecycles>()
-                .push(Lifecycle::Add(agent));
+                .resource_mut::<Hooks>()
+                .push(Hook::Add(Name::Despawn, agent));
         }
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world
-                .resource_mut::<Lifecycles>()
-                .push(Lifecycle::Start(agent));
+                .resource_mut::<Hooks>()
+                .push(Hook::Start(Name::Despawn, agent));
             world.despawn(agent);
             B
         }
         fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
             world
-                .resource_mut::<Lifecycles>()
-                .push(Lifecycle::Stop(agent, reason));
+                .resource_mut::<Hooks>()
+                .push(Hook::Stop(Name::Despawn, agent, reason));
         }
         fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
             world
-                .resource_mut::<Lifecycles>()
-                .push(Lifecycle::Remove(agent));
+                .resource_mut::<Hooks>()
+                .push(Hook::Remove(Name::Despawn, agent));
         }
         fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
             world
-                .resource_mut::<Lifecycles>()
-                .push(Lifecycle::Drop(agent, reason));
+                .resource_mut::<Hooks>()
+                .push(Hook::Drop(Name::Despawn, agent, reason));
         }
     }
 
@@ -605,13 +664,13 @@ fn despawn_action() {
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(None, StopReason::Finished),
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Done)
+            Hook::Add(Name::Despawn, a),
+            Hook::Start(Name::Despawn, a),
+            Hook::Stop(Name::Despawn, None, StopReason::Finished),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
         ]
     );
 
@@ -620,59 +679,67 @@ fn despawn_action() {
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            Lifecycle::Stop(None, StopReason::Canceled),
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Done)
+            Hook::Add(Name::Despawn, a),
+            Hook::Start(Name::Despawn, a),
+            Hook::Stop(Name::Despawn, None, StopReason::Canceled),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
         ]
     );
 
     let a = app.reset().spawn_agent();
-    app.actions(a)
-        .add_many(actions![DespawnAction::<true>, TestCountdownAction::new(1)]);
+    app.actions(a).add_many(actions![
+        DespawnAction::<true>,
+        CountdownAction::new(1),
+        CountupAction::new(1)
+    ]);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            // After despawn, the on_remove component lifecycle hook is
-            // triggered for ActionQueue containing TestCountdownAction
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Cleared),
+            Hook::Add(Name::Despawn, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Despawn, a),
+            // After despawn, the bevy ecs on_remove component hook is triggered
+            Hook::Remove(Name::Countdown, None),
+            Hook::Drop(Name::Countdown, None, DropReason::Cleared),
+            Hook::Remove(Name::Countup, None),
+            Hook::Drop(Name::Countup, None, DropReason::Cleared),
             // Back to DespawnAction
-            Lifecycle::Stop(None, StopReason::Finished),
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Done)
+            Hook::Stop(Name::Despawn, None, StopReason::Finished),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
         ]
     );
 
     let a = app.reset().spawn_agent();
     app.actions(a).add_many(actions![
         DespawnAction::<false>,
-        TestCountdownAction::new(1)
+        CountdownAction::new(1),
+        CountupAction::new(1)
     ]);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
-        app.lifecycles().deref().clone(),
+        app.hooks().deref().clone(),
         vec![
-            Lifecycle::Add(a),
-            Lifecycle::Add(a),
-            Lifecycle::Start(a),
-            // After despawn, the on_remove component lifecycle hook is
-            // triggered for ActionQueue containing TestCountdownAction
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Cleared),
+            Hook::Add(Name::Despawn, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Despawn, a),
+            // After despawn, the bevy ecs on_remove component hook is triggered
+            Hook::Remove(Name::Countdown, None),
+            Hook::Drop(Name::Countdown, None, DropReason::Cleared),
+            Hook::Remove(Name::Countup, None),
+            Hook::Drop(Name::Countup, None, DropReason::Cleared),
             // Back to DespawnAction
-            Lifecycle::Stop(None, StopReason::Canceled),
-            Lifecycle::Remove(None),
-            Lifecycle::Drop(None, DropReason::Done)
+            Hook::Stop(Name::Despawn, None, StopReason::Canceled),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
         ]
     );
 }
