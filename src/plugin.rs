@@ -70,8 +70,13 @@ impl SequentialActionsPlugin {
         action: impl Into<BoxedAction>,
         world: &mut World,
     ) {
-        // TODO: Check for agent first. Take action queue?
         let mut action = action.into();
+
+        if world.get_entity(agent).is_none() {
+            warn!("Cannot add action {action:?} to non-existent agent {agent}.");
+            return;
+        }
+
         debug!("Adding action {action:?} for agent {agent} with {config:?}.");
         action.on_add(agent, world);
 
