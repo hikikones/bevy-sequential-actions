@@ -5,6 +5,8 @@ use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
 
+// TODO: merge this and schedule examples with a custom plugin
+
 fn main() {
     App::new()
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
