@@ -227,7 +227,7 @@ impl CurrentAction {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
-        let mut current_action = world.get_mut::<CurrentAction>(agent).unwrap();
+        let mut current_action = world.get_mut::<Self>(agent).unwrap();
         if let Some(mut action) = current_action.take() {
             world.commands().add(move |world: &mut World| {
                 action.on_stop(None, world, StopReason::Canceled);
@@ -264,7 +264,7 @@ impl ActionQueue {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the action queue when an `agent` is despawned.
     pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
-        let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
+        let mut action_queue = world.get_mut::<Self>(agent).unwrap();
         if !action_queue.is_empty() {
             let actions = std::mem::take(&mut action_queue.0);
             world.commands().add(move |world: &mut World| {
