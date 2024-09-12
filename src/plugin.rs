@@ -401,13 +401,10 @@ impl SequentialActionsPlugin {
 
         debug!("Clearing {action_queue:?} for {agent}.");
 
-        action_queue
-            .drain(..)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .for_each(|mut action| {
-                action.on_remove(agent.into(), world);
-                action.on_drop(agent.into(), world, DropReason::Cleared);
-            });
+        let actions = std::mem::take(&mut action_queue.0);
+        for mut action in actions {
+            action.on_remove(agent.into(), world);
+            action.on_drop(agent.into(), world, DropReason::Cleared);
+        }
     }
 }
