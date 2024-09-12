@@ -184,7 +184,7 @@ impl<S: ScheduleLabel + Clone, F: QueryFilter + Send + Sync + 'static> Plugin
         // Add system for advancing action queue to specified schedule
         app.add_systems(self.schedule.clone(), Self::check_actions_exclusive);
 
-        // Add component lifecycle hooks for cleanup of actions when despawning agents
+        // Add observers for cleanup of actions when despawning agents
         if self.cleanup {
             app.observe(CurrentAction::on_remove_trigger::<F>)
                 .observe(ActionQueue::on_remove_trigger::<F>);
