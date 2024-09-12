@@ -226,7 +226,7 @@ pub struct CurrentAction(Option<BoxedAction>);
 impl CurrentAction {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
-    pub fn on_remove(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+    pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
         let mut current_action = world.get_mut::<CurrentAction>(agent).unwrap();
         if let Some(mut action) = current_action.take() {
             world.commands().add(move |world: &mut World| {
@@ -234,6 +234,24 @@ impl CurrentAction {
                 action.on_remove(None, world);
                 action.on_drop(None, world, DropReason::Done);
             });
+        }
+    }
+
+    /// Observer for cleaning up the current action when an `agent` is despawned.
+    pub fn on_remove_trigger<F: QueryFilter>(
+        trigger: Trigger<OnRemove, Self>,
+        mut query: Query<&mut Self, F>,
+        mut commands: Commands,
+    ) {
+        let agent = trigger.entity();
+        if let Ok(mut current_action) = query.get_mut(agent) {
+            if let Some(mut action) = current_action.take() {
+                commands.add(move |world: &mut World| {
+                    action.on_stop(None, world, StopReason::Canceled);
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Done);
+                });
+            }
         }
     }
 }
@@ -245,7 +263,7 @@ pub struct ActionQueue(VecDeque<BoxedAction>);
 impl ActionQueue {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the action queue when an `agent` is despawned.
-    pub fn on_remove(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+    pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
         let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
         if !action_queue.is_empty() {
             let actions = std::mem::take(&mut action_queue.0);
@@ -255,6 +273,26 @@ impl ActionQueue {
                     action.on_drop(None, world, DropReason::Cleared);
                 }
             });
+        }
+    }
+
+    /// Observer for cleaning up the action queue when an `agent` is despawned.
+    pub fn on_remove_trigger<F: QueryFilter>(
+        trigger: Trigger<OnRemove, Self>,
+        mut query: Query<&mut Self, F>,
+        mut commands: Commands,
+    ) {
+        let agent = trigger.entity();
+        if let Ok(mut action_queue) = query.get_mut(agent) {
+            if !action_queue.is_empty() {
+                let actions = std::mem::take(&mut action_queue.0);
+                commands.add(move |world: &mut World| {
+                    for mut action in actions {
+                        action.on_remove(None, world);
+                        action.on_drop(None, world, DropReason::Cleared);
+                    }
+                });
+            }
         }
     }
 }

@@ -24,10 +24,10 @@ impl Plugin for SequentialActionsPlugin {
         app.add_systems(Last, Self::check_actions::<()>);
         app.world_mut()
             .register_component_hooks::<CurrentAction>()
-            .on_remove(CurrentAction::on_remove);
+            .on_remove(CurrentAction::on_remove_hook);
         app.world_mut()
             .register_component_hooks::<ActionQueue>()
-            .on_remove(ActionQueue::on_remove);
+            .on_remove(ActionQueue::on_remove_hook);
     }
 }
 

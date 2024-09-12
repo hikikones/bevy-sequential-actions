@@ -150,12 +150,12 @@ Each example can be run with `cargo run --example <example>`.
 
 | Example | Description |
 | ------- | ----------- |
-| `basic` | Shows the basic usage of the library. |
-| `pause` | Shows how to pause and resume an action. |
-| `repeat` | Shows how to create an action that repeats. |
-| `parallel` | Shows how to create actions that run in parallel. |
-| `sequence` | Shows how to create an action with a sequence of actions. |
-| `custom` | Shows how to use a custom system for advancing the action queue. |
+| `basic` | Basic usage of the library. |
+| `pause` | Pause and resume an action. |
+| `repeat` | Create an action that repeats. |
+| `parallel` | Create actions that run in parallel. |
+| `sequence` | Create action with a sequence of actions. |
+| `custom` | Custom plugin with different schedules and action queue advancement. |
 
 ## 📌 Compatibility
 

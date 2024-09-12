@@ -17,7 +17,7 @@ fn main() {
                 .with_filter::<With<EvenMarker>>(),
             // Add custom plugin for the odd schedule
             CustomSequentialActionsPlugin::new(OddSchedule)
-                .with_cleanup() // TODO: what if not?
+                // No cleanup for odd agents
                 .with_filter::<With<OddMarker>>(),
         ))
         .add_systems(Startup, setup)
@@ -40,18 +40,26 @@ struct OddMarker;
 fn setup(mut commands: Commands) {
     // Spawn agent with even marker for even schedule
     let agent_even = commands.spawn((ActionsBundle::new(), EvenMarker)).id();
-    commands.actions(agent_even).add(PrintForeverAction(format!(
-        "Even: is_finished is called every even frame for agent {agent_even}."
-    )));
+    commands
+        .actions(agent_even)
+        .add(PrintForeverAction::new(format!(
+            "Even: is_finished is called every even frame for agent {agent_even}."
+        )));
 
     // Spawn agent with odd marker for odd schedule
     let agent_odd = commands.spawn((ActionsBundle::new(), OddMarker)).id();
-    commands.actions(agent_odd).add(PrintForeverAction(format!(
-        "Odd:  is_finished is called every odd  frame for agent {agent_odd}."
-    )));
+    commands
+        .actions(agent_odd)
+        .add(PrintForeverAction::new(format!(
+            "Odd:  is_finished is called every odd  frame for agent {agent_odd}."
+        )));
 }
 
-fn run_custom_schedules(world: &mut World, mut frame_count: Local<u32>) {
+fn run_custom_schedules(
+    world: &mut World,
+    mut frame_count: Local<u32>,
+    mut agent_q: Local<QueryState<Entity, With<CurrentAction>>>,
+) {
     if *frame_count % 2 == 0 {
         world.run_schedule(EvenSchedule);
     } else {
@@ -59,28 +67,54 @@ fn run_custom_schedules(world: &mut World, mut frame_count: Local<u32>) {
     }
 
     if *frame_count == 10 {
+        for agent in agent_q.iter(world).collect::<Vec<_>>() {
+            world.despawn(agent);
+        }
         world.send_event(AppExit::Success);
     }
 
     *frame_count += 1;
 }
 
-struct PrintForeverAction(String);
+struct PrintForeverAction {
+    message: String,
+    agent: Entity,
+}
+
+impl PrintForeverAction {
+    fn new(message: String) -> Self {
+        Self {
+            message,
+            agent: Entity::PLACEHOLDER,
+        }
+    }
+}
 
 impl Action for PrintForeverAction {
     fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        println!("{}", self.0);
+        println!("{}", self.message);
         false
     }
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+    fn on_start(&mut self, agent: Entity, _world: &mut World) -> bool {
+        self.agent = agent;
         false
     }
     fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
+    fn on_drop(self: Box<Self>, _agent: Option<Entity>, _world: &mut World, _reason: DropReason) {
+        // Notice that this is not called for odd agents when despawned...
+        println!("Dropping action for agent {}...", self.agent);
+    }
 }
 
+/// Custom plugin for sequential actions.
+///
+/// Action queue advancement will run in the specified schedule `S`,
+/// and only for agents matching the specified query filter `F`.
+/// With `cleanup` enabled, an observer will trigger for despawned agents
+/// that properly cleans up any remaining action.
 struct CustomSequentialActionsPlugin<S: ScheduleLabel, F: QueryFilter> {
     schedule: S,
-    register_cleanup_hooks: bool,
+    cleanup: bool,
     filter: PhantomData<F>,
 }
 
@@ -88,20 +122,20 @@ impl<S: ScheduleLabel> CustomSequentialActionsPlugin<S, ()> {
     const fn new(schedule: S) -> Self {
         Self {
             schedule,
-            register_cleanup_hooks: false,
+            cleanup: false,
             filter: PhantomData,
         }
     }
 
     const fn with_cleanup(mut self) -> Self {
-        self.register_cleanup_hooks = true;
+        self.cleanup = true;
         self
     }
 
     fn with_filter<F: QueryFilter>(self) -> CustomSequentialActionsPlugin<S, F> {
         CustomSequentialActionsPlugin {
             schedule: self.schedule,
-            register_cleanup_hooks: self.register_cleanup_hooks,
+            cleanup: self.cleanup,
             filter: PhantomData,
         }
     }
@@ -151,13 +185,9 @@ impl<S: ScheduleLabel + Clone, F: QueryFilter + Send + Sync + 'static> Plugin
         app.add_systems(self.schedule.clone(), Self::check_actions_exclusive);
 
         // Add component lifecycle hooks for cleanup of actions when despawning agents
-        if self.register_cleanup_hooks {
-            app.world_mut()
-                .register_component_hooks::<CurrentAction>()
-                .try_on_remove(CurrentAction::on_remove);
-            app.world_mut()
-                .register_component_hooks::<ActionQueue>()
-                .try_on_remove(ActionQueue::on_remove);
+        if self.cleanup {
+            app.observe(CurrentAction::on_remove_trigger::<F>)
+                .observe(ActionQueue::on_remove_trigger::<F>);
         }
     }
 }
