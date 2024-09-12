@@ -29,28 +29,30 @@ struct Id(u32);
 
 fn check_actions_exclusive(
     world: &mut World,
+    mut finished: Local<Vec<(Entity, u32)>>,
     mut agent_q: Local<QueryState<(Entity, &CurrentAction, &Id)>>,
 ) {
     // Collect all agents with finished action
-    let mut finished_agents = agent_q
-        .iter(world)
-        .filter(|&(agent, current_action, _)| {
-            current_action
-                .as_ref()
-                .map(|action| action.is_finished(agent, world))
-                .unwrap_or(false)
-        })
-        .map(|(agent, _, id)| (agent, id.0))
-        .collect::<Vec<_>>();
+    finished.extend(
+        agent_q
+            .iter(world)
+            .filter(|&(agent, current_action, _)| {
+                current_action
+                    .as_ref()
+                    .map(|action| action.is_finished(agent, world))
+                    .unwrap_or(false)
+            })
+            .map(|(agent, _, id)| (agent, id.0)),
+    );
 
     // Sort by id in reverse
-    finished_agents.sort_by_key(|&(_, id)| std::cmp::Reverse(id));
+    finished.sort_by_key(|&(_, id)| std::cmp::Reverse(id));
 
     // Advance the action queue
-    finished_agents.into_iter().for_each(|(agent, _)| {
+    for (agent, _) in finished.drain(..) {
         SequentialActionsPlugin::stop_current_action(agent, StopReason::Finished, world);
         SequentialActionsPlugin::start_next_action(agent, world);
-    });
+    }
 }
 
 struct PrintIdAction;
