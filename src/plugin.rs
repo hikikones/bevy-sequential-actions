@@ -22,6 +22,12 @@ pub struct SequentialActionsPlugin;
 impl Plugin for SequentialActionsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Last, Self::check_actions::<()>);
+        app.world_mut()
+            .register_component_hooks::<CurrentAction>()
+            .on_remove(CurrentAction::on_remove);
+        app.world_mut()
+            .register_component_hooks::<ActionQueue>()
+            .on_remove(ActionQueue::on_remove);
     }
 }
 

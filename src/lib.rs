@@ -176,11 +176,7 @@ use std::{collections::VecDeque, fmt::Debug};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::{
-    component::{ComponentHooks, StorageType},
-    prelude::*,
-    query::QueryFilter,
-};
+use bevy_ecs::{component::ComponentId, prelude::*, query::QueryFilter, world::DeferredWorld};
 use bevy_log::{debug, warn};
 
 mod commands;
@@ -224,52 +220,42 @@ impl ActionsBundle {
 }
 
 /// The current action for an `agent`.
-///
-/// The [`on_remove`](ComponentHooks::on_remove) hook is implemented for this component so that
-/// you can despawn an agent without worrying about cleaning up the current action.
-#[derive(Debug, Default, Deref, DerefMut)]
+#[derive(Debug, Default, Component, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
 
-impl Component for CurrentAction {
-    const STORAGE_TYPE: StorageType = StorageType::Table;
-
-    fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.on_remove(|mut world, agent, _component_id| {
-            let mut current_action = world.get_mut::<CurrentAction>(agent).unwrap();
-            if let Some(mut action) = current_action.take() {
-                world.commands().add(move |world: &mut World| {
-                    action.on_stop(None, world, StopReason::Canceled);
-                    action.on_remove(None, world);
-                    action.on_drop(None, world, DropReason::Done);
-                });
-            }
-        });
+impl CurrentAction {
+    /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
+    /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
+    pub fn on_remove(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+        let mut current_action = world.get_mut::<CurrentAction>(agent).unwrap();
+        if let Some(mut action) = current_action.take() {
+            world.commands().add(move |world: &mut World| {
+                action.on_stop(None, world, StopReason::Canceled);
+                action.on_remove(None, world);
+                action.on_drop(None, world, DropReason::Done);
+            });
+        }
     }
 }
 
 /// The action queue for an `agent`.
-///
-/// The [`on_remove`](ComponentHooks::on_remove) hook is implemented for this component so that
-/// you can despawn an agent without worrying about cleaning up the actions in the queue.
-#[derive(Debug, Default, Deref, DerefMut)]
+#[derive(Debug, Default, Component, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
-impl Component for ActionQueue {
-    const STORAGE_TYPE: StorageType = StorageType::Table;
-
-    fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.on_remove(|mut world, agent, _component_id| {
-            let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
-            if !action_queue.is_empty() {
-                let actions = std::mem::take(&mut action_queue.0);
-                world.commands().add(move |world: &mut World| {
-                    for mut action in actions {
-                        action.on_remove(None, world);
-                        action.on_drop(None, world, DropReason::Cleared);
-                    }
-                });
-            }
-        });
+impl ActionQueue {
+    /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
+    /// used by [`SequentialActionsPlugin`] for cleaning up the action queue when an `agent` is despawned.
+    pub fn on_remove(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+        let mut action_queue = world.get_mut::<ActionQueue>(agent).unwrap();
+        if !action_queue.is_empty() {
+            let actions = std::mem::take(&mut action_queue.0);
+            world.commands().add(move |world: &mut World| {
+                for mut action in actions {
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Cleared);
+                }
+            });
+        }
     }
 }
 
