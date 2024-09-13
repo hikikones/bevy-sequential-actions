@@ -37,9 +37,14 @@ struct EvenMarker;
 #[derive(Component)]
 struct OddMarker;
 
+#[derive(Component)]
+struct Agent;
+
 fn setup(mut commands: Commands) {
     // Spawn agent with even marker for even schedule
-    let agent_even = commands.spawn((ActionsBundle::new(), EvenMarker)).id();
+    let agent_even = commands
+        .spawn((ActionsBundle::new(), EvenMarker, Agent))
+        .id();
     commands
         .actions(agent_even)
         .add(PrintForeverAction::new(format!(
@@ -47,7 +52,9 @@ fn setup(mut commands: Commands) {
         )));
 
     // Spawn agent with odd marker for odd schedule
-    let agent_odd = commands.spawn((ActionsBundle::new(), OddMarker)).id();
+    let agent_odd = commands
+        .spawn((ActionsBundle::new(), OddMarker, Agent))
+        .id();
     commands
         .actions(agent_odd)
         .add(PrintForeverAction::new(format!(
@@ -58,7 +65,7 @@ fn setup(mut commands: Commands) {
 fn run_custom_schedules(
     world: &mut World,
     mut frame_count: Local<u32>,
-    mut agent_q: Local<QueryState<Entity, With<CurrentAction>>>,
+    mut agent_q: Local<QueryState<Entity, With<Agent>>>,
 ) {
     if *frame_count % 2 == 0 {
         world.run_schedule(EvenSchedule);
@@ -111,7 +118,7 @@ impl Action for PrintForeverAction {
 /// Action queue advancement will run in the specified schedule `S`,
 /// and only for agents matching the specified query filter `F`.
 /// With `cleanup` enabled, an observer will trigger for despawned agents
-/// that properly cleans up any remaining action.
+/// that ensures any remaining action is cleaned up.
 struct CustomSequentialActionsPlugin<S: ScheduleLabel, F: QueryFilter> {
     schedule: S,
     cleanup: bool,
