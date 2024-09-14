@@ -1,9 +1,7 @@
 use crate::*;
 
-impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
-    type Modifier = AgentCommands<'c, 'w, 's>;
-
-    fn actions(&'c mut self, agent: Entity) -> AgentCommands<'c, 'w, 's> {
+impl ActionsProxy for Commands<'_, '_> {
+    fn actions(&mut self, agent: Entity) -> impl ModifyActions {
         AgentCommands {
             agent,
             config: AddConfig::default(),

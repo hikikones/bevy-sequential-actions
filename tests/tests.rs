@@ -22,7 +22,7 @@ impl TestApp {
         self.world_mut().spawn(ActionsBundle::new()).id()
     }
 
-    fn actions(&mut self, agent: Entity) -> AgentActions {
+    fn actions(&mut self, agent: Entity) -> impl ModifyActions + '_ {
         self.world_mut().actions(agent)
     }
 
