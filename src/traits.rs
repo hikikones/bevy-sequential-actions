@@ -1,6 +1,51 @@
 use super::*;
 
 /// The trait that all actions must implement.
+///
+/// It contains various methods that together defines the _lifecycle_ of an action.
+/// From this, you can create any action that can last as long as you like,
+/// and do as much as you like.
+///
+/// ## ⚠️ Warning
+///
+/// Since you are given a mutable [`World`], you can in practice do "anything".
+/// Depending on what you do, the logic for advancing the action queue might not work properly.
+///
+/// There are two things you should keep in mind:
+///
+/// * The [`execute`](`ModifyActions::execute`) and [`next`](`ModifyActions::next`) methods should not be used,
+///     as that will immediately advance the action queue while inside any of the trait methods.
+///     Instead, you should return `true` in [`on_start`](`Self::on_start`).
+/// * When adding new actions, you should set the [`start`](`ModifyActions::start`) property to `false`.
+///     Otherwise, you will effectively call [`execute`](`ModifyActions::execute`) which, again, should not be used.
+///
+/// ```rust,no_run
+/// # use bevy_ecs::prelude::*;
+/// # use bevy_sequential_actions::*;
+/// # struct EmptyAction;
+/// # impl Action for EmptyAction {
+/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+/// #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+/// #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+/// # }
+/// # struct TestAction;
+/// # impl Action for TestAction {
+/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+///     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+/// #       let action_a = EmptyAction;
+/// #       let action_b = EmptyAction;
+/// #       let action_c = EmptyAction;
+///         world
+///             .actions(agent)
+///             .start(false) // Do not start next action
+///             .add_many(actions![action_a, action_b, action_c]);
+///
+///         // Immediately advance the action queue
+///         true
+///     }
+/// #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+/// # }
+/// ```
 #[allow(unused_variables)]
 pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
     /// Determines if an action is finished or not.
@@ -11,21 +56,37 @@ pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
 
     /// The method that is called when an action is started.
     ///
+    /// Typically here you would insert components to `agent` or a new entity
+    /// to make systems run. If you wish to despawn `agent` as an action,
+    /// **this is where you should do it**.
+    ///
     /// Returning `true` here marks the action as already finished,
     /// and will immediately advance the action queue.
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool;
 
     /// The method that is called when an action is stopped.
+    ///
+    /// Typically here you would clean up any stuff from [`on_start`](`Self::on_start`),
+    /// depending on the [`reason`](`StopReason`).
+    ///
+    /// When paused, the action will be put back into the action queue again to the front.
+    /// This means that it will start again when the next action is executed.
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason);
 
     /// The method that is called when an action is added to the queue.
+    ///
+    /// You can think of this as the _constructor_, as it will only be called once.
     fn on_add(&mut self, agent: Entity, world: &mut World) {}
 
     /// The method that is called when an action is removed from the queue.
+    ///
+    /// You can think of this as the _destructor_, as it will only be called once.
     fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {}
 
-    /// The last method that is called for an action.
-    /// Full ownership is given here, hence the name.
+    /// The last method that is called with full ownership.
+    ///
+    /// This is useful for actions that might want to alter the behavior of the action queue.
+    /// For example, a `RepeatAction` could keep readding itself to the action queue based on some counter.
     fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {}
 
     /// Returns the type name of an action.
@@ -71,7 +132,7 @@ pub trait ActionsProxy<'a> {
     /// The type returned for modifying actions.
     type Modifier: ModifyActions;
 
-    /// Returns a type for modifying actions for specified `agent`.
+    /// Modify actions for specified `agent`.
     fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
 }
 

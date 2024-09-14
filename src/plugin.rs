@@ -2,21 +2,11 @@ use super::*;
 
 /// The [`Plugin`] for this library that you can add to your [`App`].
 ///
-/// This plugin adds the system [`check_actions`](Self::check_actions) to the [`Last`] schedule.
-/// It also contains various static methods for modifying the action queue.
+/// This plugin adds the [`check_actions`](Self::check_actions) system to the [`Last`] schedule
+/// for action queue advancement, and also two [`hooks`](bevy_ecs::component::ComponentHooks)
+/// for cleaning up actions from despawned agents.
 ///
-/// # Example
-///
-/// ```rust,no_run
-/// # use bevy_ecs::prelude::*;
-/// # use bevy_app::prelude::*;
-/// # use bevy_sequential_actions::*;
-/// # fn main() {
-/// App::new()
-///     .add_plugins(SequentialActionsPlugin)
-///     .run();
-/// # }
-/// ```
+/// Finally, it also contains various static methods for modifying the action queue.
 pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {

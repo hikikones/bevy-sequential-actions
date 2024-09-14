@@ -39,17 +39,9 @@ fn main() {
 #### Implementing an Action
 
 An action is anything that implements the [`Action`] trait.
-The trait contains 3 required methods:
-
-* [`is_finished`](Action::is_finished) to determine if an action is finished or not.
-* [`on_start`](Action::on_start) which is called when an action is started.
-* [`on_stop`](Action::on_stop) which is called when an action is stopped.
-
-In addition, there are 3 optional methods:
-
-* [`on_add`](Action::on_add) which is called when an action is added to the queue.
-* [`on_remove`](Action::on_remove) which is called when an action is removed from the queue.
-* [`on_drop`](Action::on_drop) which is the last method to be called with full ownership.
+The trait contains various methods that together defines the _lifecycle_ of an action.
+From this, you can create any action that can last as long as you like,
+and do as much as you like.
 
 An entity with actions is referred to as an `agent`.
 
@@ -156,20 +148,6 @@ fn setup(mut commands: Commands) {
         });
 }
 ```
-
-#### ⚠️ Warning
-
-One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
-In order to pass a mutable reference to world when calling the trait methods,
-the action has to be temporarily removed from an `agent`.
-This means that depending on what you do,
-the logic for advancing the action queue might not work properly.
-
-In general, there are two rules when modifying actions for an `agent` inside the action trait:
-
-* When adding new actions, you should either set the [`start`](AddConfig::start) property in [`AddConfig`] to `false`,
-    or push to the [`ActionQueue`] component directly.
-* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be used.
 */
 
 use std::{collections::VecDeque, fmt::Debug};
