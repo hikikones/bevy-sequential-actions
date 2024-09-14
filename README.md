@@ -49,12 +49,13 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
+    // By default, this method is called every frame in the Last schedule.
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if wait timer has reached zero.
-        // By default, this method is called every frame in the Last schedule.
         world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
     }
 
+    // This method is called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
@@ -67,6 +68,7 @@ impl Action for WaitAction {
         self.is_finished(agent, world)
     }
 
+    // This method is called when an action is stopped.
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         // Do nothing if agent has been despawned.
         let Some(agent) = agent else { return };
@@ -79,6 +81,15 @@ impl Action for WaitAction {
             self.current = Some(wait_timer.unwrap().0);
         }
     }
+
+    // Optional. This method is called when an action is added to the queue.
+    fn on_add(&mut self, agent: Entity, world: &mut World) {}
+
+    // Optional. This method is called when an action is removed from the queue.
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {}
+
+    // Optional. The last method that is called with full ownership.
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {}
 }
 
 #[derive(Component)]
