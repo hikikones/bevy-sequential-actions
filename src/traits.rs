@@ -11,8 +11,9 @@ use super::*;
 /// Since you are given a mutable [`World`], you can in practice do "anything".
 /// Depending on what you do, the logic for advancing the action queue might not work properly.
 ///
-/// There are two things you should keep in mind:
+/// There are a few things you should keep in mind:
 ///
+/// * If you want to despawn an `agent` as an action, this should be done in [`on_start`](`Self::on_start`).
 /// * The [`execute`](`ModifyActions::execute`) and [`next`](`ModifyActions::next`) methods should not be used,
 ///     as that will immediately advance the action queue while inside any of the trait methods.
 ///     Instead, you should return `true` in [`on_start`](`Self::on_start`).
