@@ -210,7 +210,7 @@ impl ActionsBundle {
 
 /// The current action for an `agent`.
 #[derive(Debug, Default, Component, Deref, DerefMut)]
-pub struct CurrentAction(Option<BoxedAction>);
+pub struct CurrentAction(Option<Entity>);
 
 impl CurrentAction {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
@@ -243,6 +243,12 @@ impl CurrentAction {
             }
         }
     }
+}
+
+#[derive(Component)]
+pub struct ActiveAction {
+    pub agent: Entity,
+    pub action: BoxedAction,
 }
 
 /// The action queue for an `agent`.
