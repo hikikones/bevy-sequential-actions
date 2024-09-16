@@ -217,8 +217,28 @@ impl CurrentAction {
     /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
         let mut current_action = world.get_mut::<Self>(agent).unwrap();
-        if let Some(mut action) = current_action.take() {
+        if let Some(entity) = current_action.take() {
             world.commands().add(move |world: &mut World| {
+                let Some(mut entity_ref) = world.get_entity_mut(entity) else {
+                    warn!(
+                        "Cannot clear current action for despawned agent {agent} \
+                        due to non-existent active action entity {entity}."
+                    );
+                    return;
+                };
+
+                let Some(ActiveAction { mut action, .. }) = entity_ref.take::<ActiveAction>()
+                else {
+                    warn!(
+                        "Cannot clear current action for despawned agent {agent} \
+                        due to active action entity {entity} missing component {}.",
+                        std::any::type_name::<ActiveAction>()
+                    );
+                    world.despawn(entity);
+                    return;
+                };
+                world.despawn(entity);
+
                 action.on_stop(None, world, StopReason::Canceled);
                 action.on_remove(None, world);
                 action.on_drop(None, world, DropReason::Done);
@@ -234,8 +254,28 @@ impl CurrentAction {
     ) {
         let agent = trigger.entity();
         if let Ok(mut current_action) = query.get_mut(agent) {
-            if let Some(mut action) = current_action.take() {
+            if let Some(entity) = current_action.take() {
                 commands.add(move |world: &mut World| {
+                    let Some(mut entity_ref) = world.get_entity_mut(entity) else {
+                        warn!(
+                            "Cannot clear current action for despawned agent {agent} \
+                            due to non-existent active action entity {entity}."
+                        );
+                        return;
+                    };
+
+                    let Some(ActiveAction { mut action, .. }) = entity_ref.take::<ActiveAction>()
+                    else {
+                        warn!(
+                            "Cannot clear current action for despawned agent {agent} \
+                            due to active action entity {entity} missing component {}.",
+                            std::any::type_name::<ActiveAction>()
+                        );
+                        world.despawn(entity);
+                        return;
+                    };
+                    world.despawn(entity);
+
                     action.on_stop(None, world, StopReason::Canceled);
                     action.on_remove(None, world);
                     action.on_drop(None, world, DropReason::Done);
@@ -245,10 +285,10 @@ impl CurrentAction {
     }
 }
 
-#[derive(Component)]
+#[derive(Debug, Component)]
 pub struct ActiveAction {
-    pub agent: Entity,
     pub action: BoxedAction,
+    pub agent: Entity,
 }
 
 /// The action queue for an `agent`.

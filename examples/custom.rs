@@ -152,19 +152,15 @@ impl<S: ScheduleLabel, F: QueryFilter> CustomSequentialActionsPlugin<S, F> {
     fn check_actions_exclusive(
         world: &mut World,
         mut finished: Local<Vec<Entity>>,
-        mut agent_q: Local<QueryState<(Entity, &CurrentAction), F>>,
+        mut agent_q: Local<QueryState<&ActiveAction, F>>,
     ) {
         // Collect all agents with finished action
         finished.extend(
             agent_q
                 .iter(world)
-                .filter(|&(agent, current_action)| {
-                    current_action
-                        .as_ref()
-                        .map(|action| action.is_finished(agent, world))
-                        .unwrap_or(false)
-                })
-                .map(|(agent, _)| agent),
+                .filter_map(|ActiveAction { action, agent }| {
+                    action.is_finished(*agent, world).then_some(*agent)
+                }),
         );
 
         // Do something with the finished list if you want.

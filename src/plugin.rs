@@ -43,20 +43,21 @@ impl SequentialActionsPlugin {
     /// # }
     /// ```
     pub fn check_actions<F: QueryFilter>(
-        action_q: Query<(Entity, &CurrentAction), F>,
+        action_q: Query<&ActiveAction, F>,
         world: &World,
         mut commands: Commands,
     ) {
-        action_q.iter().for_each(|(agent, current_action)| {
-            if let Some(action) = current_action.as_ref() {
-                if action.is_finished(agent, world) {
-                    commands.add(move |world: &mut World| {
-                        Self::stop_current_action(agent, StopReason::Finished, world);
-                        Self::start_next_action(agent, world);
-                    });
-                }
-            }
-        });
+        action_q
+            .iter()
+            .filter_map(|ActiveAction { action, agent }| {
+                action.is_finished(*agent, world).then_some(*agent)
+            })
+            .for_each(|agent| {
+                commands.add(move |world: &mut World| {
+                    Self::stop_current_action(agent, StopReason::Finished, world);
+                    Self::start_next_action(agent, world);
+                });
+            });
     }
 
     /// Adds a single [`action`](Action) to `agent` with specified `config`.
@@ -242,7 +243,14 @@ impl SequentialActionsPlugin {
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) for `agent` with specified `reason`.
     pub fn stop_current_action(agent: Entity, reason: StopReason, world: &mut World) {
-        let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) else {
+        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+            warn!(
+                "Cannot stop current action for non-existent agent {agent} with reason {reason:?}."
+            );
+            return;
+        };
+
+        let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
             warn!(
                 "Cannot stop current action for agent {agent} with reason {reason:?} \
                 due to missing component {}.",
@@ -251,7 +259,26 @@ impl SequentialActionsPlugin {
             return;
         };
 
-        if let Some(mut action) = current_action.take() {
+        if let Some(entity) = current_action.take() {
+            let Some(mut entity_ref) = world.get_entity_mut(entity) else {
+                warn!(
+                    "Cannot stop current action for agent {agent} with reason {reason:?} \
+                    due to non-existent active action entity {entity}."
+                );
+                return;
+            };
+
+            let Some(ActiveAction { mut action, .. }) = entity_ref.take::<ActiveAction>() else {
+                warn!(
+                    "Cannot stop current action for agent {agent} with reason {reason:?} \
+                    due to active action entity {entity} missing component {}.",
+                    std::any::type_name::<ActiveAction>()
+                );
+                world.despawn(entity);
+                return;
+            };
+            world.despawn(entity);
+
             debug!("Stopping current action {action:?} for agent {agent} with reason {reason:?}.");
             action.on_stop(agent.into(), world, reason);
 
@@ -310,14 +337,37 @@ impl SequentialActionsPlugin {
             debug!("Starting action {action:?} for agent {agent}.");
 
             if !action.on_start(agent, world) {
-                match world.get_mut::<CurrentAction>(agent) {
-                    Some(mut current_action) => current_action.0 = Some(action),
-                    None => {
-                        action.on_stop(None, world, StopReason::Canceled);
-                        action.on_remove(None, world);
-                        action.on_drop(None, world, DropReason::Done);
-                    }
+                if world.get_entity(agent).is_none() {
+                    action.on_stop(None, world, StopReason::Canceled);
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Done);
+                } else {
+                    let active_action = world.spawn(ActiveAction { action, agent }).id();
+
+                    let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) else {
+                        warn!(
+                            "Cannot set active action entity {active_action:?} due to missing component {}. \
+                            {:?} is therefore dropped immediately.",
+                            std::any::type_name::<CurrentAction>(),
+                            world.get::<ActiveAction>(active_action).unwrap()
+                        );
+                        let ActiveAction { mut action, .. } = world
+                            .get_entity_mut(agent)
+                            .unwrap()
+                            .take::<ActiveAction>()
+                            .unwrap();
+                        world.despawn(active_action);
+
+                        action.on_stop(agent.into(), world, StopReason::Canceled);
+                        action.on_remove(agent.into(), world);
+                        action.on_drop(agent.into(), world, DropReason::Done);
+
+                        break;
+                    };
+
+                    current_action.0 = Some(active_action);
                 }
+
                 break;
             };
 
@@ -371,7 +421,26 @@ impl SequentialActionsPlugin {
             return;
         };
 
-        if let Some(mut action) = current_action.take() {
+        if let Some(entity) = current_action.take() {
+            let Some(mut entity_ref) = world.get_entity_mut(entity) else {
+                warn!(
+                    "Cannot clear current action for agent {agent} \
+                    due to missing active action entity {entity}."
+                );
+                return;
+            };
+
+            let Some(ActiveAction { mut action, .. }) = entity_ref.take::<ActiveAction>() else {
+                warn!(
+                    "Cannot clear current action for agent {agent} \
+                    due to active action entity {entity} missing component {}.",
+                    std::any::type_name::<ActiveAction>()
+                );
+                world.despawn(entity);
+                return;
+            };
+            world.despawn(entity);
+
             debug!("Clearing current action {action:?} for agent {agent}.");
             action.on_stop(agent.into(), world, StopReason::Canceled);
             action.on_remove(agent.into(), world);
