@@ -242,7 +242,14 @@ impl SequentialActionsPlugin {
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) for `agent` with specified `reason`.
     pub fn stop_current_action(agent: Entity, reason: StopReason, world: &mut World) {
-        let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) else {
+        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+            warn!(
+                "Cannot stop current action for non-existent agent {agent} with reason {reason:?}."
+            );
+            return;
+        };
+
+        let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
             warn!(
                 "Cannot stop current action for agent {agent} with reason {reason:?} \
                 due to missing component {}.",
