@@ -43,6 +43,12 @@ impl TestApp {
         self.world().get::<CurrentAction>(agent).unwrap()
     }
 
+    fn active_action(&mut self) -> &ActiveAction {
+        self.world_mut()
+            .query::<&ActiveAction>()
+            .single(self.world())
+    }
+
     fn action_queue(&self, agent: Entity) -> &ActionQueue {
         self.world().get::<ActionQueue>(agent).unwrap()
     }
@@ -217,6 +223,7 @@ enum Name {
     Countdown,
     Countup,
     Despawn,
+    Add,
 }
 
 #[test]
@@ -740,6 +747,63 @@ fn despawn_action() {
             Hook::Stop(Name::Despawn, None, StopReason::Canceled),
             Hook::Remove(Name::Despawn, None),
             Hook::Drop(Name::Despawn, None, DropReason::Done)
+        ]
+    );
+}
+
+#[test]
+fn add_action() {
+    struct AddAction<const B: bool>;
+    impl<const B: bool> Action for AddAction<B> {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Add(Name::Add, agent));
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Start(Name::Add, agent));
+            world.actions(agent).add(CountdownAction::new(0));
+            B
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Stop(Name::Add, agent, reason));
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Remove(Name::Add, agent));
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Drop(Name::Add, agent, reason));
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(AddAction::<true>);
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Add, a),
+            Hook::Start(Name::Add, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Stop(Name::Add, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Add, Some(a)),
+            Hook::Drop(Name::Add, Some(a), DropReason::Done),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
     );
 }
