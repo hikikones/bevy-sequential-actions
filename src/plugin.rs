@@ -119,6 +119,7 @@ impl SequentialActionsPlugin {
     }
 
     /// Adds a collection of actions to `agent` with specified `config`.
+    /// An empty collection does nothing.
     pub fn add_actions<I>(agent: Entity, config: AddConfig, actions: I, world: &mut World)
     where
         I: IntoIterator<Item = BoxedAction>,
@@ -313,7 +314,7 @@ impl SequentialActionsPlugin {
 
             if !current_action.is_none() {
                 warn!(
-                    "Cannot start next action for agent {agent} due to non-empty {current_action:?}."
+                    "Cannot start next action for agent {agent} due to non-empty current action {current_action:?}."
                 );
                 break;
             }
@@ -347,8 +348,12 @@ impl SequentialActionsPlugin {
 
             if !action.on_start(agent, world) {
                 match world.get_mut::<CurrentAction>(agent) {
-                    Some(mut current_action) => *current_action = CurrentAction::Some(action),
+                    Some(mut current_action) => {
+                        debug!("Executing action {action:?} now for agent {agent}.");
+                        *current_action = CurrentAction::Some(action);
+                    }
                     None => {
+                        debug!("Canceling action {action:?} due to missing agent {agent}.");
                         action.on_stop(None, world, StopReason::Canceled);
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Done);
@@ -358,6 +363,7 @@ impl SequentialActionsPlugin {
             };
 
             let agent = world.get_entity(agent).map(|_| agent);
+            debug!("Finishing action {action:?} for agent {agent:?}.");
             action.on_stop(agent, world, StopReason::Finished);
             action.on_remove(agent, world);
             action.on_drop(agent, world, DropReason::Done);
@@ -410,7 +416,7 @@ impl SequentialActionsPlugin {
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     pub fn clear_actions(agent: Entity, world: &mut World) {
         let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-            warn!("Cannot clear current action for non-existent agent {agent}.");
+            warn!("Cannot clear actions for non-existent agent {agent}.");
             return;
         };
 
@@ -446,7 +452,7 @@ impl SequentialActionsPlugin {
             return;
         }
 
-        debug!("Clearing {action_queue:?} for {agent}.");
+        debug!("Clearing action queue {:?} for {agent}.", **action_queue);
 
         let actions = std::mem::take(&mut action_queue.0);
         for mut action in actions {

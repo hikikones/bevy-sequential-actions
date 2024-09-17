@@ -211,6 +211,7 @@ impl ActionsBundle {
 /// The current action for an `agent`.
 #[derive(Debug, Default, Component)]
 pub enum CurrentAction {
+    // TODO: manual debug impl
     #[default]
     None,
     Temp,

@@ -13,7 +13,7 @@ impl TestApp {
     fn new() -> Self {
         let mut app = App::new();
         app.init_resource::<Hooks>()
-            .add_plugins(SequentialActionsPlugin)
+            .add_plugins((bevy_log::LogPlugin::default(), SequentialActionsPlugin))
             .add_systems(Update, (countdown, countup));
 
         Self(app)
@@ -218,7 +218,10 @@ enum Name {
     Countup,
     Despawn,
     Add,
+    Next,
 }
+
+// TODO: name action for reuse
 
 #[test]
 fn add() {
@@ -437,6 +440,58 @@ fn next() {
     );
 
     app.reset().actions(a).next();
+}
+
+#[test]
+fn next_action() {
+    struct NextAction;
+    impl Action for NextAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Add(Name::Next, agent));
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Start(Name::Next, agent));
+            world.actions(agent).next();
+            false
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Stop(Name::Next, agent, reason));
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Remove(Name::Next, agent));
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            world
+                .resource_mut::<Hooks>()
+                .push(Hook::Drop(Name::Next, agent, reason));
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a)
+        .add_many(actions![NextAction, CountdownAction::new(0)]);
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Next, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Next, a)
+        ]
+    );
 }
 
 #[test]
@@ -747,8 +802,8 @@ fn despawn_action() {
 
 #[test]
 fn add_action() {
-    struct AddAction<const B: bool>;
-    impl<const B: bool> Action for AddAction<B> {
+    struct AddAction;
+    impl Action for AddAction {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
             true
         }
@@ -762,7 +817,7 @@ fn add_action() {
                 .resource_mut::<Hooks>()
                 .push(Hook::Start(Name::Add, agent));
             world.actions(agent).add(CountdownAction::new(0));
-            B
+            true
         }
         fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
             world
@@ -784,7 +839,7 @@ fn add_action() {
     let mut app = TestApp::new();
 
     let a = app.spawn_agent();
-    app.actions(a).add(AddAction::<true>);
+    app.actions(a).add(AddAction);
 
     assert_eq!(
         app.hooks().deref().clone(),
@@ -802,3 +857,5 @@ fn add_action() {
         ]
     );
 }
+
+// TODO: repeat action
