@@ -47,16 +47,19 @@ impl SequentialActionsPlugin {
         world: &World,
         mut commands: Commands,
     ) {
-        action_q.iter().for_each(|(agent, current_action)| {
-            if let Some(action) = current_action.as_ref() {
-                if action.is_finished(agent, world) {
-                    commands.add(move |world: &mut World| {
-                        Self::stop_current_action(agent, StopReason::Finished, world);
-                        Self::start_next_action(agent, world);
-                    });
-                }
-            }
-        });
+        action_q
+            .iter()
+            .filter_map(|(agent, current_action)| {
+                current_action
+                    .as_ref()
+                    .and_then(|action| action.is_finished(agent, world).then_some(agent))
+            })
+            .for_each(|agent| {
+                commands.add(move |world: &mut World| {
+                    Self::stop_current_action(agent, StopReason::Finished, world);
+                    Self::start_next_action(agent, world);
+                });
+            });
     }
 
     /// Adds a single [`action`](Action) to `agent` with specified `config`.
@@ -301,6 +304,8 @@ impl SequentialActionsPlugin {
                 warn!("Cannot start next action for non-existent agent {agent}.");
                 break;
             };
+
+            // TODO: check for existing action. cancel it if so.
 
             let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                 warn!(
