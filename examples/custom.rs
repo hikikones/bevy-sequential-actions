@@ -156,10 +156,7 @@ impl<S: ScheduleLabel, F: QueryFilter> CustomSequentialActionsPlugin<S, F> {
     ) {
         // Collect all agents with finished action
         finished.extend(agent_q.iter(world).filter_map(|(agent, current_action)| {
-            current_action
-                .as_ref()
-                .filter(|action| action.is_finished(agent, world))
-                .map(|_| agent)
+            current_action.and_then(|action| action.is_finished(agent, world).then_some(agent))
         }));
 
         // Do something with the finished list if you want.

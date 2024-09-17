@@ -194,7 +194,7 @@ impl ActionsBundle {
     /// that all entities with actions must have.
     pub const fn new() -> Self {
         Self {
-            current: CurrentAction(None),
+            current: CurrentAction::None,
             queue: ActionQueue(VecDeque::new()),
         }
     }
@@ -202,17 +202,69 @@ impl ActionsBundle {
     /// Creates a new [`Bundle`] with specified `capacity` for the action queue.
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            current: CurrentAction(None),
+            current: CurrentAction::None,
             queue: ActionQueue(VecDeque::with_capacity(capacity)),
         }
     }
 }
 
 /// The current action for an `agent`.
-#[derive(Debug, Default, Component, Deref, DerefMut)]
-pub struct CurrentAction(Option<BoxedAction>);
+#[derive(Debug, Default, Component)]
+pub enum CurrentAction {
+    #[default]
+    None,
+    Temp,
+    Some(BoxedAction),
+}
 
 impl CurrentAction {
+    #[inline]
+    /// Returns `true` if there is no action.
+    pub const fn is_none(&self) -> bool {
+        matches!(self, Self::None)
+    }
+
+    #[inline]
+    /// Returns `true` if the action is temporary taken.
+    pub const fn is_temp(&self) -> bool {
+        matches!(self, Self::Temp)
+    }
+
+    #[inline]
+    /// Returns `true` if there is a action.
+    pub const fn is_some(&self) -> bool {
+        matches!(self, Self::Some(_))
+    }
+
+    #[inline]
+    /// Takes the action out, leaving a `None` in its place.
+    /// If there is no action, the value remains the same.
+    pub fn take(&mut self) -> Option<BoxedAction> {
+        let current = std::mem::take(self);
+        match current {
+            CurrentAction::None | CurrentAction::Temp => {
+                *self = current;
+                None
+            }
+            CurrentAction::Some(action) => {
+                *self = Self::None;
+                Some(action)
+            }
+        }
+    }
+
+    #[inline]
+    /// Returns the result of `f` when value contains an action, otherwise `None`.
+    pub fn and_then<U, F>(&self, f: F) -> Option<U>
+    where
+        F: FnOnce(&BoxedAction) -> Option<U>,
+    {
+        match self {
+            CurrentAction::None | CurrentAction::Temp => None,
+            CurrentAction::Some(action) => f(action),
+        }
+    }
+
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {

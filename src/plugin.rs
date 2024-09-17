@@ -50,10 +50,7 @@ impl SequentialActionsPlugin {
         action_q
             .iter()
             .filter_map(|(agent, current_action)| {
-                current_action
-                    .as_ref()
-                    .filter(|action| action.is_finished(agent, world))
-                    .map(|_| agent)
+                current_action.and_then(|action| action.is_finished(agent, world).then_some(agent))
             })
             .for_each(|agent| {
                 commands.add(move |world: &mut World| {
@@ -322,7 +319,7 @@ impl SequentialActionsPlugin {
 
             if !action.on_start(agent, world) {
                 match world.get_mut::<CurrentAction>(agent) {
-                    Some(mut current_action) => current_action.0 = Some(action),
+                    Some(mut current_action) => *current_action = CurrentAction::Some(action),
                     None => {
                         action.on_stop(None, world, StopReason::Canceled);
                         action.on_remove(None, world);
