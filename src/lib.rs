@@ -211,10 +211,12 @@ impl ActionsBundle {
 /// The current action for an `agent`.
 #[derive(Debug, Default, Component)]
 pub enum CurrentAction {
-    // TODO: manual debug impl
     #[default]
+    /// No action.
     None,
+    /// Temporary value for blocking action queue advancement.
     Temp,
+    /// The current action.
     Some(BoxedAction),
 }
 
@@ -255,6 +257,23 @@ impl CurrentAction {
             }
             CurrentAction::Some(action) => {
                 *self = Self::None;
+                Some(action)
+            }
+        }
+    }
+
+    #[inline]
+    /// Takes the action out, leaving a `Temp` in its place.
+    /// If there is no action, the value remains the same.
+    pub fn take_temp(&mut self) -> Option<BoxedAction> {
+        let current = std::mem::take(self);
+        match current {
+            CurrentAction::None | CurrentAction::Temp => {
+                *self = current;
+                None
+            }
+            CurrentAction::Some(action) => {
+                *self = Self::Temp;
                 Some(action)
             }
         }

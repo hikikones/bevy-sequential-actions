@@ -260,7 +260,7 @@ impl SequentialActionsPlugin {
             return;
         };
 
-        if let Some(mut action) = current_action.take() {
+        if let Some(mut action) = current_action.take_temp() {
             debug!("Stopping current action {action:?} for agent {agent} with reason {reason:?}.");
             action.on_stop(agent.into(), world, reason);
 
@@ -287,12 +287,24 @@ impl SequentialActionsPlugin {
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
+                        // TODO: reset CurrentAction here also?
                         return;
                     };
 
                     action_queue.push_front(action);
                 }
             }
+
+            let Some(mut current_action) = world.get_mut::<CurrentAction>(agent) else {
+                warn!(
+                    "Could not reset current action for agent {agent} after stopping its action \
+                    due to missing component {}.",
+                    std::any::type_name::<CurrentAction>()
+                );
+                return;
+            };
+
+            *current_action = CurrentAction::None;
         }
     }
 

@@ -58,6 +58,56 @@ impl TestApp {
     }
 }
 
+#[derive(Debug, Default, Resource, Deref, DerefMut)]
+struct Hooks(Vec<Hook>);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Hook {
+    Add(Name, Entity),
+    Start(Name, Entity),
+    Stop(Name, Option<Entity>, StopReason),
+    Remove(Name, Option<Entity>),
+    Drop(Name, Option<Entity>, DropReason),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Name {
+    Countdown,
+    Countup,
+    Despawn,
+    Add,
+    Next,
+    Repeat,
+}
+
+impl Name {
+    fn on_add(self, agent: Entity, world: &mut World) {
+        world.resource_mut::<Hooks>().push(Hook::Add(self, agent));
+    }
+
+    fn on_start(self, agent: Entity, world: &mut World) {
+        world.resource_mut::<Hooks>().push(Hook::Start(self, agent));
+    }
+
+    fn on_stop(self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Stop(self, agent, reason));
+    }
+
+    fn on_remove(self, agent: Option<Entity>, world: &mut World) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Remove(self, agent));
+    }
+
+    fn on_drop(self, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Drop(self, agent, reason));
+    }
+}
+
 struct CountdownAction {
     count: i32,
     current: Option<i32>,
@@ -78,25 +128,20 @@ impl Action for CountdownAction {
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Add(Name::Countdown, agent));
+        Name::Countdown.on_add(agent, world);
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        Name::Countdown.on_start(agent, world);
+
         let count = self.current.take().unwrap_or(self.count);
         world.entity_mut(agent).insert(Countdown(count));
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Start(Name::Countdown, agent));
 
         self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Stop(Name::Countdown, agent, reason));
+        Name::Countdown.on_stop(agent, world, reason);
 
         let Some(agent) = agent else { return };
 
@@ -108,15 +153,11 @@ impl Action for CountdownAction {
     }
 
     fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Remove(Name::Countdown, agent));
+        Name::Countdown.on_remove(agent, world);
     }
 
     fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Drop(Name::Countdown, agent, reason));
+        Name::Countdown.on_drop(agent, world, reason);
     }
 }
 
@@ -149,25 +190,20 @@ impl Action for CountupAction {
     }
 
     fn on_add(&mut self, agent: Entity, world: &mut World) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Add(Name::Countup, agent));
+        Name::Countup.on_add(agent, world);
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        Name::Countup.on_start(agent, world);
+
         let count = self.current.take().unwrap_or_default();
         world.entity_mut(agent).insert(Countup(count));
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Start(Name::Countup, agent));
 
         self.is_finished(agent, world)
     }
 
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Stop(Name::Countup, agent, reason));
+        Name::Countup.on_stop(agent, world, reason);
 
         let Some(agent) = agent else { return };
 
@@ -179,15 +215,11 @@ impl Action for CountupAction {
     }
 
     fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Remove(Name::Countup, agent));
+        Name::Countup.on_remove(agent, world);
     }
 
     fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-        world
-            .resource_mut::<Hooks>()
-            .push(Hook::Drop(Name::Countup, agent, reason));
+        Name::Countup.on_drop(agent, world, reason);
     }
 }
 
@@ -199,29 +231,6 @@ fn countup(mut countup_q: Query<&mut Countup>) {
         countup.0 += 1;
     }
 }
-
-#[derive(Debug, Default, Resource, Deref, DerefMut)]
-struct Hooks(Vec<Hook>);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Hook {
-    Add(Name, Entity),
-    Start(Name, Entity),
-    Stop(Name, Option<Entity>, StopReason),
-    Remove(Name, Option<Entity>),
-    Drop(Name, Option<Entity>, DropReason),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Name {
-    Countdown,
-    Countup,
-    Despawn,
-    Add,
-    Next,
-}
-
-// TODO: name action for reuse
 
 #[test]
 fn add() {
@@ -444,37 +453,28 @@ fn next() {
 
 #[test]
 fn next_action() {
+    // TODO: assert CurrentAction state
     struct NextAction;
     impl Action for NextAction {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
             true
         }
         fn on_add(&mut self, agent: Entity, world: &mut World) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Add(Name::Next, agent));
+            Name::Next.on_add(agent, world);
         }
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Start(Name::Next, agent));
+            Name::Next.on_start(agent, world);
             world.actions(agent).next();
             false
         }
         fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Stop(Name::Next, agent, reason));
+            Name::Next.on_stop(agent, world, reason);
         }
         fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Remove(Name::Next, agent));
+            Name::Next.on_remove(agent, world);
         }
         fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Drop(Name::Next, agent, reason));
+            Name::Next.on_drop(agent, world, reason);
         }
     }
 
@@ -685,31 +685,21 @@ fn despawn_action() {
             true
         }
         fn on_add(&mut self, agent: Entity, world: &mut World) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Add(Name::Despawn, agent));
+            Name::Despawn.on_add(agent, world);
         }
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Start(Name::Despawn, agent));
+            Name::Despawn.on_start(agent, world);
             world.despawn(agent);
             B
         }
         fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Stop(Name::Despawn, agent, reason));
+            Name::Despawn.on_stop(agent, world, reason);
         }
         fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Remove(Name::Despawn, agent));
+            Name::Despawn.on_remove(agent, world);
         }
         fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Drop(Name::Despawn, agent, reason));
+            Name::Despawn.on_drop(agent, world, reason);
         }
     }
 
@@ -808,31 +798,21 @@ fn add_action() {
             true
         }
         fn on_add(&mut self, agent: Entity, world: &mut World) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Add(Name::Add, agent));
+            Name::Add.on_add(agent, world);
         }
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Start(Name::Add, agent));
+            Name::Add.on_start(agent, world);
             world.actions(agent).add(CountdownAction::new(0));
             true
         }
         fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Stop(Name::Add, agent, reason));
+            Name::Add.on_stop(agent, world, reason);
         }
         fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Remove(Name::Add, agent));
+            Name::Add.on_remove(agent, world);
         }
         fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-            world
-                .resource_mut::<Hooks>()
-                .push(Hook::Drop(Name::Add, agent, reason));
+            Name::Add.on_drop(agent, world, reason);
         }
     }
 
@@ -858,4 +838,65 @@ fn add_action() {
     );
 }
 
-// TODO: repeat action
+#[test]
+fn repeat_action() {
+    // TODO: assert CurrentAction state
+    struct RepeatAction(u32);
+    impl Action for RepeatAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            Name::Repeat.on_add(agent, world);
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            Name::Repeat.on_start(agent, world);
+            false
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            Name::Repeat.on_stop(agent, world, reason);
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            Name::Repeat.on_remove(agent, world);
+        }
+        fn on_drop(
+            mut self: Box<Self>,
+            agent: Option<Entity>,
+            world: &mut World,
+            reason: DropReason,
+        ) {
+            Name::Repeat.on_drop(agent, world, reason);
+
+            if self.0 == 0 {
+                return;
+            }
+
+            self.0 -= 1;
+            world.actions(agent.unwrap()).add(self as BoxedAction);
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(RepeatAction(1));
+    app.update();
+    app.update();
+    app.update();
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Repeat, a),
+            Hook::Start(Name::Repeat, a),
+            Hook::Stop(Name::Repeat, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Repeat, Some(a)),
+            Hook::Drop(Name::Repeat, Some(a), DropReason::Done),
+            Hook::Add(Name::Repeat, a),
+            Hook::Start(Name::Repeat, a),
+            Hook::Stop(Name::Repeat, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Repeat, Some(a)),
+            Hook::Drop(Name::Repeat, Some(a), DropReason::Done)
+        ]
+    );
+}
