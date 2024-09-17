@@ -841,3 +841,28 @@ fn bad_add_action() {
         ]
     );
 }
+
+#[test]
+#[should_panic]
+fn forever_action() {
+    struct ForeverAction;
+    impl Action for ForeverAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            true
+        }
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, _reason: DropReason) {
+            world
+                .actions(agent.unwrap())
+                .start(false)
+                .add(self as BoxedAction);
+        }
+    }
+
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+    app.actions(a).add(ForeverAction);
+}

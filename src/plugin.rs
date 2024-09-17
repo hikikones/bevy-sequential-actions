@@ -300,10 +300,15 @@ impl SequentialActionsPlugin {
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
     /// This will loop until any action is not immediately finished or the queue is empty.
+    /// Since this may trigger an infinite loop, a counter is used in debug build
+    /// that panics when reaching a sufficient target.
     ///
     /// If a current action is found while starting the next, a warning is emitted
     /// and the action will be immediately canceled before starting the next one.
     pub fn start_next_action(agent: Entity, world: &mut World) {
+        #[cfg(debug_assertions)]
+        let mut counter: u16 = 0;
+
         loop {
             let Some(mut agent_ref) = world.get_entity_mut(agent) else {
                 warn!("Cannot start next action for non-existent agent {agent}.");
@@ -366,6 +371,14 @@ impl SequentialActionsPlugin {
 
             if agent.is_none() {
                 break;
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                counter += 1;
+                if counter == u16::MAX {
+                    panic!("infinite loop detected in starting next action");
+                }
             }
         }
     }
