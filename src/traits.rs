@@ -6,9 +6,14 @@ use super::*;
 /// From this, you can create any action that can last as long as you like,
 /// and do as much as you like.
 ///
+/// In general, the act of _starting_ the action should happen inside [`on_start`](`Self::on_start`).
+/// This is especially true for despawning an `agent`.
+/// The other methods should be used for initializing and cleaning up.
+/// See below for more information.
+///
 /// ## ⚠️ Warning
 ///
-/// Since you are given a mutable [`World`], you can in practice do "anything".
+/// Since you are given a mutable [`World`], you can in practice do _anything_.
 /// Depending on what you do, the logic for advancing the action queue might not work properly.
 ///
 /// There are a few things you should keep in mind:
@@ -156,6 +161,7 @@ pub trait ModifyActions {
     fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
 
     /// Adds a collection of actions to the queue.
+    /// An empty collection does nothing.
     fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
