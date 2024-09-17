@@ -299,6 +299,10 @@ impl SequentialActionsPlugin {
     }
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
+    /// This will loop until any action is not immediately finished or the queue is empty.
+    ///
+    /// If a current action is found while starting the next, a warning is emitted
+    /// and the action will be immediately canceled before starting the next one.
     pub fn start_next_action(agent: Entity, world: &mut World) {
         loop {
             let Some(mut agent_ref) = world.get_entity_mut(agent) else {
@@ -306,9 +310,25 @@ impl SequentialActionsPlugin {
                 break;
             };
 
-            // TODO: check for existing action. cancel it if so.
+            let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
+                warn!(
+                    "Cannot start next action for agent {agent} due to missing component {}.",
+                    std::any::type_name::<CurrentAction>()
+                );
+                break;
+            };
 
-            let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
+            if let Some(mut action) = current_action.take() {
+                warn!(
+                    "Agent {agent} already has current action {action:?} while starting next action. \
+                    Action {action:?} is therefore canceled immediately before starting the next one.",
+                );
+                action.on_stop(agent.into(), world, StopReason::Canceled);
+                action.on_remove(agent.into(), world);
+                action.on_drop(agent.into(), world, DropReason::Done);
+            }
+
+            let Some(mut action_queue) = world.get_mut::<ActionQueue>(agent) else {
                 warn!(
                     "Cannot start next action for agent {agent} due to missing component {}.",
                     std::any::type_name::<ActionQueue>()

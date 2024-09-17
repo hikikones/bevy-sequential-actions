@@ -75,6 +75,8 @@ enum Name {
     Countdown,
     Countup,
     Despawn,
+    GoodAdd,
+    BadAdd,
 }
 
 impl Name {
@@ -740,6 +742,102 @@ fn despawn_action() {
             Hook::Stop(Name::Despawn, None, StopReason::Canceled),
             Hook::Remove(Name::Despawn, None),
             Hook::Drop(Name::Despawn, None, DropReason::Done)
+        ]
+    );
+}
+
+#[test]
+fn good_add_action() {
+    struct GoodAddAction;
+    impl Action for GoodAddAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            Name::GoodAdd.on_add(agent, world);
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            Name::GoodAdd.on_start(agent, world);
+            world
+                .actions(agent)
+                .start(false)
+                .add(CountdownAction::new(1));
+            true
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            Name::GoodAdd.on_stop(agent, world, reason);
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            Name::GoodAdd.on_remove(agent, world);
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            Name::GoodAdd.on_drop(agent, world, reason);
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(GoodAddAction);
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::GoodAdd, a),
+            Hook::Start(Name::GoodAdd, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Stop(Name::GoodAdd, Some(a), StopReason::Finished),
+            Hook::Remove(Name::GoodAdd, Some(a)),
+            Hook::Drop(Name::GoodAdd, Some(a), DropReason::Done),
+            Hook::Start(Name::Countdown, a)
+        ]
+    );
+}
+
+#[test]
+fn bad_add_action() {
+    struct BadAddAction;
+    impl Action for BadAddAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            Name::BadAdd.on_add(agent, world);
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            Name::BadAdd.on_start(agent, world);
+            true
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            Name::BadAdd.on_stop(agent, world, reason);
+            world.actions(agent.unwrap()).add(CountdownAction::new(1));
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            Name::BadAdd.on_remove(agent, world);
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            Name::BadAdd.on_drop(agent, world, reason);
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(BadAddAction);
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::BadAdd, a),
+            Hook::Start(Name::BadAdd, a),
+            Hook::Stop(Name::BadAdd, Some(a), StopReason::Finished),
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Remove(Name::BadAdd, Some(a)),
+            Hook::Drop(Name::BadAdd, Some(a), DropReason::Done),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
     );
 }
