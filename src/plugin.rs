@@ -303,6 +303,21 @@ impl SequentialActionsPlugin {
                 break;
             };
 
+            let Some(current_action) = agent_ref.get::<CurrentAction>() else {
+                warn!(
+                    "Cannot start next action for agent {agent} due to missing component {}.",
+                    std::any::type_name::<CurrentAction>()
+                );
+                break;
+            };
+
+            if !current_action.is_none() {
+                warn!(
+                    "Cannot start next action for agent {agent} due to non-empty {current_action:?}."
+                );
+                break;
+            }
+
             let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                 warn!(
                     "Cannot start next action for agent {agent} due to missing component {}.",
@@ -314,6 +329,19 @@ impl SequentialActionsPlugin {
             let Some(mut action) = action_queue.pop_front() else {
                 break;
             };
+
+            let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
+                warn!(
+                    "Cannot start next action {action:?} for agent {agent} due to missing component {}. \
+                    Action is therefore dropped immediately.",
+                    std::any::type_name::<CurrentAction>()
+                );
+                action.on_remove(agent.into(), world);
+                action.on_drop(agent.into(), world, DropReason::Skipped);
+                break;
+            };
+
+            *current_action = CurrentAction::Temp;
 
             debug!("Starting action {action:?} for agent {agent}.");
 
@@ -334,9 +362,24 @@ impl SequentialActionsPlugin {
             action.on_remove(agent, world);
             action.on_drop(agent, world, DropReason::Done);
 
-            if agent.is_none() {
+            let Some(agent) = agent else {
                 break;
-            }
+            };
+
+            let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+                warn!("Cannot start next action for non-existent agent {agent}.");
+                break;
+            };
+
+            let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
+                warn!(
+                    "Cannot start next action for agent {agent} due to missing component {}.",
+                    std::any::type_name::<CurrentAction>()
+                );
+                break;
+            };
+
+            *current_action = CurrentAction::None;
         }
     }
 

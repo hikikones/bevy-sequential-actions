@@ -795,6 +795,7 @@ fn add_action() {
             Hook::Stop(Name::Add, Some(a), StopReason::Finished),
             Hook::Remove(Name::Add, Some(a)),
             Hook::Drop(Name::Add, Some(a), DropReason::Done),
+            Hook::Start(Name::Countdown, a),
             Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
             Hook::Remove(Name::Countdown, Some(a)),
             Hook::Drop(Name::Countdown, Some(a), DropReason::Done)

@@ -225,15 +225,21 @@ impl CurrentAction {
     }
 
     #[inline]
-    /// Returns `true` if the action is temporary taken.
-    pub const fn is_temp(&self) -> bool {
-        matches!(self, Self::Temp)
-    }
-
-    #[inline]
     /// Returns `true` if there is a action.
     pub const fn is_some(&self) -> bool {
         matches!(self, Self::Some(_))
+    }
+
+    #[inline]
+    /// Returns the result of `f` when value contains an action, otherwise `None`.
+    pub fn and_then<U, F>(&self, f: F) -> Option<U>
+    where
+        F: FnOnce(&BoxedAction) -> Option<U>,
+    {
+        match self {
+            CurrentAction::None | CurrentAction::Temp => None,
+            CurrentAction::Some(action) => f(action),
+        }
     }
 
     #[inline]
@@ -250,18 +256,6 @@ impl CurrentAction {
                 *self = Self::None;
                 Some(action)
             }
-        }
-    }
-
-    #[inline]
-    /// Returns the result of `f` when value contains an action, otherwise `None`.
-    pub fn and_then<U, F>(&self, f: F) -> Option<U>
-    where
-        F: FnOnce(&BoxedAction) -> Option<U>,
-    {
-        match self {
-            CurrentAction::None | CurrentAction::Temp => None,
-            CurrentAction::Some(action) => f(action),
         }
     }
 
