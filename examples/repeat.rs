@@ -85,7 +85,7 @@ impl Action for PrintAction {
 
     fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
         println!("{}", self.0);
-        false
+        true
     }
 
     fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}

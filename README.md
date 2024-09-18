@@ -144,6 +144,7 @@ There are a few things you should keep in mind:
     Instead, you should return `true` in `on_start`.
 * When adding new actions, you should set the `start` property to `false`.
     Otherwise, you will effectively call `execute` which, again, should not be used.
+    At worst, you will cause a **stack overflow** if the action adds itself.
 
     ```rust,no_run
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {

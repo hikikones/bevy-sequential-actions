@@ -172,6 +172,7 @@ There are a few things you should keep in mind:
     Instead, you should return `true` in [`on_start`](`Action::on_start`).
 * When adding new actions, you should set the [`start`](`ModifyActions::start`) property to `false`.
     Otherwise, you will effectively call [`execute`](`ModifyActions::execute`) which, again, should not be used.
+    At worst, you will cause a **stack overflow** if the action adds itself.
 
     ```rust,no_run
     # use bevy_ecs::prelude::*;
