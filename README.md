@@ -132,6 +132,31 @@ fn setup(mut commands: Commands) {
 }
 ```
 
+#### ⚠️ Warning
+
+Since you are given a mutable `World`, you can in practice do _anything_.
+Depending on what you do, the logic for advancing the action queue might not work properly.
+There are a few things you should keep in mind:
+
+* If you want to despawn an `agent` as an action, this should be done in `on_start`.
+* The `execute` and `next` methods should not be used,
+    as that will immediately advance the action queue while inside any of the trait methods.
+    Instead, you should return `true` in `on_start`.
+* When adding new actions, you should set the `start` property to `false`.
+    Otherwise, you will effectively call `execute` which, again, should not be used.
+
+    ```rust,no_run
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            world
+                .actions(agent)
+                .start(false) // Do not start next action
+                .add_many(actions![action_a, action_b, action_c]);
+
+            // Immediately advance the action queue
+            true
+        }
+    ```
+
 ## 📎 Examples
 
 See the [examples](examples/) for more usage.

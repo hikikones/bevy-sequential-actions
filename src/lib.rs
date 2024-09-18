@@ -159,6 +159,47 @@ fn setup(mut commands: Commands) {
         });
 }
 ```
+
+#### ⚠️ Warning
+
+Since you are given a mutable [`World`], you can in practice do _anything_.
+Depending on what you do, the logic for advancing the action queue might not work properly.
+There are a few things you should keep in mind:
+
+* If you want to despawn an `agent` as an action, this should be done in [`on_start`](`Action::on_start`).
+* The [`execute`](`ModifyActions::execute`) and [`next`](`ModifyActions::next`) methods should not be used,
+    as that will immediately advance the action queue while inside any of the trait methods.
+    Instead, you should return `true` in [`on_start`](`Action::on_start`).
+* When adding new actions, you should set the [`start`](`ModifyActions::start`) property to `false`.
+    Otherwise, you will effectively call [`execute`](`ModifyActions::execute`) which, again, should not be used.
+
+    ```rust,no_run
+    # use bevy_ecs::prelude::*;
+    # use bevy_sequential_actions::*;
+    # struct EmptyAction;
+    # impl Action for EmptyAction {
+    #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+    #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+    #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+    # }
+    # struct TestAction;
+    # impl Action for TestAction {
+    #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    #       let action_a = EmptyAction;
+    #       let action_b = EmptyAction;
+    #       let action_c = EmptyAction;
+            world
+                .actions(agent)
+                .start(false) // Do not start next action
+                .add_many(actions![action_a, action_b, action_c]);
+
+            // Immediately advance the action queue
+            true
+        }
+    #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+    # }
+    ```
 */
 
 use std::{collections::VecDeque, fmt::Debug};
