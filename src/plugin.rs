@@ -316,7 +316,7 @@ impl SequentialActionsPlugin {
                 break;
             };
 
-            let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
+            let Some(current_action) = agent_ref.get::<CurrentAction>() else {
                 warn!(
                     "Cannot start next action for agent {agent} due to missing component {}.",
                     std::any::type_name::<CurrentAction>()
@@ -324,18 +324,15 @@ impl SequentialActionsPlugin {
                 break;
             };
 
-            if let Some(mut action) = current_action.take() {
+            if let Some(action) = current_action.0.as_ref() {
                 warn!(
-                    "Found current action {action:?} for agent {agent} while starting next action. \
-                    Action is therefore canceled before starting the next one.",
+                    "Cannot start next action for agent {agent} \
+                    as it already has current action {action:?}."
                 );
-                // TODO: break instead?
-                action.on_stop(agent.into(), world, StopReason::Canceled);
-                action.on_remove(agent.into(), world);
-                action.on_drop(agent.into(), world, DropReason::Done);
+                break;
             }
 
-            let Some(mut action_queue) = world.get_mut::<ActionQueue>(agent) else {
+            let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                 warn!(
                     "Cannot start next action for agent {agent} due to missing component {}.",
                     std::any::type_name::<ActionQueue>()

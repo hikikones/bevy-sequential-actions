@@ -31,6 +31,10 @@ impl TestApp {
         self.world().resource::<Hooks>()
     }
 
+    fn hooks_mut(&mut self) -> Mut<'_, Hooks> {
+        self.world_mut().resource_mut::<Hooks>()
+    }
+
     fn entity(&self, entity: Entity) -> EntityRef<'_> {
         self.world().entity(entity)
     }
@@ -834,8 +838,17 @@ fn bad_add_action() {
             Hook::Add(Name::Countdown, a),
             Hook::Start(Name::Countdown, a),
             Hook::Remove(Name::BadAdd, Some(a)),
-            Hook::Drop(Name::BadAdd, Some(a), DropReason::Done),
-            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Drop(Name::BadAdd, Some(a), DropReason::Done)
+        ]
+    );
+
+    app.hooks_mut().clear();
+    app.update();
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
             Hook::Remove(Name::Countdown, Some(a)),
             Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
         ]
