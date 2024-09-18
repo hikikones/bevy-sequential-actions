@@ -53,6 +53,7 @@ use super::*;
 /// # }
 /// ```
 #[allow(unused_variables)]
+// TODO: add debug bound?
 pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
     /// Determines if an action is finished or not.
     /// Advances the action queue when returning `true`.

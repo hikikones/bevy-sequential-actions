@@ -299,12 +299,13 @@ impl SequentialActionsPlugin {
     }
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`.
-    /// This will loop until any action is not immediately finished or the queue is empty.
+    ///
+    /// This will loop until any next action is not immediately finished or the queue is empty.
     /// Since this may trigger an infinite loop, a counter is used in debug build
     /// that panics when reaching a sufficient target.
     ///
     /// If a current action is found while starting the next, a warning is emitted
-    /// and the action will be immediately canceled before starting the next one.
+    /// and the action will be canceled before starting the next one.
     pub fn start_next_action(agent: Entity, world: &mut World) {
         #[cfg(debug_assertions)]
         let mut counter: u16 = 0;
@@ -325,9 +326,10 @@ impl SequentialActionsPlugin {
 
             if let Some(mut action) = current_action.take() {
                 warn!(
-                    "Agent {agent} already has current action {action:?} while starting next action. \
-                    Action {action:?} is therefore canceled immediately before starting the next one.",
+                    "Found current action {action:?} for agent {agent} while starting next action. \
+                    Action is therefore canceled before starting the next one.",
                 );
+                // TODO: break instead?
                 action.on_stop(agent.into(), world, StopReason::Canceled);
                 action.on_remove(agent.into(), world);
                 action.on_drop(agent.into(), world, DropReason::Done);

@@ -14,14 +14,12 @@ fn main() {
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::new()).id();
     commands.actions(agent).add_many(actions![
-        ParallelActions {
-            actions: actions![
-                PrintAction("hello"),
-                CountdownAction::new(2),
-                PrintAction("world"),
-                CountdownAction::new(4),
-            ],
-        },
+        ParallelActions::new(actions![
+            PrintAction("hello"),
+            CountdownAction::new(2),
+            PrintAction("world"),
+            CountdownAction::new(4),
+        ],),
         |_agent, world: &mut World| {
             world.send_event(AppExit::Success);
             false
@@ -31,6 +29,12 @@ fn setup(mut commands: Commands) {
 
 struct ParallelActions<const N: usize> {
     actions: [BoxedAction; N],
+}
+
+impl<const N: usize> ParallelActions<N> {
+    const fn new(actions: [BoxedAction; N]) -> Self {
+        Self { actions }
+    }
 }
 
 impl<const N: usize> Action for ParallelActions<N> {

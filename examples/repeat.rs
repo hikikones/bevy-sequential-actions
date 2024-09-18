@@ -27,6 +27,10 @@ fn setup(mut commands: Commands) {
                 if world.get::<ActionQueue>(agent).unwrap().is_empty() {
                     world.send_event(AppExit::Success);
                 }
+
+                // Do not advance action queue immediately,
+                // otherwise we get stuck in an infinite loop
+                // as we keep readding this action
                 false
             },
             repeat: u32::MAX,
@@ -56,16 +60,19 @@ impl<A: Action> Action for RepeatAction<A> {
         self.action.on_stop(agent, world, reason);
     }
 
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+        self.action.on_remove(agent, world);
+    }
+
     fn on_drop(mut self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
         if self.repeat == 0 || reason != DropReason::Done {
-            self.action.on_remove(agent, world);
             return;
         }
 
         let Some(agent) = agent else { return };
 
         self.repeat -= 1;
-        world.get_mut::<ActionQueue>(agent).unwrap().push_back(self);
+        world.actions(agent).start(false).add(self as BoxedAction);
     }
 }
 
