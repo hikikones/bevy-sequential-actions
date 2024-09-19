@@ -304,8 +304,8 @@ impl SequentialActionsPlugin {
     /// Since this may trigger an infinite loop, a counter is used in debug build
     /// that panics when reaching a sufficient target.
     ///
-    /// If a current action is found while starting the next, a warning is emitted
-    /// and the action will be canceled before starting the next one.
+    /// The loop will also break if `agent` already has a current action.
+    /// This is likely a user error, and so a warning will be emitted.
     pub fn start_next_action(agent: Entity, world: &mut World) {
         #[cfg(debug_assertions)]
         let mut counter: u16 = 0;
@@ -345,11 +345,9 @@ impl SequentialActionsPlugin {
             };
 
             debug!("Starting action {action:?} for agent {agent}.");
-
             if !action.on_start(agent, world) {
                 match world.get_mut::<CurrentAction>(agent) {
                     Some(mut current_action) => {
-                        debug!("Executing action {action:?} now for agent {agent}.");
                         current_action.0 = Some(action);
                     }
                     None => {
@@ -446,7 +444,6 @@ impl SequentialActionsPlugin {
         }
 
         debug!("Clearing action queue {:?} for {agent}.", **action_queue);
-
         let actions = std::mem::take(&mut action_queue.0);
         for mut action in actions {
             action.on_remove(agent.into(), world);
