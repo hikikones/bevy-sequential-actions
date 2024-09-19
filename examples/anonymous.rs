@@ -12,6 +12,13 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::new()).id();
+    commands.actions(agent).add(AnonymousAction::on_start(
+        |_agent, world: &mut World| -> bool {
+            println!("AnonymousAction::on_start");
+            world.send_event(AppExit::Success);
+            true
+        },
+    ));
 }
 
 struct AnonymousAction<IsFinished, OnAdd, OnStart, OnStop, OnRemove, OnDrop>
@@ -29,6 +36,30 @@ where
     on_stop: OnStop,
     on_remove: OnRemove,
     on_drop: OnDrop,
+}
+
+impl<OnStart>
+    AnonymousAction<
+        fn(Entity, &World) -> bool,
+        fn(Entity, &mut World),
+        OnStart,
+        fn(Entity, &mut World, StopReason),
+        fn(Entity, &mut World),
+        fn(Entity, &mut World, DropReason),
+    >
+where
+    OnStart: FnMut(Entity, &mut World) -> bool,
+{
+    fn on_start(on_start: OnStart) -> Self {
+        Self {
+            is_finished: |_agent, _world| true,
+            on_add: |_agent, _world| {},
+            on_start,
+            on_stop: |_agent, _world, _reason| {},
+            on_remove: |_agent, _world| {},
+            on_drop: |_agent, _world, _reason| {},
+        }
+    }
 }
 
 impl<IsFinished, OnAdd, OnStart, OnStop, OnRemove, OnDrop> Action
