@@ -1,10 +1,8 @@
 use super::*;
 
-impl<'a> ActionsProxy<'a> for World {
-    type Modifier = AgentActions<'a>;
-
-    fn actions(&'a mut self, agent: Entity) -> Self::Modifier {
-        Self::Modifier {
+impl ActionsProxy for World {
+    fn actions(&mut self, agent: Entity) -> impl ModifyActions {
+        AgentActions {
             agent,
             config: AddConfig::default(),
             world: self,

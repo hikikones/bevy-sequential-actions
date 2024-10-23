@@ -135,12 +135,9 @@ impl std::fmt::Debug for BoxedAction {
 }
 
 /// Proxy method for modifying actions.
-pub trait ActionsProxy<'a> {
-    /// The type returned for modifying actions.
-    type Modifier: ModifyActions;
-
-    /// Modify actions for specified `agent`.
-    fn actions(&'a mut self, agent: Entity) -> Self::Modifier;
+pub trait ActionsProxy {
+    /// Returns a type for modifying actions for specified `agent`.
+    fn actions(&mut self, agent: Entity) -> impl ModifyActions;
 }
 
 /// Methods for modifying actions.
