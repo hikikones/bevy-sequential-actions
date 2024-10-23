@@ -47,7 +47,7 @@ fn frame_logic(mut frame: Local<u32>, mut commands: Commands, agent_q: Query<Ent
             EXIT_FRAME - MISSING_FRAMES,
             MISSING_FRAMES,
         );
-        commands.add(|world: &mut World| {
+        commands.queue(|world: &mut World| {
             world.send_event(AppExit::Success);
         });
     }
