@@ -1,4 +1,4 @@
-use crate::*;
+use super::*;
 
 impl ActionsProxy for Commands<'_, '_> {
     fn actions(&mut self, agent: Entity) -> impl ModifyActions {
@@ -48,7 +48,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
     fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         let agent = self.agent;
         let config = self.config;

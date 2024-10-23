@@ -20,7 +20,7 @@ fn setup(mut commands: Commands) {
         PrintAction("cowboy"),
         |_agent, world: &mut World| -> bool {
             world.send_event(AppExit::Success);
-            false
+            true
         }
     ]));
 }
@@ -28,11 +28,16 @@ fn setup(mut commands: Commands) {
 struct ActionSequence<const N: usize> {
     actions: [BoxedAction; N],
     index: usize,
+    canceled: bool,
 }
 
 impl<const N: usize> ActionSequence<N> {
     fn new(actions: [BoxedAction; N]) -> Self {
-        Self { actions, index: 0 }
+        Self {
+            actions,
+            index: 0,
+            canceled: false,
+        }
     }
 }
 
@@ -51,27 +56,36 @@ impl<const N: usize> Action for ActionSequence<N> {
         self.actions[self.index].on_start(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         self.actions[self.index].on_stop(agent, world, reason);
-
-        if reason == StopReason::Canceled {
-            self.index = self.actions.len();
-        }
+        self.canceled = reason == StopReason::Canceled;
     }
 
-    fn on_drop(mut self: Box<Self>, agent: Entity, world: &mut World, reason: DropReason) {
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+        self.actions[self.index].on_remove(agent, world);
+    }
+
+    fn on_drop(mut self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
         self.index += 1;
 
-        if self.index >= self.actions.len() || reason != DropReason::Done {
-            self.actions
-                .iter_mut()
-                .for_each(|action| action.on_remove(agent, world));
-        } else {
-            world
-                .get_mut::<ActionQueue>(agent)
-                .unwrap()
-                .push_front(self);
+        if self.index >= N {
+            return;
         }
+
+        if self.canceled || reason != DropReason::Done {
+            for i in self.index..N {
+                self.actions[i].on_remove(agent, world);
+            }
+            return;
+        }
+
+        let Some(agent) = agent else { return };
+
+        world
+            .actions(agent)
+            .start(false)
+            .order(AddOrder::Front)
+            .add(self as BoxedAction);
     }
 }
 
@@ -87,5 +101,5 @@ impl Action for PrintAction {
         false
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }

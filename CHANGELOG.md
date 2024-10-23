@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.12.0-dev
+
+- [Add cleanup of actions for despawned agents][101]
+    - `on_stop`, `on_remove` and `on_drop` in the `Action` trait
+    now take `Option<Entity>` for `agent` in order to respond to despawns
+    - Replaces all unwraps with logging
+    - Adds `on_remove_hook` and `on_remove_trigger` for both `CurrentAction` and `ActionQueue`
+
+[101]: https://github.com/hikikones/bevy-sequential-actions/pull/101
+
 ## Version 0.11.0
 
 - [Update to Bevy 0.14][97]

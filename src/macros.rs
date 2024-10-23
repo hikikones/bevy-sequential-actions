@@ -8,7 +8,7 @@
 /// # impl Action for EmptyAction {
 /// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
 /// #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
-/// #   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
+/// #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
 /// # }
 /// #
 /// # let action_a = EmptyAction;

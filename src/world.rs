@@ -1,4 +1,4 @@
-use crate::*;
+use super::*;
 
 impl ActionsProxy for World {
     fn actions(&mut self, agent: Entity) -> impl ModifyActions {
@@ -41,7 +41,7 @@ impl ModifyActions for AgentActions<'_> {
     fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         SequentialActionsPlugin::add_actions(self.agent, self.config, actions, self.world);
         self
