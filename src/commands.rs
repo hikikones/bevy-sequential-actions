@@ -1,4 +1,4 @@
-use crate::*;
+use super::*;
 
 impl<'c, 'w: 'c, 's: 'c> ActionsProxy<'c> for Commands<'w, 's> {
     type Modifier = AgentCommands<'c, 'w, 's>;
@@ -50,7 +50,7 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
     fn add_many<I>(&mut self, actions: I) -> &mut Self
     where
         I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator,
+        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
     {
         let agent = self.agent;
         let config = self.config;

@@ -12,6 +12,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
+    // Spawn entity with the bundle
     let agent = commands.spawn(ActionsBundle::new()).id();
     commands
         .actions(agent)
@@ -27,7 +28,7 @@ fn setup(mut commands: Commands) {
         .add(|_agent, world: &mut World| -> bool {
             // on_start
             world.send_event(AppExit::Success);
-            false
+            true
         });
 }
 
@@ -50,7 +51,7 @@ impl Action for DemoAction {
     }
 
     // Required method
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {
         println!("on_stop: called when an action is stopped");
     }
 
@@ -60,12 +61,12 @@ impl Action for DemoAction {
     }
 
     // Optional method (empty by default)
-    fn on_remove(&mut self, _agent: Entity, _world: &mut World) {
+    fn on_remove(&mut self, _agent: Option<Entity>, _world: &mut World) {
         println!("on_remove: called when an action is removed from the queue");
     }
 
     // Optional method (empty by default)
-    fn on_drop(self: Box<Self>, _agent: Entity, _world: &mut World, _reason: DropReason) {
+    fn on_drop(self: Box<Self>, _agent: Option<Entity>, _world: &mut World, _reason: DropReason) {
         println!("on_drop: the last method to be called with full ownership");
     }
 }
@@ -82,7 +83,7 @@ impl Action for PrintAction {
         true
     }
 
-    fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
 struct CountdownAction {
@@ -119,7 +120,10 @@ impl Action for CountdownAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        // Do nothing if agent has been despawned.
+        let Some(agent) = agent else { return };
+
         // Take the countdown component from the agent
         let countdown = world.entity_mut(agent).take::<Countdown>();
 

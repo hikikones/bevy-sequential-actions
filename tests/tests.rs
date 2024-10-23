@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Deref};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
@@ -12,8 +12,9 @@ struct TestApp(App);
 impl TestApp {
     fn new() -> Self {
         let mut app = App::new();
-        app.add_plugins(SequentialActionsPlugin)
-            .add_systems(Update, countdown);
+        app.init_resource::<Hooks>()
+            .add_plugins(SequentialActionsPlugin)
+            .add_systems(Update, (countdown, countup));
 
         Self(app)
     }
@@ -22,8 +23,24 @@ impl TestApp {
         self.world_mut().spawn(ActionsBundle::new()).id()
     }
 
-    fn actions(&mut self, agent: Entity) -> AgentActions {
+    fn actions(&mut self, agent: Entity) -> AgentActions<'_> {
         self.world_mut().actions(agent)
+    }
+
+    fn hooks(&self) -> &Hooks {
+        self.world().resource::<Hooks>()
+    }
+
+    fn hooks_mut(&mut self) -> Mut<'_, Hooks> {
+        self.world_mut().resource_mut::<Hooks>()
+    }
+
+    fn entity(&self, entity: Entity) -> EntityRef<'_> {
+        self.world().entity(entity)
+    }
+
+    fn get_entity(&self, entity: Entity) -> Option<EntityRef<'_>> {
+        self.world().get_entity(entity)
     }
 
     fn current_action(&self, agent: Entity) -> &CurrentAction {
@@ -33,73 +50,117 @@ impl TestApp {
     fn action_queue(&self, agent: Entity) -> &ActionQueue {
         self.world().get::<ActionQueue>(agent).unwrap()
     }
+
+    fn despawn(&mut self, entity: Entity) -> bool {
+        self.world_mut().despawn(entity)
+    }
+
+    fn reset(&mut self) -> &mut Self {
+        self.world_mut().clear_entities();
+        self.world_mut().resource_mut::<Hooks>().clear();
+        self
+    }
 }
 
-struct TestCountdownAction {
+#[derive(Debug, Default, Resource, Deref, DerefMut)]
+struct Hooks(Vec<Hook>);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Hook {
+    Add(Name, Entity),
+    Start(Name, Entity),
+    Stop(Name, Option<Entity>, StopReason),
+    Remove(Name, Option<Entity>),
+    Drop(Name, Option<Entity>, DropReason),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Name {
+    Countdown,
+    Countup,
+    Despawn,
+    GoodAdd,
+    BadAdd,
+}
+
+impl Name {
+    fn on_add(self, agent: Entity, world: &mut World) {
+        world.resource_mut::<Hooks>().push(Hook::Add(self, agent));
+    }
+
+    fn on_start(self, agent: Entity, world: &mut World) {
+        world.resource_mut::<Hooks>().push(Hook::Start(self, agent));
+    }
+
+    fn on_stop(self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Stop(self, agent, reason));
+    }
+
+    fn on_remove(self, agent: Option<Entity>, world: &mut World) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Remove(self, agent));
+    }
+
+    fn on_drop(self, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+        world
+            .resource_mut::<Hooks>()
+            .push(Hook::Drop(self, agent, reason));
+    }
+}
+
+struct CountdownAction {
     count: i32,
-    entity: Option<Entity>,
     current: Option<i32>,
 }
 
-impl TestCountdownAction {
+impl CountdownAction {
     const fn new(count: i32) -> Self {
         Self {
             count,
-            entity: None,
             current: None,
         }
     }
 }
 
-impl Action for TestCountdownAction {
-    fn is_finished(&self, _agent: Entity, world: &World) -> bool {
-        world.get::<Countdown>(self.entity.unwrap()).unwrap().0 <= 0
+impl Action for CountdownAction {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        world.get::<Countdown>(agent).unwrap().0 <= 0
     }
 
-    fn on_add(&mut self, _agent: Entity, world: &mut World) {
-        self.entity = world.spawn((Added, CountdownMarker)).id().into();
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        Name::Countdown.on_add(agent, world);
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        Name::Countdown.on_start(agent, world);
+
         let count = self.current.take().unwrap_or(self.count);
-        world
-            .entity_mut(self.entity.unwrap())
-            .insert((Started, Countdown(count)));
+        world.entity_mut(agent).insert(Countdown(count));
 
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, _agent: Entity, world: &mut World, reason: StopReason) {
-        let mut e = world.entity_mut(self.entity.unwrap());
-        let countdown = e.insert(Stopped).take::<Countdown>();
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        Name::Countdown.on_stop(agent, world, reason);
 
-        match reason {
-            StopReason::Finished => {
-                e.insert(Finished);
-            }
-            StopReason::Canceled => {
-                e.insert(Canceled);
-            }
-            StopReason::Paused => {
-                e.insert(Paused);
-                self.current = countdown.unwrap().0.into();
-            }
-        };
+        let Some(agent) = agent else { return };
+
+        let countdown = world.entity_mut(agent).take::<Countdown>();
+
+        if reason == StopReason::Paused {
+            self.current = Some(countdown.unwrap().0);
+        }
     }
 
-    fn on_remove(&mut self, _agent: Entity, world: &mut World) {
-        world.entity_mut(self.entity.unwrap()).insert(Removed);
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+        Name::Countdown.on_remove(agent, world);
     }
 
-    fn on_drop(self: Box<Self>, _agent: Entity, world: &mut World, reason: DropReason) {
-        let mut e = world.entity_mut(self.entity.unwrap());
-        e.insert(Dropped);
-
-        match reason {
-            DropReason::Done => e.insert(Done),
-            DropReason::Skipped => e.insert(Skipped),
-            DropReason::Cleared => e.insert(Cleared),
-        };
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+        Name::Countdown.on_drop(agent, world, reason);
     }
 }
 
@@ -112,64 +173,96 @@ fn countdown(mut countdown_q: Query<&mut Countdown>) {
     }
 }
 
-#[derive(Component)]
-struct CountdownMarker;
+struct CountupAction {
+    count: i32,
+    current: Option<i32>,
+}
+
+impl CountupAction {
+    const fn new(count: i32) -> Self {
+        Self {
+            count,
+            current: None,
+        }
+    }
+}
+
+impl Action for CountupAction {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        world.get::<Countup>(agent).unwrap().0 >= self.count
+    }
+
+    fn on_add(&mut self, agent: Entity, world: &mut World) {
+        Name::Countup.on_add(agent, world);
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        Name::Countup.on_start(agent, world);
+
+        let count = self.current.take().unwrap_or_default();
+        world.entity_mut(agent).insert(Countup(count));
+
+        self.is_finished(agent, world)
+    }
+
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        Name::Countup.on_stop(agent, world, reason);
+
+        let Some(agent) = agent else { return };
+
+        let countup = world.entity_mut(agent).take::<Countup>();
+
+        if reason == StopReason::Paused {
+            self.current = Some(countup.unwrap().0);
+        }
+    }
+
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+        Name::Countup.on_remove(agent, world);
+    }
+
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+        Name::Countup.on_drop(agent, world, reason);
+    }
+}
 
 #[derive(Component)]
-struct Added;
+struct Countup(i32);
 
-#[derive(Component)]
-struct Started;
-
-#[derive(Component)]
-struct Stopped;
-
-#[derive(Component)]
-struct Finished;
-
-#[derive(Component)]
-struct Canceled;
-
-#[derive(Component)]
-struct Paused;
-
-#[derive(Component)]
-struct Removed;
-
-#[derive(Component)]
-struct Dropped;
-
-#[derive(Component)]
-struct Done;
-
-#[derive(Component)]
-struct Skipped;
-
-#[derive(Component)]
-struct Cleared;
+fn countup(mut countup_q: Query<&mut Countup>) {
+    for mut countup in &mut countup_q {
+        countup.0 += 1;
+    }
+}
 
 #[test]
 fn add() {
     let mut app = TestApp::new();
+
     let a = app.spawn_agent();
-
-    app.actions(a).start(false).add(TestCountdownAction::new(0));
-
-    assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 1);
-
-    app.actions(a)
-        .clear()
-        .start(true)
-        .add(TestCountdownAction::new(0));
+    app.actions(a).start(false).add(CountdownAction::new(0));
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
+    assert_eq!(app.action_queue(a).len(), 1);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![Hook::Add(Name::Countdown, a)]
+    );
 
-    app.actions(a).start(true).add(TestCountdownAction::new(1));
+    app.actions(a).clear().add(CountdownAction::new(0));
+
+    assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 0);
+
+    app.actions(a).clear().add(CountdownAction::new(1));
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 0);
+    assert_eq!(app.action_queue(a).len(), 0);
+
+    app.reset().actions(a).add(CountdownAction::new(1));
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(app.hooks().deref().clone(), vec![]);
 }
 
 #[test]
@@ -177,55 +270,41 @@ fn add_many() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).start(false).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .start(false)
+        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 2);
+    assert_eq!(app.action_queue(a).len(), 2);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![Hook::Add(Name::Countdown, a), Hook::Add(Name::Countup, a)]
+    );
 
-    app.actions(a).clear().start(true).add_many(actions![
-        TestCountdownAction::new(0),
-        TestCountdownAction::new(0)
-    ]);
+    app.actions(a)
+        .clear()
+        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 0);
+    assert_eq!(app.action_queue(a).len(), 0);
 
-    app.actions(a).start(true).add_many(actions![
-        TestCountdownAction::new(1),
-        TestCountdownAction::new(1)
-    ]);
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
+    assert_eq!(app.action_queue(a).len(), 1);
 
     app.actions(a).add_many(actions![]);
 
     assert!(app.current_action(a).is_some());
-    assert!(app.action_queue(a).len() == 1);
-}
+    assert_eq!(app.action_queue(a).len(), 1);
 
-#[test]
-fn next() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
+    app.reset()
+        .actions(a)
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
 
-    app.actions(a).add(TestCountdownAction::new(1));
-
-    let e = app
-        .world_mut()
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), false);
-
-    app.actions(a).next();
-
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), true);
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(app.hooks().deref().clone(), vec![]);
 }
 
 #[test]
@@ -233,24 +312,79 @@ fn finish() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1));
+    app.actions(a).add(CountdownAction::new(0));
+
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).is_empty());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
+        ]
+    );
+
+    let a = app.reset().spawn_agent();
+    app.actions(a).add(CountdownAction::new(1));
     app.update();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
+        ]
+    );
 
-    let e = app
-        .world_mut()
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
+    let a = app.reset().spawn_agent();
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
 
-    assert_eq!(app.world().entity(e).contains::<Finished>(), true);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.world().entity(e).contains::<Paused>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Done>(), true);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    assert!(app.current_action(a).is_none());
+    assert!(app.action_queue(a).is_empty());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done),
+            Hook::Start(Name::Countup, a),
+            Hook::Stop(Name::Countup, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countup, Some(a)),
+            Hook::Drop(Name::Countup, Some(a), DropReason::Done)
+        ]
+    );
+
+    let a = app.reset().spawn_agent();
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
+    app.update();
+
+    assert!(app.current_action(a).is_some());
+    assert_eq!(app.action_queue(a).len(), 0);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done),
+            Hook::Start(Name::Countup, a)
+        ]
+    );
 }
 
 #[test]
@@ -258,23 +392,22 @@ fn cancel() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).cancel();
+    app.actions(a).add(CountdownAction::new(1)).cancel();
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
+        ]
+    );
 
-    let e = app
-        .world_mut()
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.world().entity(e).contains::<Finished>(), false);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), true);
-    assert_eq!(app.world().entity(e).contains::<Paused>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Done>(), true);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    app.reset().actions(a).cancel();
 }
 
 #[test]
@@ -282,23 +415,43 @@ fn pause() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    app.actions(a).add(TestCountdownAction::new(1)).pause();
+    app.actions(a).add(CountdownAction::new(1)).pause();
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).len() == 1);
+    assert_eq!(app.action_queue(a).len(), 1);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Paused)
+        ]
+    );
 
-    let e = app
-        .world_mut()
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
+    app.reset().actions(a).pause();
+}
 
-    assert_eq!(app.world().entity(e).contains::<Finished>(), false);
-    assert_eq!(app.world().entity(e).contains::<Canceled>(), false);
-    assert_eq!(app.world().entity(e).contains::<Paused>(), true);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Done>(), false);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+#[test]
+fn next() {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    app.actions(a).add(CountdownAction::new(1)).next();
+
+    assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 0);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
+        ]
+    );
+
+    app.reset().actions(a).next();
 }
 
 #[test]
@@ -308,24 +461,21 @@ fn skip() {
 
     app.actions(a)
         .start(false)
-        .add(TestCountdownAction::new(0))
+        .add(CountdownAction::new(1))
         .skip();
 
-    assert!(app.action_queue(a).is_empty());
+    assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 0);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Skipped)
+        ]
+    );
 
-    let e = app
-        .world_mut()
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), false);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), true);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Done>(), false);
-    assert_eq!(app.world().entity(e).contains::<Skipped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Cleared>(), false);
+    app.reset().actions(a).skip();
 }
 
 #[test]
@@ -334,95 +484,32 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![
-            TestCountdownAction::new(1),
-            TestCountdownAction::new(1)
-        ])
+        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)])
         .clear();
 
     assert!(app.current_action(a).is_none());
-    assert!(app.action_queue(a).is_empty());
+    assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Canceled>>()
-            .iter(app.world())
-            .len(),
-        1
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Canceled),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Cleared),
+            Hook::Remove(Name::Countup, Some(a)),
+            Hook::Drop(Name::Countup, Some(a), DropReason::Cleared)
+        ]
     );
-    assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Removed>>()
-            .iter(app.world())
-            .len(),
-        2
-    );
-    assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Dropped>>()
-            .iter(app.world())
-            .len(),
-        2
-    );
-    assert_eq!(
-        app.world_mut()
-            .query_filtered::<Entity, With<Cleared>>()
-            .iter(app.world())
-            .len(),
-        2
-    );
-}
 
-#[test]
-fn lifecycle() {
-    let mut app = TestApp::new();
-    let a = app.spawn_agent();
-
-    app.actions(a).start(false).add(TestCountdownAction::new(1));
-
-    let e = app
-        .world_mut()
-        .query_filtered::<Entity, With<CountdownMarker>>()
-        .single(app.world());
-
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), false);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
-
-    app.actions(a).execute();
-
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), false);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
-
-    app.actions(a).pause();
-
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), false);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), false);
-
-    app.actions(a).clear();
-
-    assert_eq!(app.world().entity(e).contains::<Added>(), true);
-    assert_eq!(app.world().entity(e).contains::<Started>(), true);
-    assert_eq!(app.world().entity(e).contains::<Stopped>(), true);
-    assert_eq!(app.world().entity(e).contains::<Removed>(), true);
-    assert_eq!(app.world().entity(e).contains::<Dropped>(), true);
+    app.reset().actions(a).clear();
 }
 
 #[test]
 fn order() {
+    #[derive(Default)]
     struct MarkerAction<M: Default + Component>(PhantomData<M>);
-    impl<M: Default + Component> MarkerAction<M> {
-        const fn new() -> Self {
-            Self(PhantomData)
-        }
-    }
     impl<M: Default + Component> Action for MarkerAction<M> {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
             true
@@ -431,8 +518,8 @@ fn order() {
             world.entity_mut(agent).insert(M::default());
             false
         }
-        fn on_stop(&mut self, agent: Entity, world: &mut World, _reason: StopReason) {
-            world.entity_mut(agent).remove::<M>();
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, _reason: StopReason) {
+            world.entity_mut(agent.unwrap()).remove::<M>();
         }
     }
 
@@ -448,55 +535,55 @@ fn order() {
 
     // Back
     app.actions(a).add_many(actions![
-        MarkerAction::<A>::new(),
-        MarkerAction::<B>::new(),
-        MarkerAction::<C>::new(),
+        MarkerAction::<A>::default(),
+        MarkerAction::<B>::default(),
+        MarkerAction::<C>::default(),
     ]);
 
-    assert_eq!(app.world().entity(a).contains::<A>(), true);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), true);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), true);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), true);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), true);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), true);
 
     // Front
     app.actions(a)
         .clear()
         .start(false)
-        .add(TestCountdownAction::new(0))
+        .add(|_a, _w: &mut World| false)
         .order(AddOrder::Front)
         .add_many(actions![
-            MarkerAction::<A>::new(),
-            MarkerAction::<B>::new(),
-            MarkerAction::<C>::new(),
+            MarkerAction::<A>::default(),
+            MarkerAction::<B>::default(),
+            MarkerAction::<C>::default(),
         ])
         .execute();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), true);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), true);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), true);
-    assert_eq!(app.world().entity(a).contains::<C>(), false);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), true);
+    assert_eq!(app.entity(a).contains::<C>(), false);
 
     app.update();
 
-    assert_eq!(app.world().entity(a).contains::<A>(), false);
-    assert_eq!(app.world().entity(a).contains::<B>(), false);
-    assert_eq!(app.world().entity(a).contains::<C>(), true);
+    assert_eq!(app.entity(a).contains::<A>(), false);
+    assert_eq!(app.entity(a).contains::<B>(), false);
+    assert_eq!(app.entity(a).contains::<C>(), true);
 }
 
 #[test]
@@ -504,56 +591,291 @@ fn pause_resume() {
     let mut app = TestApp::new();
     let a = app.spawn_agent();
 
-    fn countdown_value(app: &mut TestApp) -> i32 {
-        app.world_mut().query::<&Countdown>().single(app.world()).0
-    }
+    app.actions(a).add(CountdownAction::new(10));
 
-    app.actions(a).add(TestCountdownAction::new(10));
-
-    assert_eq!(countdown_value(&mut app), 10);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 10);
 
     app.update();
 
-    assert_eq!(countdown_value(&mut app), 9);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 9);
 
     app.actions(a)
         .pause()
         .order(AddOrder::Front)
-        .add(TestCountdownAction::new(1));
+        .add(CountdownAction::new(1));
 
-    assert_eq!(countdown_value(&mut app), 1);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 1);
 
     app.update();
 
-    assert_eq!(countdown_value(&mut app), 9);
+    assert_eq!(app.entity(a).get::<Countdown>().unwrap().0, 9);
 }
 
 #[test]
 fn despawn() {
-    struct DespawnAction;
-    impl Action for DespawnAction {
+    let mut app = TestApp::new();
+    let a = app.spawn_agent();
+
+    app.actions(a)
+        .add_many(actions![CountdownAction::new(10), CountupAction::new(10)]);
+    app.update();
+    app.despawn(a);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Stop(Name::Countdown, None, StopReason::Canceled),
+            Hook::Remove(Name::Countdown, None),
+            Hook::Drop(Name::Countdown, None, DropReason::Done),
+            Hook::Remove(Name::Countup, None),
+            Hook::Drop(Name::Countup, None, DropReason::Cleared)
+        ]
+    );
+}
+
+#[test]
+fn despawn_action() {
+    struct DespawnAction<const B: bool>;
+    impl<const B: bool> Action for DespawnAction<B> {
         fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-            false
+            true
         }
-
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            Name::Despawn.on_add(agent, world);
+        }
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            Name::Despawn.on_start(agent, world);
             world.despawn(agent);
-            false
+            B
         }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            Name::Despawn.on_stop(agent, world, reason);
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            Name::Despawn.on_remove(agent, world);
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            Name::Despawn.on_drop(agent, world, reason);
+        }
+    }
 
-        fn on_stop(&mut self, _agent: Entity, _world: &mut World, _reason: StopReason) {}
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(DespawnAction::<true>);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Despawn, a),
+            Hook::Start(Name::Despawn, a),
+            Hook::Stop(Name::Despawn, None, StopReason::Finished),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
+        ]
+    );
+
+    let a = app.reset().spawn_agent();
+    app.actions(a).add(DespawnAction::<false>);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Despawn, a),
+            Hook::Start(Name::Despawn, a),
+            Hook::Stop(Name::Despawn, None, StopReason::Canceled),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
+        ]
+    );
+
+    let a = app.reset().spawn_agent();
+    app.actions(a).add_many(actions![
+        DespawnAction::<true>,
+        CountdownAction::new(1),
+        CountupAction::new(1)
+    ]);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Despawn, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Despawn, a),
+            // After despawn, the bevy ecs on_remove component hook is triggered
+            Hook::Remove(Name::Countdown, None),
+            Hook::Drop(Name::Countdown, None, DropReason::Cleared),
+            Hook::Remove(Name::Countup, None),
+            Hook::Drop(Name::Countup, None, DropReason::Cleared),
+            // Back to DespawnAction
+            Hook::Stop(Name::Despawn, None, StopReason::Finished),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
+        ]
+    );
+
+    let a = app.reset().spawn_agent();
+    app.actions(a).add_many(actions![
+        DespawnAction::<false>,
+        CountdownAction::new(1),
+        CountupAction::new(1)
+    ]);
+
+    assert!(app.get_entity(a).is_none());
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Despawn, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Despawn, a),
+            // After despawn, the bevy ecs on_remove component hook is triggered
+            Hook::Remove(Name::Countdown, None),
+            Hook::Drop(Name::Countdown, None, DropReason::Cleared),
+            Hook::Remove(Name::Countup, None),
+            Hook::Drop(Name::Countup, None, DropReason::Cleared),
+            // Back to DespawnAction
+            Hook::Stop(Name::Despawn, None, StopReason::Canceled),
+            Hook::Remove(Name::Despawn, None),
+            Hook::Drop(Name::Despawn, None, DropReason::Done)
+        ]
+    );
+}
+
+#[test]
+fn good_add_action() {
+    struct GoodAddAction;
+    impl Action for GoodAddAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            Name::GoodAdd.on_add(agent, world);
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            Name::GoodAdd.on_start(agent, world);
+            world
+                .actions(agent)
+                .start(false)
+                .add(CountdownAction::new(1));
+            true
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            Name::GoodAdd.on_stop(agent, world, reason);
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            Name::GoodAdd.on_remove(agent, world);
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            Name::GoodAdd.on_drop(agent, world, reason);
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(GoodAddAction);
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::GoodAdd, a),
+            Hook::Start(Name::GoodAdd, a),
+            Hook::Add(Name::Countdown, a),
+            Hook::Stop(Name::GoodAdd, Some(a), StopReason::Finished),
+            Hook::Remove(Name::GoodAdd, Some(a)),
+            Hook::Drop(Name::GoodAdd, Some(a), DropReason::Done),
+            Hook::Start(Name::Countdown, a)
+        ]
+    );
+}
+
+#[test]
+fn bad_add_action() {
+    struct BadAddAction;
+    impl Action for BadAddAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_add(&mut self, agent: Entity, world: &mut World) {
+            Name::BadAdd.on_add(agent, world);
+        }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            Name::BadAdd.on_start(agent, world);
+            true
+        }
+        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+            Name::BadAdd.on_stop(agent, world, reason);
+            world.actions(agent.unwrap()).add(CountdownAction::new(1));
+        }
+        fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
+            Name::BadAdd.on_remove(agent, world);
+        }
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            Name::BadAdd.on_drop(agent, world, reason);
+        }
+    }
+
+    let mut app = TestApp::new();
+
+    let a = app.spawn_agent();
+    app.actions(a).add(BadAddAction);
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::BadAdd, a),
+            Hook::Start(Name::BadAdd, a),
+            Hook::Stop(Name::BadAdd, Some(a), StopReason::Finished),
+            Hook::Add(Name::Countdown, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Remove(Name::BadAdd, Some(a)),
+            Hook::Drop(Name::BadAdd, Some(a), DropReason::Done)
+        ]
+    );
+
+    app.hooks_mut().clear();
+    app.update();
+
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Stop(Name::Countdown, Some(a), StopReason::Finished),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Done)
+        ]
+    );
+}
+
+#[test]
+#[should_panic]
+fn forever_action() {
+    struct ForeverAction;
+    impl Action for ForeverAction {
+        fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
+            true
+        }
+        fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
+            true
+        }
+        fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, _reason: DropReason) {
+            world
+                .actions(agent.unwrap())
+                .start(false)
+                .add(self as BoxedAction);
+        }
     }
 
     let mut app = TestApp::new();
     let a = app.spawn_agent();
-
-    app.actions(a).add_many(actions![
-        TestCountdownAction::new(1),
-        DespawnAction,
-        TestCountdownAction::new(0),
-    ]);
-
-    app.update();
-
-    assert!(app.world().get_entity(a).is_none());
+    app.actions(a).add(ForeverAction);
 }

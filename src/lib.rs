@@ -25,66 +25,25 @@ The quickest way for getting started is adding the [`SequentialActionsPlugin`] t
 # use bevy_ecs::prelude::*;
 # use bevy_app::prelude::*;
 use bevy_sequential_actions::*;
+#
+# struct DefaultPlugins;
+# impl Plugin for DefaultPlugins { fn build(&self, _app: &mut App) {} }
 
 fn main() {
     App::new()
-        .add_plugins(SequentialActionsPlugin)
+        .add_plugins((DefaultPlugins, SequentialActionsPlugin))
         .run();
-}
-```
-
-#### Modifying Actions
-
-An action is anything that implements the [`Action`] trait,
-and can be added to any [`Entity`] that contains the [`ActionsBundle`].
-An entity with actions is referred to as an `agent`.
-See the [`ModifyActions`] trait for available methods.
-
-```rust,no_run
-# use bevy_ecs::prelude::*;
-# use bevy_sequential_actions::*;
-#
-# struct EmptyAction;
-# impl Action for EmptyAction {
-#   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true.into() }
-#   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true.into() }
-#   fn on_stop(&mut self, _a: Entity, _w: &mut World, _r: StopReason) {}
-# }
-#
-fn setup(mut commands: Commands) {
-#   let action_a = EmptyAction;
-#   let action_b = EmptyAction;
-#   let action_c = EmptyAction;
-#   let action_d = EmptyAction;
-#
-    let agent = commands.spawn(ActionsBundle::new()).id();
-    commands
-        .actions(agent)
-        .add(action_a)
-        .add_many(actions![
-            action_b,
-            action_c
-        ])
-        .order(AddOrder::Front)
-        .add(action_d)
-        // ...
-#       ;
 }
 ```
 
 #### Implementing an Action
 
-The [`Action`] trait contains 3 required methods:
+An action is anything that implements the [`Action`] trait.
+The trait contains various methods that together defines the _lifecycle_ of an action.
+From this, you can create any action that can last as long as you like,
+and do as much as you like.
 
-* [`is_finished`](Action::is_finished) to determine if an action is finished or not.
-* [`on_start`](Action::on_start) which is called when an action is started.
-* [`on_stop`](Action::on_stop) which is called when an action is stopped.
-
-In addition, there are 3 optional methods:
-
-* [`on_add`](Action::on_add) which is called when an action is added to the queue.
-* [`on_remove`](Action::on_remove) which is called when an action is removed from the queue.
-* [`on_drop`](Action::on_drop) which is the last method to be called with full ownership.
+An entity with actions is referred to as an `agent`.
 
 A simple wait action follows.
 
@@ -102,12 +61,13 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
+    // By default, this method is called every frame in the Last schedule.
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if wait timer has reached zero.
-        // By default, this method is called every frame in the Last schedule.
         world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
     }
 
+    // This method is called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
@@ -120,7 +80,11 @@ impl Action for WaitAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    // This method is called when an action is stopped.
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        // Do nothing if agent has been despawned.
+        let Some(agent) = agent else { return };
+
         // Take the wait timer component from the agent.
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
@@ -129,6 +93,15 @@ impl Action for WaitAction {
             self.current = Some(wait_timer.unwrap().0);
         }
     }
+
+    // Optional. This method is called when an action is added to the queue.
+    fn on_add(&mut self, agent: Entity, world: &mut World) {}
+
+    // Optional. This method is called when an action is removed from the queue.
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {}
+
+    // Optional. The last method that is called with full ownership.
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {}
 }
 
 #[derive(Component)]
@@ -141,26 +114,101 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 }
 ```
 
+#### Modifying Actions
+
+Actions can be added to any [`Entity`] that contains the [`ActionsBundle`].
+This is is done through the [`actions(agent)`](ActionsProxy::actions)
+extension method implemented for both [`Commands`] and [`World`].
+See the [`ModifyActions`] trait for available methods.
+
+```rust,no_run
+# use bevy_app::AppExit;
+# use bevy_ecs::prelude::*;
+# use bevy_sequential_actions::*;
+#
+# struct EmptyAction;
+# impl Action for EmptyAction {
+#   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+#   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+#   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+# }
+#
+fn setup(mut commands: Commands) {
+#   let action_a = EmptyAction;
+#   let action_b = EmptyAction;
+#   let action_c = EmptyAction;
+#   let action_d = EmptyAction;
+#
+    // Spawn entity with the bundle
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands
+        .actions(agent)
+        // Add a single action
+        .add(action_a)
+        // Add multiple actions
+        .add_many(actions![
+            action_b,
+            action_c,
+            action_d
+        ])
+        // Add an anonymous action with a closure
+        .add(|_agent, world: &mut World| -> bool {
+            // on_start
+            world.send_event(AppExit::Success);
+            true
+        });
+}
+```
+
 #### ⚠️ Warning
 
-One thing to keep in mind is when modifying actions using [`World`] inside the [`Action`] trait.
-In order to pass a mutable reference to world when calling the trait methods,
-the action has to be temporarily removed from an `agent`.
-This means that depending on what you do,
-the logic for advancing the action queue might not work properly.
+Since you are given a mutable [`World`], you can in practice do _anything_.
+Depending on what you do, the logic for advancing the action queue might not work properly.
+There are a few things you should keep in mind:
 
-In general, there are two rules when modifying actions for an `agent` inside the action trait:
+* If you want to despawn an `agent` as an action, this should be done in [`on_start`](`Action::on_start`).
+* The [`execute`](`ModifyActions::execute`) and [`next`](`ModifyActions::next`) methods should not be used,
+    as that will immediately advance the action queue while inside any of the trait methods.
+    Instead, you should return `true` in [`on_start`](`Action::on_start`).
+* When adding new actions, you should set the [`start`](`ModifyActions::start`) property to `false`.
+    Otherwise, you will effectively call [`execute`](`ModifyActions::execute`) which, again, should not be used.
+    At worst, you will cause a **stack overflow** if the action adds itself.
 
-* When adding new actions, you should either set the [`start`](ModifyActions::start) property to `false`,
-    or push to the [`ActionQueue`] component directly.
-* The [`execute`](ModifyActions::execute) and [`next`](ModifyActions::next) methods should not be used.
+    ```rust,no_run
+    # use bevy_ecs::prelude::*;
+    # use bevy_sequential_actions::*;
+    # struct EmptyAction;
+    # impl Action for EmptyAction {
+    #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+    #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+    #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+    # }
+    # struct TestAction;
+    # impl Action for TestAction {
+    #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+    #       let action_a = EmptyAction;
+    #       let action_b = EmptyAction;
+    #       let action_c = EmptyAction;
+            world
+                .actions(agent)
+                .start(false) // Do not start next action
+                .add_many(actions![action_a, action_b, action_c]);
+
+            // Immediately advance the action queue
+            true
+        }
+    #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+    # }
+    ```
 */
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, fmt::Debug};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::prelude::*;
+use bevy_ecs::{component::ComponentId, prelude::*, query::QueryFilter, world::DeferredWorld};
+use bevy_log::{debug, warn};
 
 mod commands;
 mod macros;
@@ -203,16 +251,82 @@ impl ActionsBundle {
 }
 
 /// The current action for an `agent`.
-///
-/// Note that you are not supposed to use this directly.
-#[derive(Default, Component, Deref, DerefMut)]
+#[derive(Debug, Default, Component, Deref, DerefMut)]
 pub struct CurrentAction(Option<BoxedAction>);
 
+impl CurrentAction {
+    /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
+    /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
+    pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+        let mut current_action = world.get_mut::<Self>(agent).unwrap();
+        if let Some(mut action) = current_action.take() {
+            world.commands().add(move |world: &mut World| {
+                action.on_stop(None, world, StopReason::Canceled);
+                action.on_remove(None, world);
+                action.on_drop(None, world, DropReason::Done);
+            });
+        }
+    }
+
+    /// Observer for cleaning up the current action when an `agent` is despawned.
+    pub fn on_remove_trigger<F: QueryFilter>(
+        trigger: Trigger<OnRemove, Self>,
+        mut query: Query<&mut Self, F>,
+        mut commands: Commands,
+    ) {
+        let agent = trigger.entity();
+        if let Ok(mut current_action) = query.get_mut(agent) {
+            if let Some(mut action) = current_action.take() {
+                commands.add(move |world: &mut World| {
+                    action.on_stop(None, world, StopReason::Canceled);
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Done);
+                });
+            }
+        }
+    }
+}
+
 /// The action queue for an `agent`.
-///
-/// Note that you are not supposed to use this directly.
-#[derive(Default, Component, Deref, DerefMut)]
+#[derive(Debug, Default, Component, Deref, DerefMut)]
 pub struct ActionQueue(VecDeque<BoxedAction>);
+
+impl ActionQueue {
+    /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
+    /// used by [`SequentialActionsPlugin`] for cleaning up the action queue when an `agent` is despawned.
+    pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+        let mut action_queue = world.get_mut::<Self>(agent).unwrap();
+        if !action_queue.is_empty() {
+            let actions = std::mem::take(&mut action_queue.0);
+            world.commands().add(move |world: &mut World| {
+                for mut action in actions {
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Cleared);
+                }
+            });
+        }
+    }
+
+    /// Observer for cleaning up the action queue when an `agent` is despawned.
+    pub fn on_remove_trigger<F: QueryFilter>(
+        trigger: Trigger<OnRemove, Self>,
+        mut query: Query<&mut Self, F>,
+        mut commands: Commands,
+    ) {
+        let agent = trigger.entity();
+        if let Ok(mut action_queue) = query.get_mut(agent) {
+            if !action_queue.is_empty() {
+                let actions = std::mem::take(&mut action_queue.0);
+                commands.add(move |world: &mut World| {
+                    for mut action in actions {
+                        action.on_remove(None, world);
+                        action.on_drop(None, world, DropReason::Cleared);
+                    }
+                });
+            }
+        }
+    }
+}
 
 /// Configuration for actions to be added.
 #[derive(Debug, Clone, Copy)]
@@ -263,8 +377,10 @@ pub enum DropReason {
     /// The action is considered done as it was either finished or canceled
     /// without being skipped or cleared from the action queue.
     Done,
-    /// The action was skipped.
+    /// The action was skipped. This happens either deliberately,
+    /// or because an action was added to an `agent` that does not exist or is missing the [`ActionsBundle`].
     Skipped,
-    /// The action queue was cleared.
+    /// The action queue was cleared. This happens either deliberately,
+    /// or because an `agent` was despawned.
     Cleared,
 }

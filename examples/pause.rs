@@ -16,16 +16,15 @@ fn main() {
         .run();
 }
 
+#[derive(Component)]
+struct Agent;
+
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    let agent = commands.spawn((ActionsBundle::new(), Agent)).id();
     commands.actions(agent).add(CountForeverAction);
 }
 
-fn frame_logic(
-    mut frame: Local<u32>,
-    mut commands: Commands,
-    agent_q: Query<Entity, With<ActionQueue>>,
-) {
+fn frame_logic(mut frame: Local<u32>, mut commands: Commands, agent_q: Query<Entity, With<Agent>>) {
     const PAUSE_FRAME: u32 = 10;
     const RESUME_FRAME: u32 = PAUSE_FRAME * 2;
     const EXIT_FRAME: u32 = PAUSE_FRAME * 3;
@@ -75,13 +74,13 @@ impl Action for CountForeverAction {
         false
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         match reason {
             StopReason::Finished | StopReason::Canceled => {
-                world.entity_mut(agent).remove::<Count>();
+                world.entity_mut(agent.unwrap()).remove::<Count>();
             }
             StopReason::Paused => {
-                world.entity_mut(agent).insert(Paused);
+                world.entity_mut(agent.unwrap()).insert(Paused);
             }
         }
     }

@@ -26,47 +26,19 @@ use bevy_sequential_actions::*;
 
 fn main() {
     App::new()
-        .add_plugins(SequentialActionsPlugin)
+        .add_plugins((DefaultPlugins, SequentialActionsPlugin))
         .run();
-}
-```
-
-#### Modifying Actions
-
-An action is anything that implements the `Action` trait,
-and can be added to any `Entity` that contains the `ActionsBundle`.
-An entity with actions is referred to as an `agent`.
-See the `ModifyActions` trait for available methods.
-
-```rust
-fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
-    commands
-        .actions(agent)
-        .add(action_a)
-        .add_many(actions![
-            action_b,
-            action_c
-        ])
-        .order(AddOrder::Front)
-        .add(action_d)
-        // ...
 }
 ```
 
 #### Implementing an Action
 
-The `Action` trait contains 3 required methods:
+An action is anything that implements the `Action` trait.
+The trait contains various methods that together defines the _lifecycle_ of an action.
+From this, you can create any action that can last as long as you like,
+and do as much as you like.
 
-* `is_finished` to determine if an action is finished or not.
-* `on_start` which is called when an action is started.
-* `on_stop` which is called when an action is stopped.
-
-In addition, there are 3 optional methods:
-
-* `on_add` which is called when an action is added to the queue.
-* `on_remove` which is called when an action is removed from the queue.
-* `on_drop` which is the last method to be called with full ownership.
+An entity with actions is referred to as an `agent`.
 
 A simple wait action follows.
 
@@ -77,12 +49,13 @@ pub struct WaitAction {
 }
 
 impl Action for WaitAction {
+    // By default, this method is called every frame in the Last schedule.
     fn is_finished(&self, agent: Entity, world: &World) -> bool {
         // Determine if wait timer has reached zero.
-        // By default, this method is called every frame in the Last schedule.
         world.get::<WaitTimer>(agent).unwrap().0 <= 0.0
     }
 
+    // This method is called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
         // Take current time (if paused), or use full duration.
         let duration = self.current.take().unwrap_or(self.duration);
@@ -95,7 +68,11 @@ impl Action for WaitAction {
         self.is_finished(agent, world)
     }
 
-    fn on_stop(&mut self, agent: Entity, world: &mut World, reason: StopReason) {
+    // This method is called when an action is stopped.
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        // Do nothing if agent has been despawned.
+        let Some(agent) = agent else { return };
+
         // Take the wait timer component from the agent.
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
@@ -104,6 +81,15 @@ impl Action for WaitAction {
             self.current = Some(wait_timer.unwrap().0);
         }
     }
+
+    // Optional. This method is called when an action is added to the queue.
+    fn on_add(&mut self, agent: Entity, world: &mut World) {}
+
+    // Optional. This method is called when an action is removed from the queue.
+    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {}
+
+    // Optional. The last method that is called with full ownership.
+    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {}
 }
 
 #[derive(Component)]
@@ -116,19 +102,61 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 }
 ```
 
+#### Modifying Actions
+
+Actions can be added to any `Entity` that contains the `ActionsBundle`.
+This is is done through the `actions(agent)`
+extension method implemented for both `Commands` and `World`.
+See the `ModifyActions` trait for available methods.
+
+```rust
+fn setup(mut commands: Commands) {
+    // Spawn entity with the bundle
+    let agent = commands.spawn(ActionsBundle::new()).id();
+    commands
+        .actions(agent)
+        // Add a single action
+        .add(action_a)
+        // Add multiple actions
+        .add_many(actions![
+            action_b,
+            action_c,
+            action_d
+        ])
+        // Add an anonymous action with a closure
+        .add(|_agent, world: &mut World| -> bool {
+            // on_start
+            world.send_event(AppExit::Success);
+            true
+        });
+}
+```
+
 #### ⚠️ Warning
 
-One thing to keep in mind is when modifying actions using `World` inside the `Action` trait.
-In order to pass a mutable reference to world when calling the trait methods,
-the action has to be temporarily removed from an `agent`.
-This means that depending on what you do,
-the logic for advancing the action queue might not work properly.
+Since you are given a mutable `World`, you can in practice do _anything_.
+Depending on what you do, the logic for advancing the action queue might not work properly.
+There are a few things you should keep in mind:
 
-In general, there are two rules when modifying actions for an `agent` inside the action trait:
+* If you want to despawn an `agent` as an action, this should be done in `on_start`.
+* The `execute` and `next` methods should not be used,
+    as that will immediately advance the action queue while inside any of the trait methods.
+    Instead, you should return `true` in `on_start`.
+* When adding new actions, you should set the `start` property to `false`.
+    Otherwise, you will effectively call `execute` which, again, should not be used.
+    At worst, you will cause a **stack overflow** if the action adds itself.
 
-* When adding new actions, you should either set the `start` property to `false`,
-    or push to the `ActionQueue` component directly.
-* The `execute` and `next` methods should not be used.
+    ```rust,no_run
+        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+            world
+                .actions(agent)
+                .start(false) // Do not start next action
+                .add_many(actions![action_a, action_b, action_c]);
+
+            // Immediately advance the action queue
+            true
+        }
+    ```
 
 ## 📎 Examples
 
@@ -137,14 +165,12 @@ Each example can be run with `cargo run --example <example>`.
 
 | Example | Description |
 | ------- | ----------- |
-| `basic` | Shows the basic usage of the library. |
-| `pause` | Shows how to pause and resume an action. |
-| `repeat` | Shows how to create an action that repeats. |
-| `parallel` | Shows how to create actions that run in parallel. |
-| `sequence` | Shows how to create an action with a sequence of actions. |
-| `schedule` | Shows how to use the plugin with two different schedules. |
-| `custom` | Shows how to use a custom system for advancing the action queue. |
-| `despawn` | Shows how to properly despawn an `agent`. |
+| `basic` | Basic usage of the library. |
+| `pause` | Pause and resume an action. |
+| `repeat` | Create an action that repeats. |
+| `parallel` | Create actions that run in parallel. |
+| `sequence` | Create action with a sequence of actions. |
+| `custom` | Custom plugin with different schedules and action queue advancement. |
 
 ## 📌 Compatibility
 
