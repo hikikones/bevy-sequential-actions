@@ -26,6 +26,6 @@
 #[macro_export]
 macro_rules! actions {
     ( $( $action:expr ),* $(,)? ) => {
-        [ $( ::core::convert::Into::<::std::boxed::Box<dyn $crate::Action>>::into($action) ),* ]
+        [ $( $crate::IntoBoxedAction::into_boxed_action($action) ),* ]
     }
 }

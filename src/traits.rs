@@ -45,7 +45,7 @@ use super::*;
 ///         world
 ///             .actions(agent)
 ///             .start(false) // Do not start next action
-///             .add_many(actions![action_a, action_b, action_c]);
+///             .add((action_a, action_b, action_c));
 ///
 ///         // Immediately advance the action queue
 ///         true
@@ -104,12 +104,9 @@ pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
 
 downcast_rs::impl_downcast!(Action);
 
-impl<T> From<T> for BoxedAction
-where
-    T: Action,
-{
-    fn from(action: T) -> Self {
-        Box::new(action)
+impl std::fmt::Debug for BoxedAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.type_name())
     }
 }
 
@@ -126,12 +123,6 @@ where
     }
 
     fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
-}
-
-impl std::fmt::Debug for BoxedAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.type_name())
-    }
 }
 
 /// Proxy method for modifying actions.
@@ -157,13 +148,6 @@ pub trait ModifyActions {
 
     /// Adds one or more actions to the queue.
     fn add(&mut self, actions: impl IntoBoxedActions) -> &mut Self;
-
-    /// Adds a collection of actions to the queue.
-    /// An empty collection does nothing.
-    fn add_many<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no current action.

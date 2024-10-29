@@ -272,7 +272,7 @@ fn add_many() {
 
     app.actions(a)
         .start(false)
-        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
+        .add((CountdownAction::new(0), CountupAction::new(0)));
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 2);
@@ -283,25 +283,25 @@ fn add_many() {
 
     app.actions(a)
         .clear()
-        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
+        .add((CountdownAction::new(0), CountupAction::new(0)));
 
     assert!(app.current_action(a).is_none());
     assert_eq!(app.action_queue(a).len(), 0);
 
     app.actions(a)
-        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
+        .add(actions![CountdownAction::new(1), CountupAction::new(1)]);
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);
 
-    app.actions(a).add_many(actions![]);
+    app.actions(a).add(actions![]);
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);
 
     app.reset()
         .actions(a)
-        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
+        .add(actions![CountdownAction::new(1), CountupAction::new(1)]);
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(app.hooks().deref().clone(), vec![]);
@@ -346,7 +346,7 @@ fn finish() {
 
     let a = app.reset().spawn_agent();
     app.actions(a)
-        .add_many(actions![CountdownAction::new(0), CountupAction::new(0)]);
+        .add((CountdownAction::new(0), CountupAction::new(0)));
 
     assert!(app.current_action(a).is_none());
     assert!(app.action_queue(a).is_empty());
@@ -368,7 +368,7 @@ fn finish() {
 
     let a = app.reset().spawn_agent();
     app.actions(a)
-        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)]);
+        .add((CountdownAction::new(1), CountupAction::new(1)));
     app.update();
 
     assert!(app.current_action(a).is_some());
@@ -484,7 +484,7 @@ fn clear() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![CountdownAction::new(1), CountupAction::new(1)])
+        .add((CountdownAction::new(1), CountupAction::new(1)))
         .clear();
 
     assert!(app.current_action(a).is_none());
@@ -534,11 +534,11 @@ fn order() {
     let a = app.spawn_agent();
 
     // Back
-    app.actions(a).add_many(actions![
+    app.actions(a).add((
         MarkerAction::<A>::default(),
         MarkerAction::<B>::default(),
         MarkerAction::<C>::default(),
-    ]);
+    ));
 
     assert_eq!(app.entity(a).contains::<A>(), true);
     assert_eq!(app.entity(a).contains::<B>(), false);
@@ -562,11 +562,11 @@ fn order() {
         .start(false)
         .add(|_a, _w: &mut World| false)
         .order(AddOrder::Front)
-        .add_many(actions![
+        .add((
             MarkerAction::<A>::default(),
             MarkerAction::<B>::default(),
             MarkerAction::<C>::default(),
-        ])
+        ))
         .execute();
 
     assert_eq!(app.entity(a).contains::<A>(), true);
@@ -617,7 +617,7 @@ fn despawn() {
     let a = app.spawn_agent();
 
     app.actions(a)
-        .add_many(actions![CountdownAction::new(10), CountupAction::new(10)]);
+        .add((CountdownAction::new(10), CountupAction::new(10)));
     app.update();
     app.despawn(a);
 
@@ -696,11 +696,11 @@ fn despawn_action() {
     );
 
     let a = app.reset().spawn_agent();
-    app.actions(a).add_many(actions![
+    app.actions(a).add((
         DespawnAction::<true>,
         CountdownAction::new(1),
-        CountupAction::new(1)
-    ]);
+        CountupAction::new(1),
+    ));
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(
@@ -723,11 +723,11 @@ fn despawn_action() {
     );
 
     let a = app.reset().spawn_agent();
-    app.actions(a).add_many(actions![
+    app.actions(a).add((
         DespawnAction::<false>,
         CountdownAction::new(1),
-        CountupAction::new(1)
-    ]);
+        CountupAction::new(1),
+    ));
 
     assert!(app.get_entity(a).is_none());
     assert_eq!(

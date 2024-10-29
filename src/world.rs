@@ -52,20 +52,6 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add_many<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
-    {
-        SequentialActionsPlugin::add_actions(
-            self.agent,
-            self.config,
-            actions.into_iter(),
-            self.world,
-        );
-        self
-    }
-
     fn execute(&mut self) -> &mut Self {
         SequentialActionsPlugin::execute_actions(self.agent, self.world);
         self

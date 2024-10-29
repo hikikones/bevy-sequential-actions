@@ -12,7 +12,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(ActionsBundle::new()).id();
-    commands.actions(agent).add_many(actions![
+    commands.actions(agent).add((
         RepeatAction {
             action: PrintAction("hello"),
             repeat: 3,
@@ -35,7 +35,7 @@ fn setup(mut commands: Commands) {
             },
             repeat: u32::MAX,
         },
-    ]);
+    ));
 }
 
 struct RepeatAction<A: Action> {

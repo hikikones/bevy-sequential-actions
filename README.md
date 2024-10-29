@@ -117,11 +117,13 @@ fn setup(mut commands: Commands) {
         .actions(agent)
         // Add a single action
         .add(action_a)
-        // Add multiple actions
-        .add_many(actions![
-            action_b,
-            action_c,
-            action_d
+        // Add more actions with a tuple
+        .add((action_b, action_c))
+        // Add a collection of actions
+        .add(actions![
+            action_d,
+            action_e,
+            action_f,
         ])
         // Add an anonymous action with a closure
         .add(|_agent, world: &mut World| -> bool {
@@ -151,7 +153,7 @@ There are a few things you should keep in mind:
             world
                 .actions(agent)
                 .start(false) // Do not start next action
-                .add_many(actions![action_a, action_b, action_c]);
+                .add((action_a, action_b, action_c));
 
             // Immediately advance the action queue
             true

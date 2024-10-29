@@ -60,21 +60,6 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         self
     }
 
-    fn add_many<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
-    {
-        let agent = self.agent;
-        let config = self.config;
-
-        self.commands.add(move |world: &mut World| {
-            SequentialActionsPlugin::add_actions(agent, config, actions.into_iter(), world);
-        });
-
-        self
-    }
-
     fn execute(&mut self) -> &mut Self {
         let agent = self.agent;
 
