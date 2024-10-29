@@ -222,10 +222,7 @@ pub trait IntoBoxedActions {
     ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static;
 }
 
-impl<T> IntoBoxedActions for T
-where
-    T: Action + IntoBoxedAction,
-{
+impl<T: Action> IntoBoxedActions for T {
     fn into_boxed_actions(
         self,
     ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
@@ -234,18 +231,22 @@ where
     }
 }
 
-impl<T1, T2> IntoBoxedActions for (T1, T2)
-where
-    T1: Action + IntoBoxedAction,
-    T2: Action + IntoBoxedAction,
-{
-    fn into_boxed_actions(
-        self,
-    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
-    {
-        [self.0.into_boxed_action(), self.1.into_boxed_action()].into_iter()
-    }
+macro_rules! impl_action_tuple {
+    ($($T:ident),+) => {
+        impl<$($T:Action),+> IntoBoxedActions for ($($T,)+) {
+            fn into_boxed_actions(
+                self,
+            ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+            {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = self;
+                [$( $T::into_boxed_action($T) ),+].into_iter()
+            }
+        }
+    };
 }
+
+bevy_utils::all_tuples!(impl_action_tuple, 1, 15, T);
 
 impl IntoBoxedActions for BoxedAction {
     fn into_boxed_actions(
@@ -253,15 +254,6 @@ impl IntoBoxedActions for BoxedAction {
     ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
     {
         [self].into_iter()
-    }
-}
-
-impl IntoBoxedActions for (BoxedAction, BoxedAction) {
-    fn into_boxed_actions(
-        self,
-    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
-    {
-        [self.0, self.1].into_iter()
     }
 }
 
@@ -276,9 +268,9 @@ impl<const N: usize> IntoBoxedActions for [BoxedAction; N] {
 
 fn test() {
     add(A);
-    add(Box::new(A) as BoxedAction);
+    // add(Box::new(A) as BoxedAction);
     add((A, B));
-    add((Box::new(A) as BoxedAction, Box::new(B) as _));
+    // add((Box::new(A) as BoxedAction, Box::new(B) as _));
     add(actions![
         A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B,
     ]);
