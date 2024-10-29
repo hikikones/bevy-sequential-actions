@@ -224,7 +224,7 @@ macro_rules! impl_action_tuple {
             {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = self;
-                [$( $T::into_boxed_action($T) ),+].into_iter()
+                [$( $T.into_boxed_action() ),+].into_iter()
             }
         }
     };
