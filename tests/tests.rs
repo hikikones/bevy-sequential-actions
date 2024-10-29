@@ -294,7 +294,7 @@ fn add_many() {
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);
 
-    app.actions(a).add(actions![]);
+    app.actions(a).add([]);
 
     assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 1);

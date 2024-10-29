@@ -25,7 +25,7 @@
 /// ```
 #[macro_export]
 macro_rules! actions {
-    ( $( $action:expr ),* $(,)? ) => {
-        [ $( $crate::IntoBoxedAction::into_boxed_action($action) ),* ]
+    ( $( $action:expr ),+ $(,)? ) => {
+        [ $( $crate::IntoBoxedAction::into_boxed_action($action) ),+ ]
     }
 }
