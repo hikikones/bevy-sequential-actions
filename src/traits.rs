@@ -155,8 +155,8 @@ pub trait ModifyActions {
     /// Default is [`AddOrder::Back`].
     fn order(&mut self, order: AddOrder) -> &mut Self;
 
-    /// Adds a single [`action`](Action) to the queue.
-    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
+    /// Adds one or more actions to the queue.
+    fn add(&mut self, actions: impl IntoBoxedActions) -> &mut Self;
 
     /// Adds a collection of actions to the queue.
     /// An empty collection does nothing.
@@ -219,10 +219,7 @@ pub trait IntoBoxedActions {
     /// Converts `self` into collection of boxed actions.
     fn into_boxed_actions(
         self,
-    ) -> impl IntoIterator<
-        Item = BoxedAction,
-        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
-    >;
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static;
 }
 
 impl<T> IntoBoxedActions for T
@@ -231,11 +228,9 @@ where
 {
     fn into_boxed_actions(
         self,
-    ) -> impl IntoIterator<
-        Item = BoxedAction,
-        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
-    > {
-        [self.into_boxed_action()]
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        [self.into_boxed_action()].into_iter()
     }
 }
 
@@ -246,44 +241,36 @@ where
 {
     fn into_boxed_actions(
         self,
-    ) -> impl IntoIterator<
-        Item = BoxedAction,
-        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
-    > {
-        [self.0.into_boxed_action(), self.1.into_boxed_action()]
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        [self.0.into_boxed_action(), self.1.into_boxed_action()].into_iter()
     }
 }
 
 impl IntoBoxedActions for BoxedAction {
     fn into_boxed_actions(
         self,
-    ) -> impl IntoIterator<
-        Item = BoxedAction,
-        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
-    > {
-        [self]
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        [self].into_iter()
     }
 }
 
 impl IntoBoxedActions for (BoxedAction, BoxedAction) {
     fn into_boxed_actions(
         self,
-    ) -> impl IntoIterator<
-        Item = BoxedAction,
-        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
-    > {
-        [self.0, self.1]
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        [self.0, self.1].into_iter()
     }
 }
 
 impl<const N: usize> IntoBoxedActions for [BoxedAction; N] {
     fn into_boxed_actions(
         self,
-    ) -> impl IntoIterator<
-        Item = BoxedAction,
-        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
-    > {
-        self
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
     }
 }
 

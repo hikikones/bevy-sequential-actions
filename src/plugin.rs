@@ -124,8 +124,7 @@ impl SequentialActionsPlugin {
     /// An empty collection does nothing.
     pub fn add_actions<I>(agent: Entity, config: AddConfig, actions: I, world: &mut World)
     where
-        I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
+        I: DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Debug,
     {
         let actions = actions.into_iter();
         let len = actions.len();
