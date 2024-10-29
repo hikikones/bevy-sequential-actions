@@ -34,13 +34,13 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
     }
 
     fn add(&mut self, action: impl IntoBoxedActions) -> &mut Self {
-        let agent = self.agent;
-        let config = self.config;
         let mut actions = action.into_boxed_actions();
 
         match actions.len() {
             0 => {}
             1 => {
+                let agent = self.agent;
+                let config = self.config;
                 self.commands.add(move |world: &mut World| {
                     SequentialActionsPlugin::add_action(
                         agent,
@@ -51,6 +51,8 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
                 });
             }
             _ => {
+                let agent = self.agent;
+                let config = self.config;
                 self.commands.add(move |world: &mut World| {
                     SequentialActionsPlugin::add_actions(agent, config, actions, world);
                 });
