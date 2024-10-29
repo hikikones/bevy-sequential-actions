@@ -193,7 +193,30 @@ pub trait ModifyActions {
     fn clear(&mut self) -> &mut Self;
 }
 
-trait IntoBoxedActions {
+/// Conversion of an [Action] to a [BoxedAction].
+pub trait IntoBoxedAction {
+    /// Converts `self` into [BoxedAction].
+    fn into_boxed_action(self) -> BoxedAction;
+}
+
+impl<T> IntoBoxedAction for T
+where
+    T: Action,
+{
+    fn into_boxed_action(self) -> BoxedAction {
+        Box::new(self)
+    }
+}
+
+impl IntoBoxedAction for BoxedAction {
+    fn into_boxed_action(self) -> BoxedAction {
+        self
+    }
+}
+
+/// Conversion of actions to a collection of boxed actions.
+pub trait IntoBoxedActions {
+    /// Converts `self` into collection of boxed actions.
     fn into_boxed_actions(
         self,
     ) -> impl IntoIterator<
@@ -204,7 +227,7 @@ trait IntoBoxedActions {
 
 impl<T> IntoBoxedActions for T
 where
-    T: Action,
+    T: Action + IntoBoxedAction,
 {
     fn into_boxed_actions(
         self,
@@ -212,14 +235,14 @@ where
         Item = BoxedAction,
         IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
     > {
-        actions![self]
+        [self.into_boxed_action()]
     }
 }
 
 impl<T1, T2> IntoBoxedActions for (T1, T2)
 where
-    T1: Action,
-    T2: Action,
+    T1: Action + IntoBoxedAction,
+    T2: Action + IntoBoxedAction,
 {
     fn into_boxed_actions(
         self,
@@ -227,7 +250,29 @@ where
         Item = BoxedAction,
         IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
     > {
-        actions![self.0, self.1]
+        [self.0.into_boxed_action(), self.1.into_boxed_action()]
+    }
+}
+
+impl IntoBoxedActions for BoxedAction {
+    fn into_boxed_actions(
+        self,
+    ) -> impl IntoIterator<
+        Item = BoxedAction,
+        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
+    > {
+        [self]
+    }
+}
+
+impl IntoBoxedActions for (BoxedAction, BoxedAction) {
+    fn into_boxed_actions(
+        self,
+    ) -> impl IntoIterator<
+        Item = BoxedAction,
+        IntoIter = impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator<Item = BoxedAction>,
+    > {
+        [self.0, self.1]
     }
 }
 
@@ -243,37 +288,10 @@ impl<const N: usize> IntoBoxedActions for [BoxedAction; N] {
 }
 
 fn test() {
-    struct A;
-    impl Action for A {
-        fn is_finished(&self, agent: Entity, world: &World) -> bool {
-            todo!()
-        }
-
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            todo!()
-        }
-
-        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-            todo!()
-        }
-    }
-    struct B;
-    impl Action for B {
-        fn is_finished(&self, agent: Entity, world: &World) -> bool {
-            todo!()
-        }
-
-        fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-            todo!()
-        }
-
-        fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-            todo!()
-        }
-    }
-
     add(A);
+    add(Box::new(A) as BoxedAction);
     add((A, B));
+    add((Box::new(A) as BoxedAction, Box::new(B) as _));
     add(actions![
         A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B, A, B,
     ]);
@@ -288,3 +306,32 @@ fn add(actions: impl IntoBoxedActions) {
 }
 
 fn use_action(action: BoxedAction) {}
+
+struct A;
+impl Action for A {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        todo!()
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        todo!()
+    }
+
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        todo!()
+    }
+}
+struct B;
+impl Action for B {
+    fn is_finished(&self, agent: Entity, world: &World) -> bool {
+        todo!()
+    }
+
+    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+        todo!()
+    }
+
+    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
+        todo!()
+    }
+}
