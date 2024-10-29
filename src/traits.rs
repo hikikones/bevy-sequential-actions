@@ -249,3 +249,39 @@ impl<const N: usize> IntoBoxedActions for [BoxedAction; N] {
         self.into_iter()
     }
 }
+
+impl IntoBoxedActions for Vec<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for VecDeque<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for std::collections::LinkedList<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for std::collections::BinaryHeap<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
