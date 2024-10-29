@@ -183,10 +183,7 @@ pub trait IntoBoxedAction {
     fn into_boxed_action(self) -> BoxedAction;
 }
 
-impl<T> IntoBoxedAction for T
-where
-    T: Action,
-{
+impl<T: Action> IntoBoxedAction for T {
     fn into_boxed_action(self) -> BoxedAction {
         Box::new(self)
     }
