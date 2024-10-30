@@ -20,7 +20,7 @@ fn main() {
 struct Agent;
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn((ActionsBundle::new(), Agent)).id();
+    let agent = commands.spawn((SequentialActions, Agent)).id();
     commands.actions(agent).add(CountForeverAction);
 }
 

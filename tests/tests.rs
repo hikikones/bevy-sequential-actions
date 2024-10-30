@@ -20,7 +20,7 @@ impl TestApp {
     }
 
     fn spawn_agent(&mut self) -> Entity {
-        self.world_mut().spawn(ActionsBundle::new()).id()
+        self.world_mut().spawn(SequentialActions).id()
     }
 
     fn actions(&mut self, agent: Entity) -> impl ModifyActions + use<'_> {

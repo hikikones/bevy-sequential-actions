@@ -42,9 +42,7 @@ struct Agent;
 
 fn setup(mut commands: Commands) {
     // Spawn agent with even marker for even schedule
-    let agent_even = commands
-        .spawn((ActionsBundle::new(), EvenMarker, Agent))
-        .id();
+    let agent_even = commands.spawn((SequentialActions, EvenMarker, Agent)).id();
     commands
         .actions(agent_even)
         .add(PrintForeverAction::new(format!(
@@ -52,9 +50,7 @@ fn setup(mut commands: Commands) {
         )));
 
     // Spawn agent with odd marker for odd schedule
-    let agent_odd = commands
-        .spawn((ActionsBundle::new(), OddMarker, Agent))
-        .id();
+    let agent_odd = commands.spawn((SequentialActions, OddMarker, Agent)).id();
     commands
         .actions(agent_odd)
         .add(PrintForeverAction::new(format!(

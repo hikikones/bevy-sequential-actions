@@ -116,7 +116,7 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 
 #### Modifying Actions
 
-Actions can be added to any [`Entity`] that contains the [`ActionsBundle`].
+Actions can be added to any [`Entity`] with the [`SequentialActions`] marker component.
 This is is done through the [`actions(agent)`](ActionsProxy::actions)
 extension method implemented for both [`Commands`] and [`World`].
 See the [`ModifyActions`] trait for available methods.
@@ -141,8 +141,8 @@ fn setup(mut commands: Commands) {
 #   let action_e = EmptyAction;
 #   let action_f = EmptyAction;
 #
-    // Spawn entity with the bundle
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    // Spawn entity with the marker component
+    let agent = commands.spawn(SequentialActions).id();
     commands
         .actions(agent)
         // Add a single action
@@ -395,7 +395,7 @@ pub enum DropReason {
     /// without being skipped or cleared from the action queue.
     Done,
     /// The action was skipped. This happens either deliberately,
-    /// or because an action was added to an `agent` that does not exist or is missing the [`ActionsBundle`].
+    /// or because an action was added to an `agent` that does not exist or is missing a component.
     Skipped,
     /// The action queue was cleared. This happens either deliberately,
     /// or because an `agent` was despawned.
