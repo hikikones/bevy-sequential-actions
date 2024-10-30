@@ -12,7 +12,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    let agent = commands.spawn(SequentialActions).id();
     commands.actions(agent).add((
         ParallelActions::new(actions![
             PrintAction("hello"),

@@ -3,6 +3,7 @@
 ## Version 0.12.0-dev
 
 - [Update to Bevy 0.15][103]
+- [Add `SequentialActions` marker for required components][106]
 - [Add skip amount in `ModifyActions::skip`][105]
 - [Add multiple actions with a tuple][104]
     - Removes `add_many` as `add` can now be used instead
@@ -12,6 +13,7 @@
     - Replaces all unwraps with logging
     - Adds `on_remove_hook` and `on_remove_trigger` for both `CurrentAction` and `ActionQueue`
 
+[106]: https://github.com/hikikones/bevy-sequential-actions/pull/106
 [105]: https://github.com/hikikones/bevy-sequential-actions/pull/105
 [104]: https://github.com/hikikones/bevy-sequential-actions/pull/104
 [103]: https://github.com/hikikones/bevy-sequential-actions/pull/103

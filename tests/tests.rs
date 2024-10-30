@@ -20,7 +20,7 @@ impl TestApp {
     }
 
     fn spawn_agent(&mut self) -> Entity {
-        self.world_mut().spawn(ActionsBundle::new()).id()
+        self.world_mut().spawn(SequentialActions).id()
     }
 
     fn actions(&mut self, agent: Entity) -> impl ModifyActions + use<'_> {
@@ -233,6 +233,30 @@ fn countup(mut countup_q: Query<&mut Countup>) {
     for mut countup in &mut countup_q {
         countup.0 += 1;
     }
+}
+
+#[test]
+fn spawn_and_remove() {
+    let mut app = TestApp::new();
+    let a = app.world_mut().spawn(SequentialActions).id();
+
+    assert_eq!(app.entity(a).contains::<SequentialActions>(), true);
+    assert_eq!(app.entity(a).contains::<CurrentAction>(), true);
+    assert_eq!(app.entity(a).contains::<ActionQueue>(), true);
+
+    app.world_mut().entity_mut(a).remove::<SequentialActions>();
+
+    assert_eq!(app.entity(a).contains::<SequentialActions>(), false);
+    assert_eq!(app.entity(a).contains::<CurrentAction>(), true);
+    assert_eq!(app.entity(a).contains::<ActionQueue>(), true);
+
+    app.world_mut()
+        .entity_mut(a)
+        .remove_with_requires::<SequentialActions>();
+
+    assert_eq!(app.entity(a).contains::<SequentialActions>(), false);
+    assert_eq!(app.entity(a).contains::<CurrentAction>(), false);
+    assert_eq!(app.entity(a).contains::<ActionQueue>(), false);
 }
 
 #[test]
@@ -895,6 +919,7 @@ fn bad_add_action() {
 
 #[test]
 #[should_panic]
+#[cfg(debug_assertions)]
 fn forever_action() {
     struct ForeverAction;
     impl Action for ForeverAction {
