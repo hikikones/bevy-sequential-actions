@@ -2,7 +2,7 @@
 
 ## Version 0.12.0-dev
 
-- [Add how many actions to skip in `ModifyActions::skip`][105]
+- [Add skip amount in `ModifyActions::skip`][105]
 - [Add multiple actions with a tuple][104]
     - Removes `add_many` as `add` can now be used instead
 - [Add cleanup of actions for despawned agents][101]
