@@ -73,8 +73,8 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn skip(&mut self) -> &mut Self {
-        SequentialActionsPlugin::skip_next_action(self.agent, self.world);
+    fn skip(&mut self, n: usize) -> &mut Self {
+        SequentialActionsPlugin::skip_actions(self.agent, n, self.world);
         self
     }
 

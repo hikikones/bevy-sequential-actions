@@ -377,25 +377,35 @@ impl SequentialActionsPlugin {
         }
     }
 
-    /// Skips the next [`action`](Action) in the queue for `agent`.
-    pub fn skip_next_action(agent: Entity, world: &mut World) {
-        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
-            warn!("Cannot skip next action for non-existent agent {agent}.");
-            return;
-        };
+    /// Skips the next `n` actions in the queue for `agent`.
+    pub fn skip_actions(agent: Entity, mut n: usize, world: &mut World) {
+        loop {
+            if n == 0 {
+                break;
+            }
 
-        let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            warn!(
-                "Cannot skip next action for agent {agent} due to missing component {}.",
-                std::any::type_name::<ActionQueue>()
-            );
-            return;
-        };
+            let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+                warn!("Cannot skip next action for non-existent agent {agent}.");
+                break;
+            };
 
-        if let Some(mut action) = action_queue.pop_front() {
+            let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
+                warn!(
+                    "Cannot skip next action for agent {agent} due to missing component {}.",
+                    std::any::type_name::<ActionQueue>()
+                );
+                break;
+            };
+
+            let Some(mut action) = action_queue.pop_front() else {
+                break;
+            };
+
             debug!("Skipping action {action:?} for agent {agent}.");
             action.on_remove(agent.into(), world);
             action.on_drop(agent.into(), world, DropReason::Skipped);
+
+            n -= 1;
         }
     }
 

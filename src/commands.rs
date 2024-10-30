@@ -103,11 +103,11 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         self
     }
 
-    fn skip(&mut self) -> &mut Self {
+    fn skip(&mut self, n: usize) -> &mut Self {
         let agent = self.agent;
 
         self.commands.add(move |world: &mut World| {
-            SequentialActionsPlugin::skip_next_action(agent, world);
+            SequentialActionsPlugin::skip_actions(agent, n, world);
         });
 
         self

@@ -168,8 +168,8 @@ pub trait ModifyActions {
     /// To resume the action queue, call either [`execute`](Self::execute) or [`next`](Self::next).
     fn pause(&mut self) -> &mut Self;
 
-    /// Skips the next [`action`](Action) in the queue.
-    fn skip(&mut self) -> &mut Self;
+    /// Skips the next `n` actions in the queue.
+    fn skip(&mut self, n: usize) -> &mut Self;
 
     /// Clears the action queue.
     ///

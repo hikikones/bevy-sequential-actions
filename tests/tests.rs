@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::Deref};
+use std::{marker::PhantomData, ops::Deref, usize};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
@@ -462,20 +462,58 @@ fn skip() {
     app.actions(a)
         .start(false)
         .add(CountdownAction::new(1))
-        .skip();
+        .skip(0);
 
     assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 1);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![Hook::Add(Name::Countdown, a)]
+    );
+
+    app.actions(a).add(CountupAction::new(1)).skip(1);
+
+    assert!(app.current_action(a).is_some());
     assert_eq!(app.action_queue(a).len(), 0);
     assert_eq!(
         app.hooks().deref().clone(),
         vec![
             Hook::Add(Name::Countdown, a),
-            Hook::Remove(Name::Countdown, Some(a)),
-            Hook::Drop(Name::Countdown, Some(a), DropReason::Skipped)
+            Hook::Add(Name::Countup, a),
+            Hook::Start(Name::Countdown, a),
+            Hook::Remove(Name::Countup, Some(a)),
+            Hook::Drop(Name::Countup, Some(a), DropReason::Skipped)
         ]
     );
 
-    app.reset().actions(a).skip();
+    app.actions(a).clear();
+    app.hooks_mut().clear();
+
+    app.actions(a)
+        .start(false)
+        .add((
+            CountdownAction::new(1),
+            CountupAction::new(1),
+            CountupAction::new(1),
+        ))
+        .skip(2);
+
+    assert!(app.current_action(a).is_none());
+    assert_eq!(app.action_queue(a).len(), 1);
+    assert_eq!(
+        app.hooks().deref().clone(),
+        vec![
+            Hook::Add(Name::Countdown, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Add(Name::Countup, a),
+            Hook::Remove(Name::Countdown, Some(a)),
+            Hook::Drop(Name::Countdown, Some(a), DropReason::Skipped),
+            Hook::Remove(Name::Countup, Some(a)),
+            Hook::Drop(Name::Countup, Some(a), DropReason::Skipped),
+        ]
+    );
+
+    app.reset().actions(a).skip(usize::MAX);
 }
 
 #[test]
