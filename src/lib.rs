@@ -228,6 +228,10 @@ pub use world::*;
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
+#[derive(Component)]
+#[require(CurrentAction, ActionQueue)]
+pub struct SequentialActions;
+
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
 pub struct ActionsBundle {
