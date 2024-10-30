@@ -236,6 +236,30 @@ fn countup(mut countup_q: Query<&mut Countup>) {
 }
 
 #[test]
+fn spawn_and_remove() {
+    let mut app = TestApp::new();
+    let a = app.world_mut().spawn(SequentialActions).id();
+
+    assert_eq!(app.entity(a).contains::<SequentialActions>(), true);
+    assert_eq!(app.entity(a).contains::<CurrentAction>(), true);
+    assert_eq!(app.entity(a).contains::<ActionQueue>(), true);
+
+    app.world_mut().entity_mut(a).remove::<SequentialActions>();
+
+    assert_eq!(app.entity(a).contains::<SequentialActions>(), false);
+    assert_eq!(app.entity(a).contains::<CurrentAction>(), true);
+    assert_eq!(app.entity(a).contains::<ActionQueue>(), true);
+
+    app.world_mut()
+        .entity_mut(a)
+        .remove_with_requires::<SequentialActions>();
+
+    assert_eq!(app.entity(a).contains::<SequentialActions>(), false);
+    assert_eq!(app.entity(a).contains::<CurrentAction>(), false);
+    assert_eq!(app.entity(a).contains::<ActionQueue>(), false);
+}
+
+#[test]
 fn add() {
     let mut app = TestApp::new();
 
