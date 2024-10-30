@@ -491,11 +491,11 @@ fn skip() {
 
     app.actions(a)
         .start(false)
-        .add_many(actions![
+        .add((
             CountdownAction::new(1),
             CountupAction::new(1),
-            CountupAction::new(1)
-        ])
+            CountupAction::new(1),
+        ))
         .skip(2);
 
     assert!(app.current_action(a).is_none());
