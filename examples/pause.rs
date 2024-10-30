@@ -16,15 +16,16 @@ fn main() {
         .run();
 }
 
-#[derive(Component)]
-struct Agent;
-
 fn setup(mut commands: Commands) {
-    let agent = commands.spawn((SequentialActions, Agent)).id();
+    let agent = commands.spawn(SequentialActions).id();
     commands.actions(agent).add(CountForeverAction);
 }
 
-fn frame_logic(mut frame: Local<u32>, mut commands: Commands, agent_q: Query<Entity, With<Agent>>) {
+fn frame_logic(
+    mut frame: Local<u32>,
+    mut commands: Commands,
+    agent_q: Query<Entity, With<SequentialActions>>,
+) {
     const PAUSE_FRAME: u32 = 10;
     const RESUME_FRAME: u32 = PAUSE_FRAME * 2;
     const EXIT_FRAME: u32 = PAUSE_FRAME * 3;
