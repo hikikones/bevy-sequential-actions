@@ -264,7 +264,7 @@ impl CurrentAction {
     pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
         let mut current_action = world.get_mut::<Self>(agent).unwrap();
         if let Some(mut action) = current_action.take() {
-            world.commands().add(move |world: &mut World| {
+            world.commands().queue(move |world: &mut World| {
                 action.on_stop(None, world, StopReason::Canceled);
                 action.on_remove(None, world);
                 action.on_drop(None, world, DropReason::Done);
@@ -281,7 +281,7 @@ impl CurrentAction {
         let agent = trigger.entity();
         if let Ok(mut current_action) = query.get_mut(agent) {
             if let Some(mut action) = current_action.take() {
-                commands.add(move |world: &mut World| {
+                commands.queue(move |world: &mut World| {
                     action.on_stop(None, world, StopReason::Canceled);
                     action.on_remove(None, world);
                     action.on_drop(None, world, DropReason::Done);
@@ -302,7 +302,7 @@ impl ActionQueue {
         let mut action_queue = world.get_mut::<Self>(agent).unwrap();
         if !action_queue.is_empty() {
             let actions = std::mem::take(&mut action_queue.0);
-            world.commands().add(move |world: &mut World| {
+            world.commands().queue(move |world: &mut World| {
                 for mut action in actions {
                     action.on_remove(None, world);
                     action.on_drop(None, world, DropReason::Cleared);
@@ -321,7 +321,7 @@ impl ActionQueue {
         if let Ok(mut action_queue) = query.get_mut(agent) {
             if !action_queue.is_empty() {
                 let actions = std::mem::take(&mut action_queue.0);
-                commands.add(move |world: &mut World| {
+                commands.queue(move |world: &mut World| {
                     for mut action in actions {
                         action.on_remove(None, world);
                         action.on_drop(None, world, DropReason::Cleared);

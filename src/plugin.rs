@@ -55,7 +55,7 @@ impl SequentialActionsPlugin {
                     .and_then(|action| action.is_finished(agent, world).then_some(agent))
             })
             .for_each(|agent| {
-                commands.add(move |world: &mut World| {
+                commands.queue(move |world: &mut World| {
                     Self::stop_current_action(agent, StopReason::Finished, world);
                     Self::start_next_action(agent, world);
                 });
@@ -69,7 +69,7 @@ impl SequentialActionsPlugin {
         mut action: BoxedAction,
         world: &mut World,
     ) {
-        if world.get_entity(agent).is_none() {
+        if world.get_entity(agent).is_err() {
             warn!("Cannot add action {action:?} to non-existent agent {agent}.");
             return;
         }
@@ -77,7 +77,7 @@ impl SequentialActionsPlugin {
         debug!("Adding action {action:?} for agent {agent} with {config:?}.");
         action.on_add(agent, world);
 
-        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!(
                 "Cannot enqueue action {action:?} to non-existent agent {agent}. \
                 Action is therefore dropped immediately."
@@ -131,7 +131,7 @@ impl SequentialActionsPlugin {
             return;
         }
 
-        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!("Cannot add actions {actions:?} to non-existent agent {agent}.");
             return;
         };
@@ -152,7 +152,7 @@ impl SequentialActionsPlugin {
                 for mut action in actions {
                     action.on_add(agent, world);
 
-                    let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+                    let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
                         warn!(
                             "Cannot enqueue action {action:?} to non-existent agent {agent}. \
                             Action is therefore dropped immediately."
@@ -179,7 +179,7 @@ impl SequentialActionsPlugin {
                 for mut action in actions.rev() {
                     action.on_add(agent, world);
 
-                    let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+                    let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
                         warn!(
                             "Cannot enqueue action {action:?} to non-existent agent {agent}. \
                             Action is therefore dropped immediately."
@@ -222,7 +222,7 @@ impl SequentialActionsPlugin {
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue for `agent`,
     /// but only if there is no current action.
     pub fn execute_actions(agent: Entity, world: &mut World) {
-        let Some(agent_ref) = world.get_entity(agent) else {
+        let Ok(agent_ref) = world.get_entity(agent) else {
             warn!("Cannot execute actions for non-existent agent {agent}.");
             return;
         };
@@ -243,7 +243,7 @@ impl SequentialActionsPlugin {
 
     /// [`Stops`](Action::on_stop) the current [`action`](Action) for `agent` with specified `reason`.
     pub fn stop_current_action(agent: Entity, reason: StopReason, world: &mut World) {
-        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!(
                 "Cannot stop current action for non-existent agent {agent} with reason {reason:?}."
             );
@@ -269,7 +269,7 @@ impl SequentialActionsPlugin {
                     action.on_drop(agent.into(), world, DropReason::Done);
                 }
                 StopReason::Paused => {
-                    let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+                    let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
                         warn!(
                             "Cannot enqueue paused action {action:?} to non-existent agent {agent}. \
                             Action is therefore dropped immediately."
@@ -308,7 +308,7 @@ impl SequentialActionsPlugin {
         let mut counter: u16 = 0;
 
         loop {
-            let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+            let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
                 warn!("Cannot start next action for non-existent agent {agent}.");
                 break;
             };
@@ -358,7 +358,7 @@ impl SequentialActionsPlugin {
             };
 
             debug!("Finishing action {action:?} for agent {agent}.");
-            let agent = world.get_entity(agent).map(|_| agent);
+            let agent = world.get_entity(agent).map(|_| agent).ok();
             action.on_stop(agent, world, StopReason::Finished);
             action.on_remove(agent, world);
             action.on_drop(agent, world, DropReason::Done);
@@ -384,7 +384,7 @@ impl SequentialActionsPlugin {
                 break;
             }
 
-            let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+            let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
                 warn!("Cannot skip next action for non-existent agent {agent}.");
                 break;
             };
@@ -413,7 +413,7 @@ impl SequentialActionsPlugin {
     ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     pub fn clear_actions(agent: Entity, world: &mut World) {
-        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!("Cannot clear actions for non-existent agent {agent}.");
             return;
         };
@@ -433,7 +433,7 @@ impl SequentialActionsPlugin {
             action.on_drop(agent.into(), world, DropReason::Cleared);
         }
 
-        let Some(mut agent_ref) = world.get_entity_mut(agent) else {
+        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!("Cannot clear action queue for non-existent agent {agent}.");
             return;
         };

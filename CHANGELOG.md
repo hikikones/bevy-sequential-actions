@@ -2,6 +2,7 @@
 
 ## Version 0.12.0-dev
 
+- [Update to Bevy 0.15][103]
 - [Add skip amount in `ModifyActions::skip`][105]
 - [Add multiple actions with a tuple][104]
     - Removes `add_many` as `add` can now be used instead
@@ -13,6 +14,7 @@
 
 [105]: https://github.com/hikikones/bevy-sequential-actions/pull/105
 [104]: https://github.com/hikikones/bevy-sequential-actions/pull/104
+[103]: https://github.com/hikikones/bevy-sequential-actions/pull/103
 [101]: https://github.com/hikikones/bevy-sequential-actions/pull/101
 
 ## Version 0.11.0

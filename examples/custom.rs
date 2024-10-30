@@ -187,8 +187,8 @@ impl<S: ScheduleLabel + Clone, F: QueryFilter + Send + Sync + 'static> Plugin
 
         // Add observers for cleanup of actions when despawning agents
         if self.cleanup {
-            app.observe(CurrentAction::on_remove_trigger::<F>)
-                .observe(ActionQueue::on_remove_trigger::<F>);
+            app.add_observer(CurrentAction::on_remove_trigger::<F>)
+                .add_observer(ActionQueue::on_remove_trigger::<F>);
         }
     }
 }

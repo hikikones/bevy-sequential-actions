@@ -40,7 +40,7 @@ impl TestApp {
     }
 
     fn get_entity(&self, entity: Entity) -> Option<EntityRef<'_>> {
-        self.world().get_entity(entity)
+        self.world().get_entity(entity).ok()
     }
 
     fn current_action(&self, agent: Entity) -> &CurrentAction {
