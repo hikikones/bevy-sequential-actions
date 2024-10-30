@@ -228,6 +228,15 @@ pub use world::*;
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
 
+/// Marker component for entities with actions.
+///
+/// This component is all that is needed for spawning an agent.
+/// Required components will bring in the necessary components,
+/// namely [CurrentAction] and [ActionQueue].
+///
+/// If you do not care for the marker,
+/// or perhaps don't want to use required components,
+/// there is still the [ActionsBundle] for spawning an agent as before.
 #[derive(Component)]
 #[require(CurrentAction, ActionQueue)]
 pub struct SequentialActions;

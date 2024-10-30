@@ -919,6 +919,7 @@ fn bad_add_action() {
 
 #[test]
 #[should_panic]
+#[cfg(debug_assertions)]
 fn forever_action() {
     struct ForeverAction;
     impl Action for ForeverAction {
