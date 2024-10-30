@@ -18,11 +18,18 @@ fn setup(mut commands: Commands) {
         .actions(agent)
         // Add a single action
         .add(DemoAction)
-        // Add multiple actions
-        .add_many(actions![
+        // Add more actions with a tuple
+        .add((
             PrintAction("hello"),
             PrintAction("there"),
-            CountdownAction::new(10)
+            CountdownAction::new(5),
+        ))
+        // Add a collection of actions
+        .add(actions![
+            PrintAction("it is possible to commit no mistakes and still lose"),
+            PrintAction("that is not a weakness"),
+            PrintAction("that is life"),
+            CountdownAction::new(10),
         ])
         // Add an anonymous action with a closure
         .add(|_agent, world: &mut World| -> bool {

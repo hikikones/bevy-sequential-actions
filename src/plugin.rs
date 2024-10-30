@@ -66,11 +66,9 @@ impl SequentialActionsPlugin {
     pub fn add_action(
         agent: Entity,
         config: AddConfig,
-        action: impl Into<BoxedAction>,
+        mut action: BoxedAction,
         world: &mut World,
     ) {
-        let mut action = action.into();
-
         if world.get_entity(agent).is_none() {
             warn!("Cannot add action {action:?} to non-existent agent {agent}.");
             return;
@@ -124,8 +122,7 @@ impl SequentialActionsPlugin {
     /// An empty collection does nothing.
     pub fn add_actions<I>(agent: Entity, config: AddConfig, actions: I, world: &mut World)
     where
-        I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
+        I: DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Debug,
     {
         let actions = actions.into_iter();
         let len = actions.len();

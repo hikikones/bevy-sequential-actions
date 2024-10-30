@@ -33,17 +33,22 @@ impl ModifyActions for AgentActions<'_> {
         self
     }
 
-    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
-        SequentialActionsPlugin::add_action(self.agent, self.config, action, self.world);
-        self
-    }
-
-    fn add_many<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction>,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
-    {
-        SequentialActionsPlugin::add_actions(self.agent, self.config, actions, self.world);
+    fn add(&mut self, actions: impl IntoBoxedActions) -> &mut Self {
+        let mut actions = actions.into_boxed_actions();
+        match actions.len() {
+            0 => {}
+            1 => {
+                SequentialActionsPlugin::add_action(
+                    self.agent,
+                    self.config,
+                    actions.next().unwrap(),
+                    self.world,
+                );
+            }
+            _ => {
+                SequentialActionsPlugin::add_actions(self.agent, self.config, actions, self.world);
+            }
+        }
         self
     }
 

@@ -45,7 +45,7 @@ use super::*;
 ///         world
 ///             .actions(agent)
 ///             .start(false) // Do not start next action
-///             .add_many(actions![action_a, action_b, action_c]);
+///             .add((action_a, action_b, action_c));
 ///
 ///         // Immediately advance the action queue
 ///         true
@@ -104,12 +104,9 @@ pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
 
 downcast_rs::impl_downcast!(Action);
 
-impl<T> From<T> for BoxedAction
-where
-    T: Action,
-{
-    fn from(action: T) -> Self {
-        Box::new(action)
+impl std::fmt::Debug for BoxedAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.type_name())
     }
 }
 
@@ -126,12 +123,6 @@ where
     }
 
     fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
-}
-
-impl std::fmt::Debug for BoxedAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.type_name())
-    }
 }
 
 /// Proxy method for modifying actions.
@@ -155,15 +146,8 @@ pub trait ModifyActions {
     /// Default is [`AddOrder::Back`].
     fn order(&mut self, order: AddOrder) -> &mut Self;
 
-    /// Adds a single [`action`](Action) to the queue.
-    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self;
-
-    /// Adds a collection of actions to the queue.
-    /// An empty collection does nothing.
-    fn add_many<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug;
+    /// Adds one or more actions to the queue.
+    fn add(&mut self, actions: impl IntoBoxedActions) -> &mut Self;
 
     /// [`Starts`](Action::on_start) the next [`action`](Action) in the queue,
     /// but only if there is no current action.
@@ -191,4 +175,110 @@ pub trait ModifyActions {
     ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
     fn clear(&mut self) -> &mut Self;
+}
+
+/// Conversion of an [Action] to a [BoxedAction].
+pub trait IntoBoxedAction {
+    /// Converts `self` into [BoxedAction].
+    fn into_boxed_action(self) -> BoxedAction;
+}
+
+impl<T: Action> IntoBoxedAction for T {
+    fn into_boxed_action(self) -> BoxedAction {
+        Box::new(self)
+    }
+}
+
+impl IntoBoxedAction for BoxedAction {
+    fn into_boxed_action(self) -> BoxedAction {
+        self
+    }
+}
+
+/// Conversion of actions to a collection of boxed actions.
+pub trait IntoBoxedActions {
+    /// Converts `self` into collection of boxed actions.
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static;
+}
+
+impl<T: Action> IntoBoxedActions for T {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        [self.into_boxed_action()].into_iter()
+    }
+}
+
+macro_rules! impl_action_tuple {
+    ($($T:ident),+) => {
+        impl<$($T:Action),+> IntoBoxedActions for ($($T,)+) {
+            fn into_boxed_actions(
+                self,
+            ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+            {
+                #[allow(non_snake_case)]
+                let ($($T,)+) = self;
+                [$( $T.into_boxed_action() ),+].into_iter()
+            }
+        }
+    };
+}
+
+bevy_utils::all_tuples!(impl_action_tuple, 1, 15, T);
+
+impl IntoBoxedActions for BoxedAction {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        [self].into_iter()
+    }
+}
+
+impl<const N: usize> IntoBoxedActions for [BoxedAction; N] {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for Vec<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for VecDeque<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for std::collections::LinkedList<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
+}
+
+impl IntoBoxedActions for std::collections::BinaryHeap<BoxedAction> {
+    fn into_boxed_actions(
+        self,
+    ) -> impl DoubleEndedIterator<Item = BoxedAction> + ExactSizeIterator + Send + Debug + 'static
+    {
+        self.into_iter()
+    }
 }

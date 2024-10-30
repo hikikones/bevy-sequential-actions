@@ -33,29 +33,31 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
         self
     }
 
-    fn add(&mut self, action: impl Into<BoxedAction>) -> &mut Self {
-        let agent = self.agent;
-        let config = self.config;
-        let action = action.into();
+    fn add(&mut self, action: impl IntoBoxedActions) -> &mut Self {
+        let mut actions = action.into_boxed_actions();
 
-        self.commands.add(move |world: &mut World| {
-            SequentialActionsPlugin::add_action(agent, config, action, world);
-        });
-
-        self
-    }
-
-    fn add_many<I>(&mut self, actions: I) -> &mut Self
-    where
-        I: IntoIterator<Item = BoxedAction> + Send + 'static,
-        I::IntoIter: DoubleEndedIterator + ExactSizeIterator + Debug,
-    {
-        let agent = self.agent;
-        let config = self.config;
-
-        self.commands.add(move |world: &mut World| {
-            SequentialActionsPlugin::add_actions(agent, config, actions, world);
-        });
+        match actions.len() {
+            0 => {}
+            1 => {
+                let agent = self.agent;
+                let config = self.config;
+                self.commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::add_action(
+                        agent,
+                        config,
+                        actions.next().unwrap(),
+                        world,
+                    );
+                });
+            }
+            _ => {
+                let agent = self.agent;
+                let config = self.config;
+                self.commands.add(move |world: &mut World| {
+                    SequentialActionsPlugin::add_actions(agent, config, actions, world);
+                });
+            }
+        }
 
         self
     }
