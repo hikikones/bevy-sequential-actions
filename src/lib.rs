@@ -237,7 +237,7 @@ pub type BoxedAction = Box<dyn Action>;
 /// If you do not care for the marker,
 /// or perhaps don't want to use required components,
 /// there is still the [ActionsBundle] for spawning an agent as before.
-#[derive(Component)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Component)]
 #[require(CurrentAction, ActionQueue)]
 pub struct SequentialActions;
 
@@ -346,7 +346,7 @@ impl ActionQueue {
 }
 
 /// Configuration for actions to be added.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AddConfig {
     /// Start the next action in the queue if nothing is currently running.
     pub start: bool,
