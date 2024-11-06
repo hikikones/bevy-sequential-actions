@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.12.0-dev
+## Version 0.12.0
 
 - [Update to Bevy 0.15][103]
 - [Add `SequentialActions` marker for required components][106]
