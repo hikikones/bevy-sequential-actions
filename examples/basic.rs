@@ -12,8 +12,8 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    // Spawn entity with the bundle
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    // Spawn entity with the marker component
+    let agent = commands.spawn(SequentialActions).id();
     commands
         .actions(agent)
         // Add a single action

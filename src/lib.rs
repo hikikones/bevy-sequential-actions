@@ -116,8 +116,8 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 
 #### Modifying Actions
 
-Actions can be added to any [`Entity`] that contains the [`ActionsBundle`].
-This is is done through the [`actions(agent)`](ActionsProxy::actions)
+Actions can be added to any [`Entity`] with the [`SequentialActions`] marker component.
+Adding and modifying actions is done through the [`actions(agent)`](ActionsProxy::actions)
 extension method implemented for both [`Commands`] and [`World`].
 See the [`ModifyActions`] trait for available methods.
 
@@ -141,8 +141,8 @@ fn setup(mut commands: Commands) {
 #   let action_e = EmptyAction;
 #   let action_f = EmptyAction;
 #
-    // Spawn entity with the bundle
-    let agent = commands.spawn(ActionsBundle::new()).id();
+    // Spawn entity with the marker component
+    let agent = commands.spawn(SequentialActions).id();
     commands
         .actions(agent)
         // Add a single action
@@ -227,6 +227,19 @@ pub use world::*;
 
 /// A boxed [`Action`].
 pub type BoxedAction = Box<dyn Action>;
+
+/// Marker component for entities with actions.
+///
+/// This component is all that is needed for spawning an agent that you can add actions to.
+/// Required components will bring in the necessary components,
+/// namely [CurrentAction] and [ActionQueue].
+///
+/// If you do not care for the marker,
+/// or perhaps don't want to use required components,
+/// there is still the [ActionsBundle] for spawning an agent as before.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Component)]
+#[require(CurrentAction, ActionQueue)]
+pub struct SequentialActions;
 
 /// The component bundle that all entities with actions must have.
 #[derive(Default, Bundle)]
@@ -333,7 +346,7 @@ impl ActionQueue {
 }
 
 /// Configuration for actions to be added.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AddConfig {
     /// Start the next action in the queue if nothing is currently running.
     pub start: bool,
@@ -382,7 +395,7 @@ pub enum DropReason {
     /// without being skipped or cleared from the action queue.
     Done,
     /// The action was skipped. This happens either deliberately,
-    /// or because an action was added to an `agent` that does not exist or is missing the [`ActionsBundle`].
+    /// or because an action was added to an `agent` that does not exist or is missing a component.
     Skipped,
     /// The action queue was cleared. This happens either deliberately,
     /// or because an `agent` was despawned.
