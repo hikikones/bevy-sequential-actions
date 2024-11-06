@@ -41,13 +41,9 @@ impl ModifyActions for AgentCommands<'_, '_, '_> {
             1 => {
                 let agent = self.agent;
                 let config = self.config;
+                let action = actions.next().unwrap();
                 self.commands.queue(move |world: &mut World| {
-                    SequentialActionsPlugin::add_action(
-                        agent,
-                        config,
-                        actions.next().unwrap(),
-                        world,
-                    );
+                    SequentialActionsPlugin::add_action(agent, config, action, world);
                 });
             }
             _ => {
