@@ -13,8 +13,8 @@ A library for the [Bevy](https://bevyengine.org) game engine
 that simplifies the process of running various actions in a specific sequence.
 
 <figure>
-  <img src="https://github.com/user-attachments/assets/66b5b15e-96af-47bd-9371-eee8809d1294"/>
-  <figcaption>An entity with a queue of repeating actions</figcaption>
+    <img src="https://github.com/user-attachments/assets/66b5b15e-96af-47bd-9371-eee8809d1294"/>
+    <figcaption>An entity with a queue of repeating actions</figcaption>
 </figure>
 
 </div>
