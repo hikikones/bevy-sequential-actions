@@ -66,9 +66,11 @@ impl SequentialActionsPlugin {
     pub fn add_action(
         agent: Entity,
         config: AddConfig,
-        mut action: BoxedAction,
+        action: impl IntoBoxedAction,
         world: &mut World,
     ) {
+        let mut action = action.into_boxed_action();
+
         if world.get_entity(agent).is_err() {
             warn!("Cannot add action {action:?} to non-existent agent {agent}.");
             return;
