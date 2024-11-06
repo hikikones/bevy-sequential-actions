@@ -7,11 +7,13 @@
 [![MIT/Apache 2.0](https://img.shields.io/crates/l/bevy-sequential-actions?style=flat-square)](https://github.com/hikikones/bevy-sequential-actions#license)
 
 
-A [Bevy](https://bevyengine.org) library that aims to execute a queue of various actions in a sequential manner.
-This generally means that one action runs at a time, and when it is done,
-the next action will start and so on until the queue is empty.
+A library for the [Bevy](https://bevyengine.org) game engine
+that simplifies the process of running various actions in a specific sequence.
 
-https://user-images.githubusercontent.com/19198785/167969191-48258eb3-8acb-4f38-a326-f34e055a1b40.mp4
+<figure>
+  <img src="https://github.com/user-attachments/assets/66b5b15e-96af-47bd-9371-eee8809d1294"/>
+  <figcaption>An entity with a queue of repeating actions</figcaption>
+</figure>
 
 </div>
 
@@ -178,6 +180,7 @@ Each example can be run with `cargo run --example <example>`.
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
+| 0.15 | 0.12                    |
 | 0.14 | 0.11                    |
 | 0.13 | 0.10                    |
 | 0.12 | 0.9                     |
