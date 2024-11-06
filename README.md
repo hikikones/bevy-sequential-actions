@@ -105,8 +105,8 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 #### Modifying Actions
 
 Actions can be added to any `Entity` with the `SequentialActions` marker component.
-This is is done through the `actions(agent)` extension method
-implemented for both `Commands` and `World`.
+Adding and modifying actions is done through the `actions(agent)`
+extension method implemented for both `Commands` and `World`.
 See the `ModifyActions` trait for available methods.
 
 ```rust

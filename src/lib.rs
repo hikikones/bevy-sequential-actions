@@ -117,7 +117,7 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 #### Modifying Actions
 
 Actions can be added to any [`Entity`] with the [`SequentialActions`] marker component.
-This is is done through the [`actions(agent)`](ActionsProxy::actions)
+Adding and modifying actions is done through the [`actions(agent)`](ActionsProxy::actions)
 extension method implemented for both [`Commands`] and [`World`].
 See the [`ModifyActions`] trait for available methods.
 
@@ -230,7 +230,7 @@ pub type BoxedAction = Box<dyn Action>;
 
 /// Marker component for entities with actions.
 ///
-/// This component is all that is needed for spawning an agent.
+/// This component is all that is needed for spawning an agent that you can add actions to.
 /// Required components will bring in the necessary components,
 /// namely [CurrentAction] and [ActionQueue].
 ///
