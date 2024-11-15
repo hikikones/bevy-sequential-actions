@@ -7,8 +7,7 @@
 [![MIT/Apache 2.0](https://img.shields.io/crates/l/bevy-sequential-actions?style=flat-square)](https://github.com/hikikones/bevy-sequential-actions#license)
 
 
-A library for the [Bevy](https://bevyengine.org) game engine
-that simplifies the process of running various actions in a specific sequence.
+A simple library for managing and sequencing various actions in [Bevy](https://bevyengine.org).
 
 <figure>
     <img src="https://github.com/user-attachments/assets/66b5b15e-96af-47bd-9371-eee8809d1294"/>
