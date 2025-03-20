@@ -214,7 +214,7 @@ use std::{collections::VecDeque, fmt::Debug};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::{component::ComponentId, prelude::*, query::QueryFilter, world::DeferredWorld};
+use bevy_ecs::{component::HookContext, prelude::*, query::QueryFilter, world::DeferredWorld};
 use bevy_log::{debug, warn};
 
 mod commands;
@@ -277,7 +277,8 @@ pub struct CurrentAction(Option<BoxedAction>);
 impl CurrentAction {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
-    pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+    pub fn on_remove_hook(mut world: DeferredWorld, ctx: HookContext) {
+        let agent = ctx.entity;
         let mut current_action = world.get_mut::<Self>(agent).unwrap();
         if let Some(mut action) = current_action.take() {
             world.commands().queue(move |world: &mut World| {
@@ -294,7 +295,7 @@ impl CurrentAction {
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
-        let agent = trigger.entity();
+        let agent = trigger.target();
         if let Ok(mut current_action) = query.get_mut(agent) {
             if let Some(mut action) = current_action.take() {
                 commands.queue(move |world: &mut World| {
@@ -314,7 +315,8 @@ pub struct ActionQueue(VecDeque<BoxedAction>);
 impl ActionQueue {
     /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the action queue when an `agent` is despawned.
-    pub fn on_remove_hook(mut world: DeferredWorld, agent: Entity, _component_id: ComponentId) {
+    pub fn on_remove_hook(mut world: DeferredWorld, ctx: HookContext) {
+        let agent = ctx.entity;
         let mut action_queue = world.get_mut::<Self>(agent).unwrap();
         if !action_queue.is_empty() {
             let actions = std::mem::take(&mut action_queue.0);
@@ -333,7 +335,7 @@ impl ActionQueue {
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
-        let agent = trigger.entity();
+        let agent = trigger.target();
         if let Ok(mut action_queue) = query.get_mut(agent) {
             if !action_queue.is_empty() {
                 let actions = std::mem::take(&mut action_queue.0);
