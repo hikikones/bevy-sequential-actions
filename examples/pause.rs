@@ -24,7 +24,7 @@ fn setup(mut commands: Commands) {
 fn frame_logic(
     mut frame: Local<u32>,
     mut commands: Commands,
-    agent_q: Query<Entity, With<SequentialActions>>,
+    agent_q: Single<Entity, With<SequentialActions>>,
 ) {
     const PAUSE_FRAME: u32 = 10;
     const RESUME_FRAME: u32 = PAUSE_FRAME * 2;
@@ -33,13 +33,15 @@ fn frame_logic(
 
     println!("Frame: {}", *frame);
 
+    let agent = agent_q.entity();
+
     if *frame == PAUSE_FRAME {
         println!("\nPAUSE\n");
-        commands.actions(agent_q.single()).pause();
+        commands.actions(agent).pause();
     }
     if *frame == RESUME_FRAME {
         println!("\nRESUME\n");
-        commands.actions(agent_q.single()).execute();
+        commands.actions(agent).execute();
     }
     if *frame == EXIT_FRAME {
         println!(

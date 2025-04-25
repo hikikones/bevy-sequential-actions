@@ -227,7 +227,7 @@ macro_rules! impl_action_tuple {
     };
 }
 
-bevy_utils::all_tuples!(impl_action_tuple, 1, 15, T);
+variadics_please::all_tuples!(impl_action_tuple, 1, 15, T);
 
 impl IntoBoxedActions for BoxedAction {
     fn into_boxed_actions(
