@@ -121,11 +121,7 @@ fn setup(mut commands: Commands) {
         // Add more actions with a tuple
         .add((action_b, action_c))
         // Add a collection of actions
-        .add(actions![
-            action_d,
-            action_e,
-            action_f,
-        ])
+        .add(actions![action_d, action_e, action_f])
         // Add an anonymous action with a closure
         .add(|_agent, world: &mut World| -> bool {
             // on_start
@@ -179,6 +175,7 @@ Each example can be run with `cargo run --example <example>`.
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
+| 0.16 | 0.13                    |
 | 0.15 | 0.12                    |
 | 0.14 | 0.11                    |
 | 0.13 | 0.10                    |

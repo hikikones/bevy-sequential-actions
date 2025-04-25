@@ -177,7 +177,7 @@ pub trait ModifyActions {
     fn clear(&mut self) -> &mut Self;
 }
 
-/// Conversion of an [Action] to a [BoxedAction].
+/// Conversion of an [`Action`] to a [`BoxedAction`].
 pub trait IntoBoxedAction {
     /// Converts `self` into [BoxedAction].
     fn into_boxed_action(self) -> BoxedAction;
