@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, time::Duration};
 
-use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
+use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
 use bevy_ecs::{prelude::*, query::QueryFilter, schedule::ScheduleLabel};
 
 use bevy_sequential_actions::*;
@@ -70,7 +70,7 @@ fn run_custom_schedules(
         for agent in agent_q.iter(world).collect::<Vec<_>>() {
             world.despawn(agent);
         }
-        world.send_event(AppExit::Success);
+        world.write_message(AppExit::Success);
     }
 
     *frame_count += 1;

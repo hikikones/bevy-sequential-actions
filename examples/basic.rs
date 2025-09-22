@@ -1,4 +1,4 @@
-use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
+use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
 use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
@@ -34,7 +34,7 @@ fn setup(mut commands: Commands) {
         // Add an anonymous action with a closure
         .add(|_agent, world: &mut World| -> bool {
             // on_start
-            world.send_event(AppExit::Success);
+            world.write_message(AppExit::Success);
             true
         });
 }

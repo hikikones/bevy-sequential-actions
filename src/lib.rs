@@ -210,7 +210,7 @@ use std::{collections::VecDeque, fmt::Debug};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::{component::HookContext, prelude::*, query::QueryFilter, world::DeferredWorld};
+use bevy_ecs::{lifecycle::HookContext, prelude::*, query::QueryFilter, world::DeferredWorld};
 use bevy_log::{debug, warn};
 
 mod commands;
@@ -287,11 +287,11 @@ impl CurrentAction {
 
     /// Observer for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_trigger<F: QueryFilter>(
-        trigger: Trigger<OnRemove, Self>,
+        trigger: On<Remove, Self>,
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
-        let agent = trigger.target();
+        let agent = trigger.entity;
         if let Ok(mut current_action) = query.get_mut(agent) {
             if let Some(mut action) = current_action.take() {
                 commands.queue(move |world: &mut World| {
@@ -327,11 +327,11 @@ impl ActionQueue {
 
     /// Observer for cleaning up the action queue when an `agent` is despawned.
     pub fn on_remove_trigger<F: QueryFilter>(
-        trigger: Trigger<OnRemove, Self>,
+        trigger: On<Remove, Self>,
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
-        let agent = trigger.target();
+        let agent = trigger.entity;
         if let Ok(mut action_queue) = query.get_mut(agent) {
             if !action_queue.is_empty() {
                 let actions = std::mem::take(&mut action_queue.0);
