@@ -175,6 +175,7 @@ Each example can be run with `cargo run --example <example>`.
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
+| 0.17 | 0.14                    |
 | 0.16 | 0.13                    |
 | 0.15 | 0.12                    |
 | 0.14 | 0.11                    |
