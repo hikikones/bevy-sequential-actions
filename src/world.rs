@@ -10,7 +10,7 @@ impl ActionsProxy for World {
     }
 }
 
-/// Modify actions using [`World`].
+/// Manage actions using [`World`].
 pub struct AgentActions<'w> {
     agent: Entity,
     config: AddConfig,

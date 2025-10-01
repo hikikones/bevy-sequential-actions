@@ -10,7 +10,7 @@ impl ActionsProxy for Commands<'_, '_> {
     }
 }
 
-/// Modify actions using [`Commands`].
+/// Manage actions using [`Commands`].
 pub struct AgentCommands<'c, 'w, 's> {
     agent: Entity,
     config: AddConfig,
