@@ -1,9 +1,9 @@
 [package]
 name = "bevy-sequential-actions"
 authors = ["hikikones"]
-version = "0.14.0-dev"
+version = "0.14.0"
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 description = "A Bevy library for executing various actions in a sequence."
 readme = "README.md"
 homepage = "https://github.com/hikikones/bevy-sequential-actions"
