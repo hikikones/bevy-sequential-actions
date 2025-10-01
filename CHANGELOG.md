@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.14.0-dev
+## Version 0.14.0
 
 - [Update to Bevy 0.17][111]
 - [Rename `ModifyActions` trait to `ManageActions`][112]

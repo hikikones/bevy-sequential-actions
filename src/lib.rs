@@ -292,14 +292,14 @@ impl CurrentAction {
         mut commands: Commands,
     ) {
         let agent = remove.entity;
-        if let Ok(mut current_action) = query.get_mut(agent) {
-            if let Some(mut action) = current_action.take() {
-                commands.queue(move |world: &mut World| {
-                    action.on_stop(None, world, StopReason::Canceled);
-                    action.on_remove(None, world);
-                    action.on_drop(None, world, DropReason::Done);
-                });
-            }
+        if let Ok(mut current_action) = query.get_mut(agent)
+            && let Some(mut action) = current_action.take()
+        {
+            commands.queue(move |world: &mut World| {
+                action.on_stop(None, world, StopReason::Canceled);
+                action.on_remove(None, world);
+                action.on_drop(None, world, DropReason::Done);
+            });
         }
     }
 }
@@ -332,16 +332,16 @@ impl ActionQueue {
         mut commands: Commands,
     ) {
         let agent = remove.entity;
-        if let Ok(mut action_queue) = query.get_mut(agent) {
-            if !action_queue.is_empty() {
-                let actions = std::mem::take(&mut action_queue.0);
-                commands.queue(move |world: &mut World| {
-                    for mut action in actions {
-                        action.on_remove(None, world);
-                        action.on_drop(None, world, DropReason::Cleared);
-                    }
-                });
-            }
+        if let Ok(mut action_queue) = query.get_mut(agent)
+            && !action_queue.is_empty()
+        {
+            let actions = std::mem::take(&mut action_queue.0);
+            commands.queue(move |world: &mut World| {
+                for mut action in actions {
+                    action.on_remove(None, world);
+                    action.on_drop(None, world, DropReason::Cleared);
+                }
+            });
         }
     }
 }
