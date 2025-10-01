@@ -125,13 +125,14 @@ where
     fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
-/// Proxy method for modifying actions.
-pub trait ActionsExt {
-    /// Returns a type for modifying actions for specified `agent`.
+/// Extension method for managing actions.
+/// Implemented for both [`Commands`] and [`World`].
+pub trait ActionsProxy {
+    /// Returns a type for managing actions for specified `agent`.
     fn actions(&mut self, agent: Entity) -> impl ManageActions;
 }
 
-/// Methods for modifying actions.
+/// Methods for managing actions.
 pub trait ManageActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(&mut self, config: AddConfig) -> &mut Self;

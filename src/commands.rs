@@ -1,6 +1,6 @@
 use super::*;
 
-impl ActionsExt for Commands<'_, '_> {
+impl ActionsProxy for Commands<'_, '_> {
     fn actions(&mut self, agent: Entity) -> impl ManageActions {
         AgentCommands {
             agent,

@@ -1,6 +1,6 @@
 use super::*;
 
-impl ActionsExt for World {
+impl ActionsProxy for World {
     fn actions(&mut self, agent: Entity) -> impl ManageActions {
         AgentActions {
             agent,
