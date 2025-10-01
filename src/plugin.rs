@@ -3,7 +3,7 @@ use super::*;
 /// The [`Plugin`] for this library that you can add to your [`App`].
 ///
 /// This plugin adds the [`check_actions`](Self::check_actions) system to the [`Last`] schedule
-/// for action queue advancement, and also two [`hooks`](bevy_ecs::component::ComponentHooks)
+/// for action queue advancement, and also two [`hooks`](bevy_ecs::lifecycle::ComponentHooks)
 /// for cleaning up actions from despawned agents.
 ///
 /// Finally, it also contains various static methods for modifying the action queue.
@@ -167,7 +167,8 @@ impl SequentialActionsPlugin {
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                         warn!(
                             "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-                            Action is therefore dropped immediately.", std::any::type_name::<ActionQueue>()
+                            Action is therefore dropped immediately.",
+                            std::any::type_name::<ActionQueue>()
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
@@ -194,7 +195,8 @@ impl SequentialActionsPlugin {
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                         warn!(
                             "Cannot enqueue action {action:?} to agent {agent} due to missing component {}. \
-                            Action is therefore dropped immediately.", std::any::type_name::<ActionQueue>()
+                            Action is therefore dropped immediately.",
+                            std::any::type_name::<ActionQueue>()
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);
@@ -284,7 +286,8 @@ impl SequentialActionsPlugin {
                     let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
                         warn!(
                             "Cannot enqueue paused action {action:?} to agent {agent} due to missing component {}. \
-                            Action is therefore dropped immediately.", std::any::type_name::<ActionQueue>()
+                            Action is therefore dropped immediately.",
+                            std::any::type_name::<ActionQueue>()
                         );
                         action.on_remove(agent.into(), world);
                         action.on_drop(agent.into(), world, DropReason::Skipped);

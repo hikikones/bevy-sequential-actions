@@ -271,7 +271,7 @@ impl ActionsBundle {
 pub struct CurrentAction(Option<BoxedAction>);
 
 impl CurrentAction {
-    /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
+    /// The [`on_remove`](bevy_ecs::lifecycle::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_hook(mut world: DeferredWorld, ctx: HookContext) {
         let agent = ctx.entity;
@@ -285,13 +285,13 @@ impl CurrentAction {
         }
     }
 
-    /// Observer for cleaning up the current action when an `agent` is despawned.
+    /// [`Observer`] for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_trigger<F: QueryFilter>(
-        trigger: On<Remove, Self>,
+        remove: On<Remove, Self>,
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
-        let agent = trigger.entity;
+        let agent = remove.entity;
         if let Ok(mut current_action) = query.get_mut(agent) {
             if let Some(mut action) = current_action.take() {
                 commands.queue(move |world: &mut World| {
@@ -309,7 +309,7 @@ impl CurrentAction {
 pub struct ActionQueue(VecDeque<BoxedAction>);
 
 impl ActionQueue {
-    /// The [`on_remove`](bevy_ecs::component::ComponentHooks::on_remove) component lifecycle hook
+    /// The [`on_remove`](bevy_ecs::lifecycle::ComponentHooks::on_remove) component lifecycle hook
     /// used by [`SequentialActionsPlugin`] for cleaning up the action queue when an `agent` is despawned.
     pub fn on_remove_hook(mut world: DeferredWorld, ctx: HookContext) {
         let agent = ctx.entity;
@@ -325,13 +325,13 @@ impl ActionQueue {
         }
     }
 
-    /// Observer for cleaning up the action queue when an `agent` is despawned.
+    /// [`Observer`] for cleaning up the action queue when an `agent` is despawned.
     pub fn on_remove_trigger<F: QueryFilter>(
-        trigger: On<Remove, Self>,
+        remove: On<Remove, Self>,
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
-        let agent = trigger.entity;
+        let agent = remove.entity;
         if let Ok(mut action_queue) = query.get_mut(agent) {
             if !action_queue.is_empty() {
                 let actions = std::mem::take(&mut action_queue.0);
