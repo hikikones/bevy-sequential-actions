@@ -126,13 +126,13 @@ where
 }
 
 /// Proxy method for modifying actions.
-pub trait ActionsProxy {
+pub trait ActionsExt {
     /// Returns a type for modifying actions for specified `agent`.
-    fn actions(&mut self, agent: Entity) -> impl ModifyActions;
+    fn actions(&mut self, agent: Entity) -> impl ManageActions;
 }
 
 /// Methods for modifying actions.
-pub trait ModifyActions {
+pub trait ManageActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(&mut self, config: AddConfig) -> &mut Self;
 

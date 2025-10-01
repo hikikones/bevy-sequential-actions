@@ -1,7 +1,7 @@
 use super::*;
 
-impl ActionsProxy for World {
-    fn actions(&mut self, agent: Entity) -> impl ModifyActions {
+impl ActionsExt for World {
+    fn actions(&mut self, agent: Entity) -> impl ManageActions {
         AgentActions {
             agent,
             config: AddConfig::default(),
@@ -17,7 +17,7 @@ pub struct AgentActions<'w> {
     world: &'w mut World,
 }
 
-impl ModifyActions for AgentActions<'_> {
+impl ManageActions for AgentActions<'_> {
     fn config(&mut self, config: AddConfig) -> &mut Self {
         self.config = config;
         self
