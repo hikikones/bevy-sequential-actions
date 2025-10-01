@@ -1,4 +1,4 @@
-use bevy_app::{prelude::*, AppExit, ScheduleRunnerPlugin};
+use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
 use bevy_ecs::prelude::*;
 
 use bevy_sequential_actions::*;
@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
             action: |agent, world: &mut World| {
                 // Exit app when action queue is empty
                 if world.get::<ActionQueue>(agent).unwrap().is_empty() {
-                    world.send_event(AppExit::Success);
+                    world.write_message(AppExit::Success);
                 }
 
                 // Do not advance action queue immediately,
