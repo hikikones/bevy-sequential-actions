@@ -117,12 +117,12 @@ fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
 }
 ```
 
-#### Modifying Actions
+#### Managing Actions
 
 Actions can be added to any [`Entity`] with the [`SequentialActions`] marker component.
-Adding and modifying actions is done through the [`actions(agent)`](ActionsProxy::actions)
+Adding and managing actions is done through the [`actions(agent)`](ActionsProxy::actions)
 extension method implemented for both [`Commands`] and [`World`].
-See the [`ModifyActions`] trait for available methods.
+See the [`ManageActions`] trait for available methods.
 
 ```rust,no_run
 # use bevy_app::AppExit;
@@ -170,12 +170,12 @@ Depending on what you do, the logic for advancing the action queue might not wor
 There are a few things you should keep in mind:
 
 * If you want to despawn an `agent` as an action, this should be done in [`on_start`](`Action::on_start`).
-* The [`execute`](`ModifyActions::execute`) and [`next`](`ModifyActions::next`) methods should not be used,
-    as that will immediately advance the action queue while inside any of the trait methods.
-    Instead, you should return `true` in [`on_start`](`Action::on_start`).
-* When adding new actions, you should set the [`start`](`ModifyActions::start`) property to `false`.
-    Otherwise, you will effectively call [`execute`](`ModifyActions::execute`) which, again, should not be used.
-    At worst, you will cause a **stack overflow** if the action adds itself.
+* The [`execute`](`ManageActions::execute`) and [`next`](`ManageActions::next`) methods should not be used,
+  as that will immediately advance the action queue while inside any of the trait methods.
+  Instead, you should return `true` in [`on_start`](`Action::on_start`).
+* When adding new actions, you should set the [`start`](`ManageActions::start`) property to `false`.
+  Otherwise, you will effectively call [`execute`](`ManageActions::execute`) which, again, should not be used.
+  At worst, you will cause a **stack overflow** if the action adds itself.
 
     ```rust,no_run
     # use bevy_ecs::prelude::*;

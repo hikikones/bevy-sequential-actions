@@ -19,12 +19,12 @@ use super::*;
 /// There are a few things you should keep in mind:
 ///
 /// * If you want to despawn an `agent` as an action, this should be done in [`on_start`](`Self::on_start`).
-/// * The [`execute`](`ModifyActions::execute`) and [`next`](`ModifyActions::next`) methods should not be used,
-///     as that will immediately advance the action queue while inside any of the trait methods.
-///     Instead, you should return `true` in [`on_start`](`Self::on_start`).
-/// * When adding new actions, you should set the [`start`](`ModifyActions::start`) property to `false`.
-///     Otherwise, you will effectively call [`execute`](`ModifyActions::execute`) which, again, should not be used.
-///     At worst, you will cause a **stack overflow** if the action adds itself.
+/// * The [`execute`](`ManageActions::execute`) and [`next`](`ManageActions::next`) methods should not be used,
+///   as that will immediately advance the action queue while inside any of the trait methods.
+///   Instead, you should return `true` in [`on_start`](`Self::on_start`).
+/// * When adding new actions, you should set the [`start`](`ManageActions::start`) property to `false`.
+///   Otherwise, you will effectively call [`execute`](`ManageActions::execute`) which, again, should not be used.
+///   At worst, you will cause a **stack overflow** if the action adds itself.
 ///
 /// ```rust,no_run
 /// # use bevy_ecs::prelude::*;
@@ -125,14 +125,15 @@ where
     fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
 }
 
-/// Proxy method for modifying actions.
+/// Extension method for managing actions.
+/// Implemented for both [`Commands`] and [`World`].
 pub trait ActionsProxy {
-    /// Returns a type for modifying actions for specified `agent`.
-    fn actions(&mut self, agent: Entity) -> impl ModifyActions;
+    /// Returns a type for managing actions for specified `agent`.
+    fn actions(&mut self, agent: Entity) -> impl ManageActions;
 }
 
-/// Methods for modifying actions.
-pub trait ModifyActions {
+/// Methods for managing actions.
+pub trait ManageActions {
     /// Sets the current [`config`](AddConfig) for actions to be added.
     fn config(&mut self, config: AddConfig) -> &mut Self;
 

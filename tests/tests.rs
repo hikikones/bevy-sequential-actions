@@ -23,7 +23,7 @@ impl TestApp {
         self.world_mut().spawn(SequentialActions).id()
     }
 
-    fn actions(&mut self, agent: Entity) -> impl ModifyActions + use<'_> {
+    fn actions(&mut self, agent: Entity) -> impl ManageActions + use<'_> {
         self.world_mut().actions(agent)
     }
 

@@ -3,7 +3,9 @@
 ## Version 0.14.0-dev
 
 - [Update to Bevy 0.17][111]
+- [Rename `ModifyActions` trait to `ManageActions`][112]
 
+[112]: https://github.com/hikikones/bevy-sequential-actions/pull/112
 [111]: https://github.com/hikikones/bevy-sequential-actions/pull/111
 
 ## Version 0.13.0

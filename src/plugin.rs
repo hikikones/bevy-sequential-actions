@@ -6,7 +6,7 @@ use super::*;
 /// for action queue advancement, and also two [`hooks`](bevy_ecs::lifecycle::ComponentHooks)
 /// for cleaning up actions from despawned agents.
 ///
-/// Finally, it also contains various static methods for modifying the action queue.
+/// Finally, it also contains various static methods for managing the action queue.
 pub struct SequentialActionsPlugin;
 
 impl Plugin for SequentialActionsPlugin {
