@@ -171,11 +171,11 @@ There are a few things you should keep in mind:
 
 * If you want to despawn an `agent` as an action, this should be done in [`on_start`](`Action::on_start`).
 * The [`execute`](`ManageActions::execute`) and [`next`](`ManageActions::next`) methods should not be used,
-    as that will immediately advance the action queue while inside any of the trait methods.
-    Instead, you should return `true` in [`on_start`](`Action::on_start`).
+  as that will immediately advance the action queue while inside any of the trait methods.
+  Instead, you should return `true` in [`on_start`](`Action::on_start`).
 * When adding new actions, you should set the [`start`](`ManageActions::start`) property to `false`.
-    Otherwise, you will effectively call [`execute`](`ManageActions::execute`) which, again, should not be used.
-    At worst, you will cause a **stack overflow** if the action adds itself.
+  Otherwise, you will effectively call [`execute`](`ManageActions::execute`) which, again, should not be used.
+  At worst, you will cause a **stack overflow** if the action adds itself.
 
     ```rust,no_run
     # use bevy_ecs::prelude::*;
