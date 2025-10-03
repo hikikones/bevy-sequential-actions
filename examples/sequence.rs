@@ -28,16 +28,11 @@ fn setup(mut commands: Commands) {
 struct ActionSequence<const N: usize> {
     actions: [BoxedAction; N],
     index: usize,
-    canceled: bool,
 }
 
 impl<const N: usize> ActionSequence<N> {
     fn new(actions: [BoxedAction; N]) -> Self {
-        Self {
-            actions,
-            index: 0,
-            canceled: false,
-        }
+        Self { actions, index: 0 }
     }
 }
 
@@ -58,34 +53,28 @@ impl<const N: usize> Action for ActionSequence<N> {
 
     fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
         self.actions[self.index].on_stop(agent, world, reason);
-        self.canceled = reason == StopReason::Canceled;
-    }
 
-    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-        self.actions[self.index].on_remove(agent, world);
+        if reason == StopReason::Canceled {
+            self.index = N;
+        }
     }
 
     fn on_drop(mut self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
         self.index += 1;
 
-        if self.index >= N {
-            return;
-        }
-
-        if self.canceled || reason != DropReason::Done {
-            for i in self.index..N {
-                self.actions[i].on_remove(agent, world);
-            }
+        if self.index >= N || reason != DropReason::Done {
+            self.actions
+                .iter_mut()
+                .for_each(|action| action.on_remove(agent, world));
             return;
         }
 
         let Some(agent) = agent else { return };
 
         world
-            .actions(agent)
-            .start(false)
-            .order(AddOrder::Front)
-            .add(self as BoxedAction);
+            .get_mut::<ActionQueue>(agent)
+            .unwrap()
+            .push_front(self);
     }
 }
 
