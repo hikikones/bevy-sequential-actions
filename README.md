@@ -168,7 +168,7 @@ Each example can be run with `cargo run --example <example>`.
 | `pause` | Pause and resume an action. |
 | `repeat` | Create an action that repeats. |
 | `parallel` | Create actions that run in parallel. |
-| `sequence` | Create action with a sequence of actions. |
+| `sequence` | Create an action with a sequence of actions. |
 | `custom` | Custom plugin with different schedules and action queue advancement. |
 
 ## 📌 Compatibility
