@@ -60,7 +60,7 @@ A simple wait action follows.
 #
 pub struct WaitAction {
     duration: f32, // Seconds
-    current: Option<f32>, // None
+    remaining: Option<f32>, // None
 }
 
 impl Action for WaitAction {
@@ -72,8 +72,8 @@ impl Action for WaitAction {
 
     // This method is called when an action is started.
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        // Take current time (if paused), or use full duration.
-        let duration = self.current.take().unwrap_or(self.duration);
+        // Take remaining time (if paused), or use full duration.
+        let duration = self.remaining.take().unwrap_or(self.duration);
 
         // Run the wait timer system on the agent.
         world.entity_mut(agent).insert(WaitTimer(duration));
@@ -91,9 +91,9 @@ impl Action for WaitAction {
         // Take the wait timer component from the agent.
         let wait_timer = world.entity_mut(agent).take::<WaitTimer>();
 
-        // Store current time when paused.
+        // Store remaining time when paused.
         if reason == StopReason::Paused {
-            self.current = Some(wait_timer.unwrap().0);
+            self.remaining = Some(wait_timer.unwrap().0);
         }
     }
 
