@@ -95,14 +95,14 @@ impl Action for PrintAction {
 
 struct CountdownAction {
     count: u32,
-    current: Option<u32>,
+    remaining: Option<u32>,
 }
 
 impl CountdownAction {
     const fn new(count: u32) -> Self {
         Self {
             count,
-            current: None,
+            remaining: None,
         }
     }
 }
@@ -117,8 +117,8 @@ impl Action for CountdownAction {
     }
 
     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        // Take current count (if paused), or use full count
-        let count = self.current.take().unwrap_or(self.count);
+        // Take remaining count (if paused), or use full count
+        let count = self.remaining.take().unwrap_or(self.count);
 
         // Run the countdown system on the agent
         world.entity_mut(agent).insert(Countdown(count));
@@ -134,9 +134,9 @@ impl Action for CountdownAction {
         // Take the countdown component from the agent
         let countdown = world.entity_mut(agent).take::<Countdown>();
 
-        // Store current count when paused
+        // Store remaining count when paused
         if reason == StopReason::Paused {
-            self.current = countdown.unwrap().0.into();
+            self.remaining = countdown.unwrap().0.into();
         }
     }
 }
