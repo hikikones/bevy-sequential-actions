@@ -2,6 +2,10 @@
 
 ## Version 0.16.0-dev
 
+- [Update to Bevy 0.19][119]
+
+[119]: https://github.com/hikikones/bevy-sequential-actions/pull/119
+
 ## Version 0.15.0
 
 - [Update to Bevy 0.18][116]
