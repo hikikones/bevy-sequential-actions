@@ -54,6 +54,7 @@ A simple wait action follows.
 # use bevy_ecs::prelude::*;
 # use bevy_sequential_actions::*;
 #
+# #[derive(Component)]
 # struct Time;
 # impl Resource for Time {}
 # impl Time { fn delta_seconds(&self) -> f32 { 0.0 } }
