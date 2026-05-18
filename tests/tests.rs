@@ -56,8 +56,15 @@ impl TestApp {
     }
 
     fn reset(&mut self) -> &mut Self {
-        self.world_mut().clear_entities();
-        self.world_mut().resource_mut::<Hooks>().clear();
+        let agents = self
+            .world_mut()
+            .query_filtered::<Entity, With<SequentialActions>>()
+            .iter(self.world_mut())
+            .collect::<Vec<_>>();
+        for agent in agents {
+            self.world_mut().despawn(agent);
+        }
+        self.hooks_mut().clear();
         self
     }
 }
