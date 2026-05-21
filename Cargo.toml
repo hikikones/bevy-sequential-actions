@@ -2,7 +2,7 @@
 name = "bevy-sequential-actions"
 version = "0.16.0-dev"
 edition = "2024"
-rust-version = "1.89.0"
+rust-version = "1.95.0"
 description = "A Bevy library for executing various actions in a sequence."
 readme = "README.md"
 homepage = "https://github.com/hikikones/bevy-sequential-actions"
@@ -12,9 +12,14 @@ keywords = ["action", "bevy", "command", "gamedev", "sequence"]
 categories = ["game-development"]
 
 [dependencies]
-bevy_app = { version = "0.18", default-features = false }
-bevy_derive = { version = "0.18", default-features = false }
-bevy_ecs = { version = "0.18", default-features = false }
-bevy_log = { version = "0.18", default-features = false }
+bevy_app = { version = "0.19.0-rc.1", default-features = false }
+bevy_derive = { version = "0.19.0-rc.1", default-features = false }
+bevy_ecs = { version = "0.19.0-rc.1", default-features = false }
+bevy_log = { version = "0.19.0-rc.1", default-features = false }
 downcast-rs = { version = "2.0", default-features = false }
-variadics_please = { version = "1.1", default-features = false }
+variadics_please = { version = "2.0", default-features = false }
+
+[dev-dependencies]
+bevy_ecs = { version = "0.19.0-rc.1", default-features = false, features = [
+  "debug"
+] }
