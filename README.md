@@ -159,8 +159,7 @@ There are a few things you should keep in mind:
 
 ## 📎 Examples
 
-See the [examples](examples/) for more usage.
-Each example can be run with `cargo run --example <example>`.
+See the [examples](examples/) for more usage, specifically the [shared actions](examples/shared/src/) crate which contains most of the custom actions that are used in the examples. Each example can be run with `cargo run --example <example>`.
 
 | Example | Description |
 | ------- | ----------- |
