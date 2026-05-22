@@ -57,7 +57,7 @@ A simple wait action follows.
 # #[derive(Component)]
 # struct Time;
 # impl Resource for Time {}
-# impl Time { fn delta_seconds(&self) -> f32 { 0.0 } }
+# impl Time { fn delta_secs(&self) -> f32 { 0.0 } }
 #
 pub struct WaitAction {
     duration: f32, // Seconds
@@ -113,7 +113,7 @@ struct WaitTimer(f32);
 
 fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
     for mut wait_timer in &mut wait_timer_q {
-        wait_timer.0 -= time.delta_seconds();
+        wait_timer.0 -= time.delta_secs();
     }
 }
 ```

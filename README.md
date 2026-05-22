@@ -98,7 +98,7 @@ struct WaitTimer(f32);
 
 fn wait_system(mut wait_timer_q: Query<&mut WaitTimer>, time: Res<Time>) {
     for mut wait_timer in &mut wait_timer_q {
-        wait_timer.0 -= time.delta_seconds();
+        wait_timer.0 -= time.delta_secs();
     }
 }
 ```

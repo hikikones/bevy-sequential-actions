@@ -1,36 +1,39 @@
 use std::time::Duration;
 
-use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
-use bevy_ecs::prelude::*;
-
+use bevy::{app::ScheduleRunnerPlugin, prelude::*};
 use bevy_sequential_actions::*;
+use shared::{Countdown, CountdownAction, SharedActionsPlugin};
 
 fn main() {
     App::new()
         .add_plugins((
-            ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(1.0 / 10.0)),
+            MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_millis(100))),
             SequentialActionsPlugin,
+            SharedActionsPlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (count, frame_logic).chain())
+        .add_systems(PostUpdate, frame_logic)
         .run();
 }
 
+const PAUSE_FRAME: u32 = 10;
+const RESUME_FRAME: u32 = PAUSE_FRAME * 2;
+const EXIT_FRAME: u32 = PAUSE_FRAME * 3;
+const MISSING_FRAMES: u32 = RESUME_FRAME - PAUSE_FRAME;
+
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(SequentialActions).id();
-    commands.actions(agent).add(CountForeverAction);
+    commands
+        .actions(agent)
+        .add(CountdownAction::new(EXIT_FRAME + 1));
 }
 
 fn frame_logic(
     mut frame: Local<u32>,
     mut commands: Commands,
     agent_q: Single<Entity, With<SequentialActions>>,
+    countdown_q: Query<&Countdown>,
 ) {
-    const PAUSE_FRAME: u32 = 10;
-    const RESUME_FRAME: u32 = PAUSE_FRAME * 2;
-    const EXIT_FRAME: u32 = PAUSE_FRAME * 3;
-    const MISSING_FRAMES: u32 = RESUME_FRAME - PAUSE_FRAME;
-
     println!("Frame: {}", *frame);
 
     let agent = agent_q.entity();
@@ -39,16 +42,17 @@ fn frame_logic(
         println!("\nPAUSE\n");
         commands.actions(agent).pause();
     }
+
     if *frame == RESUME_FRAME {
         println!("\nRESUME\n");
         commands.actions(agent).execute();
     }
+
     if *frame == EXIT_FRAME {
+        let countdown = countdown_q.get(agent).unwrap().current_count();
         println!(
-            "\nEXIT - Frame is now at {}, and Count should be {} (missing {} frames)",
-            *frame,
-            EXIT_FRAME - MISSING_FRAMES,
-            MISSING_FRAMES,
+            "\nEXIT - Frame is now at {} and Countdown is {} (missing {} frames)",
+            *frame, countdown, MISSING_FRAMES,
         );
         commands.queue(|world: &mut World| {
             world.write_message(AppExit::Success);
@@ -56,48 +60,4 @@ fn frame_logic(
     }
 
     *frame += 1;
-}
-
-struct CountForeverAction;
-
-impl Action for CountForeverAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        false
-    }
-
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        let mut agent = world.entity_mut(agent);
-
-        if agent.contains::<Paused>() {
-            agent.remove::<Paused>();
-        } else {
-            agent.insert(Count::default());
-        }
-
-        false
-    }
-
-    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        match reason {
-            StopReason::Finished | StopReason::Canceled => {
-                world.entity_mut(agent.unwrap()).remove::<Count>();
-            }
-            StopReason::Paused => {
-                world.entity_mut(agent.unwrap()).insert(Paused);
-            }
-        }
-    }
-}
-
-#[derive(Default, Component)]
-struct Count(u32);
-
-#[derive(Component)]
-struct Paused;
-
-fn count(mut count_q: Query<&mut Count, Without<Paused>>) {
-    for mut count in &mut count_q {
-        println!("Count: {}", count.0);
-        count.0 += 1;
-    }
 }
