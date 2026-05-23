@@ -12,6 +12,7 @@ impl Plugin for CountdownActionPlugin {
     }
 }
 
+/// An action that counts down towards zero.
 pub struct CountdownAction {
     count: u32,
     remaining: Option<u32>,

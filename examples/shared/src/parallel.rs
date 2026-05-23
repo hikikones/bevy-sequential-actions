@@ -1,6 +1,9 @@
 use bevy::ecs::{entity::Entity, world::World};
 use bevy_sequential_actions::*;
 
+/// An action that runs multiple actions in parallel.
+/// Will only advance when all actions are finished within
+/// the same frame.
 pub struct ParallelActions<const N: usize> {
     actions: [BoxedAction; N],
 }

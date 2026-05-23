@@ -1,6 +1,7 @@
 use bevy::ecs::{entity::Entity, world::World};
 use bevy_sequential_actions::*;
 
+/// An action that repeats another action by a specified amount.
 pub struct RepeatAction<A: Action> {
     action: A,
     repeat: u32,

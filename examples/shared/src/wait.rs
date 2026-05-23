@@ -9,6 +9,7 @@ impl Plugin for WaitActionPlugin {
     }
 }
 
+/// An action that waits for specified seconds.
 pub struct WaitAction {
     duration: f32,          // Seconds
     remaining: Option<f32>, // None

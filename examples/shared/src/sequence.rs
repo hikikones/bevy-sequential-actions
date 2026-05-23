@@ -1,6 +1,11 @@
 use bevy::ecs::{entity::Entity, world::World};
 use bevy_sequential_actions::*;
 
+use crate::RepeatAction;
+
+/// An action that runs a sequence of actions.
+/// Useful when you want a sequence to act as a single action.
+/// For example, canceling this action will cancel the entire sequence.
 pub struct ActionSequence<const N: usize> {
     actions: [BoxedAction; N],
     index: usize,
@@ -71,14 +76,15 @@ impl<const N: usize> Action for ActionSequence<N> {
     }
 }
 
+/// An action like [`ActionSequence`] but also repeats like [`RepeatAction`].
 pub struct RepeatActionSequence<const N: usize> {
-    repeat_action: crate::RepeatAction<ActionSequence<N>>,
+    repeat_action: RepeatAction<ActionSequence<N>>,
 }
 
 impl<const N: usize> RepeatActionSequence<N> {
     pub const fn new(actions: [BoxedAction; N], repeat: u32) -> Self {
         Self {
-            repeat_action: crate::RepeatAction::new(ActionSequence::new(actions), repeat),
+            repeat_action: RepeatAction::new(ActionSequence::new(actions), repeat),
         }
     }
 }

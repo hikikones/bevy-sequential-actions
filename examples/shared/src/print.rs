@@ -1,6 +1,7 @@
 use bevy::ecs::{entity::Entity, world::World};
 use bevy_sequential_actions::*;
 
+/// An action that simply prints to the terminal.
 pub struct PrintAction(&'static str);
 
 impl PrintAction {
