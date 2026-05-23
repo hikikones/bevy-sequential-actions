@@ -116,7 +116,14 @@ impl<const N: usize> Action for RepeatActionSequence<N> {
                 return;
             }
 
+            let Some(agent) = agent else { return };
+
             self.repeat_action.inner_action_mut().reset_index();
+            world
+                .actions(agent)
+                .config(AddConfig::new(false, AddOrder::Front))
+                .add(self as BoxedAction);
+            return;
         }
 
         let Some(agent) = agent else { return };
