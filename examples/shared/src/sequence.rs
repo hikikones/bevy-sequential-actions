@@ -3,7 +3,7 @@ use bevy_sequential_actions::*;
 
 /// An action that runs a sequence of actions.
 /// Useful when you want a sequence to act as a single action.
-/// For example, canceling this action will cancel the entire sequence.
+/// For example, canceling this action will drop the entire sequence.
 pub struct ActionSequence<const N: usize> {
     actions: [BoxedAction; N],
     index: usize,

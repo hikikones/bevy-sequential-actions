@@ -12,7 +12,7 @@ impl Plugin for CountdownActionPlugin {
     }
 }
 
-/// An action that counts down towards zero.
+/// An action that counts down to zero.
 pub struct CountdownAction {
     count: u32,
     remaining: Option<u32>,
@@ -55,7 +55,7 @@ impl Action for CountdownAction {
 
         // Store remaining count when paused.
         if reason == StopReason::Paused {
-            self.remaining = countdown.unwrap().0.into();
+            self.remaining = Some(countdown.unwrap().0);
         }
     }
 }
