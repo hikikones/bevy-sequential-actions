@@ -1,8 +1,10 @@
 use std::{marker::PhantomData, time::Duration};
 
-use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
-use bevy_ecs::{prelude::*, query::QueryFilter, schedule::ScheduleLabel};
-
+use bevy::{
+    app::ScheduleRunnerPlugin,
+    ecs::{query::QueryFilter, schedule::ScheduleLabel},
+    prelude::*,
+};
 use bevy_sequential_actions::*;
 
 fn main() {

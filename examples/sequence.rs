@@ -1,7 +1,6 @@
-use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
-use bevy_ecs::prelude::*;
-
+use bevy::{app::ScheduleRunnerPlugin, prelude::*};
 use bevy_sequential_actions::*;
+use shared::{ActionSequence, PrintAction, RepeatActionSequence};
 
 fn main() {
     App::new()
@@ -12,83 +11,26 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     let agent = commands.spawn(SequentialActions).id();
-    commands.actions(agent).add(ActionSequence::new(actions![
-        PrintAction("see"),
-        PrintAction("you"),
-        PrintAction("in"),
-        PrintAction("space"),
-        PrintAction("cowboy"),
-        |_agent, world: &mut World| -> bool {
+    commands
+        .actions(agent)
+        .add(ActionSequence::new(actions![
+            PrintAction::new("see"),
+            PrintAction::new("you"),
+            PrintAction::new("in"),
+            PrintAction::new("space"),
+            PrintAction::new("cowboy"),
+        ]))
+        .add(PrintAction::new("\n------\n"))
+        .add(RepeatActionSequence::new(
+            actions![
+                PrintAction::new("1"),
+                PrintAction::new("2"),
+                PrintAction::new("3"),
+            ],
+            1,
+        ))
+        .add(|_agent, world: &mut World| -> bool {
             world.write_message(AppExit::Success);
             true
-        }
-    ]));
-}
-
-struct ActionSequence<const N: usize> {
-    actions: [BoxedAction; N],
-    index: usize,
-}
-
-impl<const N: usize> ActionSequence<N> {
-    fn new(actions: [BoxedAction; N]) -> Self {
-        Self { actions, index: 0 }
-    }
-}
-
-impl<const N: usize> Action for ActionSequence<N> {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        self.actions[self.index].is_finished(agent, world)
-    }
-
-    fn on_add(&mut self, agent: Entity, world: &mut World) {
-        self.actions
-            .iter_mut()
-            .for_each(|action| action.on_add(agent, world));
-    }
-
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        self.actions[self.index].on_start(agent, world)
-    }
-
-    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        self.actions[self.index].on_stop(agent, world, reason);
-
-        if reason == StopReason::Canceled {
-            self.index = N;
-        }
-    }
-
-    fn on_drop(mut self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-        self.index += 1;
-
-        if self.index >= N || reason != DropReason::Done {
-            self.actions
-                .iter_mut()
-                .for_each(|action| action.on_remove(agent, world));
-            return;
-        }
-
-        let Some(agent) = agent else { return };
-
-        world
-            .get_mut::<ActionQueue>(agent)
-            .unwrap()
-            .push_front(self);
-    }
-}
-
-struct PrintAction(&'static str);
-
-impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-        println!("{}", self.0);
-        false
-    }
-
-    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
+        });
 }

@@ -1,13 +1,11 @@
-use bevy_app::{AppExit, ScheduleRunnerPlugin, prelude::*};
-use bevy_ecs::prelude::*;
-
+use bevy::prelude::*;
 use bevy_sequential_actions::*;
+use shared::{CountdownAction, PrintAction, SharedActionsPlugin};
 
 fn main() {
     App::new()
-        .add_plugins((ScheduleRunnerPlugin::default(), SequentialActionsPlugin))
+        .add_plugins((MinimalPlugins, SequentialActionsPlugin, SharedActionsPlugin))
         .add_systems(Startup, setup)
-        .add_systems(Update, countdown)
         .run();
 }
 
@@ -20,15 +18,15 @@ fn setup(mut commands: Commands) {
         .add(DemoAction)
         // Add more actions with a tuple
         .add((
-            PrintAction("hello"),
-            PrintAction("there"),
+            PrintAction::new("hello"),
+            PrintAction::new("there"),
             CountdownAction::new(5),
         ))
         // Add a collection of actions
         .add(actions![
-            PrintAction("it is possible to commit no mistakes and still lose"),
-            PrintAction("that is not a weakness"),
-            PrintAction("that is life"),
+            PrintAction::new("it is possible to commit no mistakes and still lose"),
+            PrintAction::new("that is not a weakness"),
+            PrintAction::new("that is life"),
             CountdownAction::new(10),
         ])
         // Add an anonymous action with a closure
@@ -75,77 +73,5 @@ impl Action for DemoAction {
     // Optional method (empty by default)
     fn on_drop(self: Box<Self>, _agent: Option<Entity>, _world: &mut World, _reason: DropReason) {
         println!("on_drop: the last method to be called with full ownership");
-    }
-}
-
-struct PrintAction(&'static str);
-
-impl Action for PrintAction {
-    fn is_finished(&self, _agent: Entity, _world: &World) -> bool {
-        true
-    }
-
-    fn on_start(&mut self, _agent: Entity, _world: &mut World) -> bool {
-        println!("{}", self.0);
-        true
-    }
-
-    fn on_stop(&mut self, _agent: Option<Entity>, _world: &mut World, _reason: StopReason) {}
-}
-
-struct CountdownAction {
-    count: u32,
-    remaining: Option<u32>,
-}
-
-impl CountdownAction {
-    const fn new(count: u32) -> Self {
-        Self {
-            count,
-            remaining: None,
-        }
-    }
-}
-
-impl Action for CountdownAction {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        let current_count = world.get::<Countdown>(agent).unwrap().0;
-        println!("Countdown: {current_count}");
-
-        // Determine if countdown has reached zero
-        current_count == 0
-    }
-
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        // Take remaining count (if paused), or use full count
-        let count = self.remaining.take().unwrap_or(self.count);
-
-        // Run the countdown system on the agent
-        world.entity_mut(agent).insert(Countdown(count));
-
-        // Is action already finished?
-        self.is_finished(agent, world)
-    }
-
-    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        // Do nothing if agent has been despawned.
-        let Some(agent) = agent else { return };
-
-        // Take the countdown component from the agent
-        let countdown = world.entity_mut(agent).take::<Countdown>();
-
-        // Store remaining count when paused
-        if reason == StopReason::Paused {
-            self.remaining = countdown.unwrap().0.into();
-        }
-    }
-}
-
-#[derive(Component)]
-struct Countdown(u32);
-
-fn countdown(mut countdown_q: Query<&mut Countdown>) {
-    for mut countdown in &mut countdown_q {
-        countdown.0 -= 1;
     }
 }
