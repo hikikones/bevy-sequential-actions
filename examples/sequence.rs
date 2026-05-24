@@ -20,7 +20,7 @@ fn setup(mut commands: Commands) {
             PrintAction::new("space"),
             PrintAction::new("cowboy"),
         ]))
-        .add(PrintAction::new("\n--------\n"))
+        .add(PrintAction::new("\n------\n"))
         .add(RepeatActionSequence::new(
             actions![
                 PrintAction::new("1"),
