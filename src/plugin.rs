@@ -95,8 +95,8 @@ impl SequentialActionsPlugin {
                 Action is therefore dropped immediately.",
                 std::any::type_name::<ActionQueue>()
             );
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Skipped);
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Skipped);
             return;
         };
 
@@ -170,8 +170,8 @@ impl SequentialActionsPlugin {
                             Action is therefore dropped immediately.",
                             std::any::type_name::<ActionQueue>()
                         );
-                        action.on_remove(agent.into(), world);
-                        action.on_drop(agent.into(), world, DropReason::Skipped);
+                        action.on_remove(Some(agent), world);
+                        action.on_drop(Some(agent), world, DropReason::Skipped);
                         return;
                     };
 
@@ -198,8 +198,8 @@ impl SequentialActionsPlugin {
                             Action is therefore dropped immediately.",
                             std::any::type_name::<ActionQueue>()
                         );
-                        action.on_remove(agent.into(), world);
-                        action.on_drop(agent.into(), world, DropReason::Skipped);
+                        action.on_remove(Some(agent), world);
+                        action.on_drop(Some(agent), world, DropReason::Skipped);
                         return;
                     };
 
@@ -265,12 +265,12 @@ impl SequentialActionsPlugin {
 
         if let Some(mut action) = current_action.take() {
             debug!("Stopping current action {action:?} for agent {agent} with reason {reason:?}.");
-            action.on_stop(agent.into(), world, reason);
+            action.on_stop(Some(agent), world, reason);
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
-                    action.on_remove(agent.into(), world);
-                    action.on_drop(agent.into(), world, DropReason::Done);
+                    action.on_remove(Some(agent), world);
+                    action.on_drop(Some(agent), world, DropReason::Done);
                 }
                 StopReason::Paused => {
                     let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
@@ -289,8 +289,8 @@ impl SequentialActionsPlugin {
                             Action is therefore dropped immediately.",
                             std::any::type_name::<ActionQueue>()
                         );
-                        action.on_remove(agent.into(), world);
-                        action.on_drop(agent.into(), world, DropReason::Skipped);
+                        action.on_remove(Some(agent), world);
+                        action.on_drop(Some(agent), world, DropReason::Skipped);
                         return;
                     };
 
@@ -407,8 +407,8 @@ impl SequentialActionsPlugin {
             };
 
             debug!("Skipping action {action:?} for agent {agent}.");
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Skipped);
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Skipped);
 
             n -= 1;
         }
@@ -433,9 +433,9 @@ impl SequentialActionsPlugin {
 
         if let Some(mut action) = current_action.take() {
             debug!("Clearing current action {action:?} for agent {agent}.");
-            action.on_stop(agent.into(), world, StopReason::Canceled);
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Cleared);
+            action.on_stop(Some(agent), world, StopReason::Canceled);
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Cleared);
         }
 
         let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
@@ -458,8 +458,8 @@ impl SequentialActionsPlugin {
         debug!("Clearing action queue {:?} for {agent}.", **action_queue);
         let actions = std::mem::take(&mut action_queue.0);
         for mut action in actions {
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Cleared);
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Cleared);
         }
     }
 }
