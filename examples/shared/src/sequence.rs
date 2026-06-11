@@ -42,14 +42,25 @@ impl<const N: usize> Action for ActionSequence<N> {
         self.index += 1;
 
         if self.index >= N || reason != DropReason::Done {
+            // We have finished the sequence or action has been skipped or cleared.
+            // Time for removal.
             self.actions
                 .iter_mut()
                 .for_each(|action| action.on_remove(agent, world));
             return;
         }
 
-        let Some(agent) = agent else { return };
+        let Some(agent) = agent else {
+            // We are not done with the sequence, but agent is non-existent for some reason.
+            // Not much we can do about that, so time for removal.
+            self.actions
+                .iter_mut()
+                .for_each(|action| action.on_remove(agent, world));
+            return;
+        };
 
+        // We are not done with the entire sequence yet, so we add it back again to the front.
+        // We also push it directly to the action queue to avoid calling `on_add` again.
         world
             .get_mut::<ActionQueue>(agent)
             .unwrap()
@@ -101,6 +112,7 @@ impl<const N: usize> Action for RepeatActionSequence<N> {
         self.index += 1;
 
         if reason != DropReason::Done {
+            // Action has been skipped or cleared, time for removal.
             self.actions
                 .iter_mut()
                 .for_each(|action| action.on_remove(agent, world));
@@ -108,27 +120,48 @@ impl<const N: usize> Action for RepeatActionSequence<N> {
         }
 
         if self.index >= N {
+            // We have finished the sequence, time for removal.
             self.actions
                 .iter_mut()
                 .for_each(|action| action.on_remove(agent, world));
 
             if self.repeat == 0 {
+                // No more repeats. We are completely done, so simply return.
                 return;
             }
 
-            let Some(agent) = agent else { return };
+            let Some(agent) = agent else {
+                // We are not yet done repeating, but agent is non-existent for some reason.
+                // Not much we can do about that, so simply return.
+                return;
+            };
 
+            // Decrement repeat and reset index
             self.repeat -= 1;
             self.index = 0;
+
+            // We are not done with all repeats yet, so we add it back again to the front.
+            // Since we have called the `on_remove` on each action,
+            // we add it back the usual way so `on_add` is also called again.
             world
                 .actions(agent)
-                .config(AddConfig::new(false, AddOrder::Front))
+                .start(false)
+                .order(AddOrder::Front)
                 .add(self as BoxedAction);
             return;
         }
 
-        let Some(agent) = agent else { return };
+        let Some(agent) = agent else {
+            // We are not done with the sequence, but agent is non-existent for some reason.
+            // Not much we can do about that, so time for removal.
+            self.actions
+                .iter_mut()
+                .for_each(|action| action.on_remove(agent, world));
+            return;
+        };
 
+        // We are not done with the entire sequence yet, so we add it back again to the front.
+        // We also push it directly to the action queue to avoid calling `on_add` again.
         world
             .get_mut::<ActionQueue>(agent)
             .unwrap()
