@@ -423,6 +423,7 @@ impl SequentialActionsPlugin {
             return;
         };
 
+        // Clear current action
         let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
             warn!(
                 "Cannot clear current action for agent {agent} due to missing component {}.",
@@ -431,35 +432,52 @@ impl SequentialActionsPlugin {
             return;
         };
 
-        if let Some(mut action) = current_action.take() {
-            debug!("Clearing current action {action:?} for agent {agent}.");
-            action.on_stop(Some(agent), world, StopReason::Canceled);
+        if let Some(mut current_action) = current_action.take() {
+            debug!("Clearing current action {current_action:?} for agent {agent}.");
+            current_action.on_stop(Some(agent), world, StopReason::Canceled);
+            current_action.on_remove(Some(agent), world);
+            current_action.on_drop(Some(agent), world, DropReason::Cleared);
+        }
+
+        // Clear action queue
+        loop {
+            let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
+                warn!("Cannot clear action queue for non-existent agent {agent}.");
+                return;
+            };
+
+            let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
+                warn!(
+                    "Cannot clear action queue for agent {agent} due to missing component {}.",
+                    std::any::type_name::<ActionQueue>()
+                );
+                return;
+            };
+
+            // if action_queue.is_empty() {
+            //     return;
+            // }
+
+            let Some(mut action) = action_queue.pop_front() else {
+                break;
+            };
+
+            // debug!(
+            //     "Clearing action queue for agent {agent}: {:?}",
+            //     **action_queue
+            // );
+            debug!("Clearing action {action:?} from the queue for agent {agent}.");
             action.on_remove(Some(agent), world);
             action.on_drop(Some(agent), world, DropReason::Cleared);
+            // while let Some(mut action) = action_queue.pop_front() {
+            //     action.on_remove(Some(agent), world);
+            //     action.on_drop(Some(agent), world, DropReason::Cleared);
+            // }
         }
-
-        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
-            warn!("Cannot clear action queue for non-existent agent {agent}.");
-            return;
-        };
-
-        let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            warn!(
-                "Cannot clear action queue for agent {agent} due to missing component {}.",
-                std::any::type_name::<ActionQueue>()
-            );
-            return;
-        };
-
-        if action_queue.is_empty() {
-            return;
-        }
-
-        debug!("Clearing action queue {:?} for {agent}.", **action_queue);
-        let actions = std::mem::take(&mut action_queue.0);
-        for mut action in actions {
-            action.on_remove(Some(agent), world);
-            action.on_drop(Some(agent), world, DropReason::Cleared);
-        }
+        // let actions = std::mem::take(&mut action_queue.0);
+        // for mut action in actions {
+        //     action.on_remove(Some(agent), world);
+        //     action.on_drop(Some(agent), world, DropReason::Cleared);
+        // }
     }
 }
