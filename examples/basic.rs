@@ -6,74 +6,35 @@ fn main() {
     App::new()
         .add_plugins((MinimalPlugins, SequentialActionsPlugin, SharedActionsPlugin))
         .add_systems(Startup, setup)
-        .add_systems(Update, || {
-            println!("\n\nyoyo\n\n");
-        })
         .run();
 }
 
 fn setup(mut commands: Commands) {
     // Spawn entity with the marker component
     let agent = commands.spawn(SequentialActions).id();
-    // commands
-    //     .actions(agent)
-    //     // Add a single action
-    //     .add(DemoAction)
-    //     // Add more actions with a tuple
-    //     .add((
-    //         PrintAction::new("hello"),
-    //         PrintAction::new("there"),
-    //         CountdownAction::new(5),
-    //     ))
-    //     // Add a collection of actions
-    //     .add(actions![
-    //         PrintAction::new("it is possible to commit no mistakes and still lose"),
-    //         PrintAction::new("that is not a weakness"),
-    //         PrintAction::new("that is life"),
-    //         CountdownAction::new(10),
-    //     ])
-    //     // Add an anonymous action with a closure
-    //     .add(|_agent, world: &mut World| -> bool {
-    //         // on_start
-    //         world.write_message(AppExit::Success);
-    //         true
-    //     });
-
-    commands.actions(agent).add(TestAction).clear();
-}
-
-struct TestAction;
-
-impl Action for TestAction {
-    fn is_finished(&self, agent: Entity, world: &World) -> bool {
-        println!("is_finished");
-        true
-    }
-
-    fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-        println!("on_start");
-        false
-    }
-
-    fn on_stop(&mut self, agent: Option<Entity>, world: &mut World, reason: StopReason) {
-        println!("on_stop");
-    }
-
-    fn on_add(&mut self, agent: Entity, world: &mut World) {
-        println!("on_add");
-    }
-
-    fn on_remove(&mut self, agent: Option<Entity>, world: &mut World) {
-        println!("on_remove");
-    }
-
-    fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
-        println!("on_drop");
-        world
-            .actions(agent.unwrap())
-            .start(false)
-            .add(self as BoxedAction);
-    }
+    commands
+        .actions(agent)
+        // Add a single action
+        .add(DemoAction)
+        // Add more actions with a tuple
+        .add((
+            PrintAction::new("hello"),
+            PrintAction::new("there"),
+            CountdownAction::new(5),
+        ))
+        // Add a collection of actions
+        .add(actions![
+            PrintAction::new("it is possible to commit no mistakes and still lose"),
+            PrintAction::new("that is not a weakness"),
+            PrintAction::new("that is life"),
+            CountdownAction::new(10),
+        ])
+        // Add an anonymous action with a closure
+        .add(|_agent, world: &mut World| -> bool {
+            // on_start
+            world.write_message(AppExit::Success);
+            true
+        });
 }
 
 struct DemoAction;
