@@ -417,6 +417,12 @@ impl SequentialActionsPlugin {
     /// Clears the action queue for `agent`.
     ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
+    ///
+    /// This will loop and remove one action at a time.
+    /// Since you can add new actions to the queue between each removal,
+    /// this may trigger an infinite loop.
+    /// A counter is therefore used in debug build
+    /// that panics when reaching a sufficient target.
     pub fn clear_actions(agent: Entity, world: &mut World) {
         let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!("Cannot clear actions for non-existent agent {agent}.");
@@ -440,6 +446,9 @@ impl SequentialActionsPlugin {
         }
 
         // Clear action queue
+        #[cfg(debug_assertions)]
+        let mut counter: u16 = 0;
+
         loop {
             let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
                 warn!("Cannot clear action queue for non-existent agent {agent}.");
@@ -466,6 +475,7 @@ impl SequentialActionsPlugin {
             //     "Clearing action queue for agent {agent}: {:?}",
             //     **action_queue
             // );
+
             debug!("Clearing action {action:?} from the queue for agent {agent}.");
             action.on_remove(Some(agent), world);
             action.on_drop(Some(agent), world, DropReason::Cleared);
@@ -473,6 +483,14 @@ impl SequentialActionsPlugin {
             //     action.on_remove(Some(agent), world);
             //     action.on_drop(Some(agent), world, DropReason::Cleared);
             // }
+
+            #[cfg(debug_assertions)]
+            {
+                counter += 1;
+                if counter == u16::MAX {
+                    panic!("infinite loop detected when clearing actions");
+                }
+            }
         }
         // let actions = std::mem::take(&mut action_queue.0);
         // for mut action in actions {
