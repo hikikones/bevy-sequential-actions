@@ -463,26 +463,13 @@ impl SequentialActionsPlugin {
                 return;
             };
 
-            // if action_queue.is_empty() {
-            //     return;
-            // }
-
             let Some(mut action) = action_queue.pop_front() else {
                 break;
             };
 
-            // debug!(
-            //     "Clearing action queue for agent {agent}: {:?}",
-            //     **action_queue
-            // );
-
             debug!("Clearing action {action:?} from the queue for agent {agent}.");
             action.on_remove(Some(agent), world);
             action.on_drop(Some(agent), world, DropReason::Cleared);
-            // while let Some(mut action) = action_queue.pop_front() {
-            //     action.on_remove(Some(agent), world);
-            //     action.on_drop(Some(agent), world, DropReason::Cleared);
-            // }
 
             #[cfg(debug_assertions)]
             {
@@ -492,10 +479,5 @@ impl SequentialActionsPlugin {
                 }
             }
         }
-        // let actions = std::mem::take(&mut action_queue.0);
-        // for mut action in actions {
-        //     action.on_remove(Some(agent), world);
-        //     action.on_drop(Some(agent), world, DropReason::Cleared);
-        // }
     }
 }
