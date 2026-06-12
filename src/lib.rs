@@ -205,6 +205,41 @@ There are a few things you should keep in mind:
     #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
     # }
     ```
+* You should not add new actions when the queue is being cleared or some actions are skipped.
+  In order to reuse the allocated queue, actions are removed one by one until the queue is empty.
+  Since you can add new actions to the queue between each removal, you can in practice do this forever.
+
+    ```rust,no_run
+    # use bevy_ecs::prelude::*;
+    # use bevy_sequential_actions::*;
+    # struct EmptyAction;
+    # impl Action for EmptyAction {
+    #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+    #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+    #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+    # }
+    # struct TestAction;
+    # impl Action for TestAction {
+    #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+    #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+    #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            match reason {
+                DropReason::Done => {
+                    // ...
+                }
+                DropReason::Skipped => {
+                    // New actions added to the front of the queue here
+                    // will also be skipped if more skips follow
+                }
+                DropReason::Cleared => {
+                    // All new actions added to the queue here
+                    // will also be cleared
+                }
+            }
+        }
+    # }
+    ```
 */
 
 use std::{collections::VecDeque, fmt::Debug};

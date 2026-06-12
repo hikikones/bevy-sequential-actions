@@ -26,33 +26,68 @@ use super::*;
 ///   Otherwise, you will effectively call [`execute`](`ManageActions::execute`) which, again, should not be used.
 ///   At worst, you will cause a **stack overflow** if the action adds itself.
 ///
-/// ```rust,no_run
-/// # use bevy_ecs::prelude::*;
-/// # use bevy_sequential_actions::*;
-/// # struct EmptyAction;
-/// # impl Action for EmptyAction {
-/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
-/// #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
-/// #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
-/// # }
-/// # struct TestAction;
-/// # impl Action for TestAction {
-/// #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
-///     fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
-/// #       let action_a = EmptyAction;
-/// #       let action_b = EmptyAction;
-/// #       let action_c = EmptyAction;
-///         world
-///             .actions(agent)
-///             .start(false) // Do not start next action
-///             .add((action_a, action_b, action_c));
+///     ```rust,no_run
+///     # use bevy_ecs::prelude::*;
+///     # use bevy_sequential_actions::*;
+///     # struct EmptyAction;
+///     # impl Action for EmptyAction {
+///     #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+///     #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+///     #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+///     # }
+///     # struct TestAction;
+///     # impl Action for TestAction {
+///     #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+///         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
+///     #       let action_a = EmptyAction;
+///     #       let action_b = EmptyAction;
+///     #       let action_c = EmptyAction;
+///             world
+///                 .actions(agent)
+///                 .start(false) // Do not start next action
+///                 .add((action_a, action_b, action_c));
+///    
+///             // Immediately advance the action queue
+///             true
+///         }
+///     #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+///     # }
+///     ```
+/// * You should not add new actions when the queue is being cleared or some actions are skipped.
+///   In order to reuse the allocated queue, actions are removed one by one until the queue is empty.
+///   Since you can add new actions to the queue between each removal, you can in practice do this forever.
 ///
-///         // Immediately advance the action queue
-///         true
-///     }
-/// #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
-/// # }
-/// ```
+///     ```rust,no_run
+///     # use bevy_ecs::prelude::*;
+///     # use bevy_sequential_actions::*;
+///     # struct EmptyAction;
+///     # impl Action for EmptyAction {
+///     #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+///     #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+///     #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+///     # }
+///     # struct TestAction;
+///     # impl Action for TestAction {
+///     #   fn is_finished(&self, _a: Entity, _w: &World) -> bool { true }
+///     #   fn on_start(&mut self, _a: Entity, _w: &mut World) -> bool { true }
+///     #   fn on_stop(&mut self, _a: Option<Entity>, _w: &mut World, _r: StopReason) {}
+///         fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+///             match reason {
+///                 DropReason::Done => {
+///                     // ...
+///                 }
+///                 DropReason::Skipped => {
+///                     // New actions added to the front of the queue here
+///                     // will also be skipped if more skips follow
+///                 }
+///                 DropReason::Cleared => {
+///                     // All new actions added to the queue here
+///                     // will also be cleared
+///                 }
+///             }
+///         }
+///     # }
+///     ```
 #[allow(unused_variables)]
 pub trait Action: downcast_rs::Downcast + Send + Sync + 'static {
     /// Determines if an action is finished or not.

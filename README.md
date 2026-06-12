@@ -145,7 +145,7 @@ There are a few things you should keep in mind:
     Otherwise, you will effectively call `execute` which, again, should not be used.
     At worst, you will cause a **stack overflow** if the action adds itself.
 
-    ```rust,no_run
+    ```rust
         fn on_start(&mut self, agent: Entity, world: &mut World) -> bool {
             world
                 .actions(agent)
@@ -154,6 +154,27 @@ There are a few things you should keep in mind:
 
             // Immediately advance the action queue
             true
+        }
+    ```
+* You should not add new actions when the queue is being cleared or some actions are skipped.
+  In order to reuse the allocated queue, actions are removed one by one until the queue is empty.
+  Since you can add new actions to the queue between each removal, you can in practice do this forever.
+  
+    ```rust
+        fn on_drop(self: Box<Self>, agent: Option<Entity>, world: &mut World, reason: DropReason) {
+            match reason {
+                DropReason::Done => {
+                    // ...
+                }
+                DropReason::Skipped => {
+                    // New actions added to the front of the queue here
+                    // will also be skipped if more skips follow
+                }
+                DropReason::Cleared => {
+                    // All new actions added to the queue here
+                    // will also be cleared
+                }
+            }
         }
     ```
 
