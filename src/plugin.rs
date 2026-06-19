@@ -95,8 +95,8 @@ impl SequentialActionsPlugin {
                 Action is therefore dropped immediately.",
                 std::any::type_name::<ActionQueue>()
             );
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Skipped);
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Skipped);
             return;
         };
 
@@ -170,8 +170,8 @@ impl SequentialActionsPlugin {
                             Action is therefore dropped immediately.",
                             std::any::type_name::<ActionQueue>()
                         );
-                        action.on_remove(agent.into(), world);
-                        action.on_drop(agent.into(), world, DropReason::Skipped);
+                        action.on_remove(Some(agent), world);
+                        action.on_drop(Some(agent), world, DropReason::Skipped);
                         return;
                     };
 
@@ -198,8 +198,8 @@ impl SequentialActionsPlugin {
                             Action is therefore dropped immediately.",
                             std::any::type_name::<ActionQueue>()
                         );
-                        action.on_remove(agent.into(), world);
-                        action.on_drop(agent.into(), world, DropReason::Skipped);
+                        action.on_remove(Some(agent), world);
+                        action.on_drop(Some(agent), world, DropReason::Skipped);
                         return;
                     };
 
@@ -265,12 +265,12 @@ impl SequentialActionsPlugin {
 
         if let Some(mut action) = current_action.take() {
             debug!("Stopping current action {action:?} for agent {agent} with reason {reason:?}.");
-            action.on_stop(agent.into(), world, reason);
+            action.on_stop(Some(agent), world, reason);
 
             match reason {
                 StopReason::Finished | StopReason::Canceled => {
-                    action.on_remove(agent.into(), world);
-                    action.on_drop(agent.into(), world, DropReason::Done);
+                    action.on_remove(Some(agent), world);
+                    action.on_drop(Some(agent), world, DropReason::Done);
                 }
                 StopReason::Paused => {
                     let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
@@ -289,8 +289,8 @@ impl SequentialActionsPlugin {
                             Action is therefore dropped immediately.",
                             std::any::type_name::<ActionQueue>()
                         );
-                        action.on_remove(agent.into(), world);
-                        action.on_drop(agent.into(), world, DropReason::Skipped);
+                        action.on_remove(Some(agent), world);
+                        action.on_drop(Some(agent), world, DropReason::Skipped);
                         return;
                     };
 
@@ -407,8 +407,8 @@ impl SequentialActionsPlugin {
             };
 
             debug!("Skipping action {action:?} for agent {agent}.");
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Skipped);
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Skipped);
 
             n -= 1;
         }
@@ -417,12 +417,19 @@ impl SequentialActionsPlugin {
     /// Clears the action queue for `agent`.
     ///
     /// Current action is [`stopped`](Action::on_stop) as [`canceled`](StopReason::Canceled).
+    ///
+    /// This will loop and remove one action at a time.
+    /// Since you can add new actions to the queue between each removal,
+    /// this may trigger an infinite loop.
+    /// A counter is therefore used in debug build
+    /// that panics when reaching a sufficient target.
     pub fn clear_actions(agent: Entity, world: &mut World) {
         let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
             warn!("Cannot clear actions for non-existent agent {agent}.");
             return;
         };
 
+        // Clear current action
         let Some(mut current_action) = agent_ref.get_mut::<CurrentAction>() else {
             warn!(
                 "Cannot clear current action for agent {agent} due to missing component {}.",
@@ -431,35 +438,46 @@ impl SequentialActionsPlugin {
             return;
         };
 
-        if let Some(mut action) = current_action.take() {
-            debug!("Clearing current action {action:?} for agent {agent}.");
-            action.on_stop(agent.into(), world, StopReason::Canceled);
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Cleared);
+        if let Some(mut current_action) = current_action.take() {
+            debug!("Clearing current action {current_action:?} for agent {agent}.");
+            current_action.on_stop(Some(agent), world, StopReason::Canceled);
+            current_action.on_remove(Some(agent), world);
+            current_action.on_drop(Some(agent), world, DropReason::Cleared);
         }
 
-        let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
-            warn!("Cannot clear action queue for non-existent agent {agent}.");
-            return;
-        };
+        // Clear action queue
+        #[cfg(debug_assertions)]
+        let mut counter: u16 = 0;
 
-        let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
-            warn!(
-                "Cannot clear action queue for agent {agent} due to missing component {}.",
-                std::any::type_name::<ActionQueue>()
-            );
-            return;
-        };
+        loop {
+            let Ok(mut agent_ref) = world.get_entity_mut(agent) else {
+                warn!("Cannot clear action queue for non-existent agent {agent}.");
+                return;
+            };
 
-        if action_queue.is_empty() {
-            return;
-        }
+            let Some(mut action_queue) = agent_ref.get_mut::<ActionQueue>() else {
+                warn!(
+                    "Cannot clear action queue for agent {agent} due to missing component {}.",
+                    std::any::type_name::<ActionQueue>()
+                );
+                return;
+            };
 
-        debug!("Clearing action queue {:?} for {agent}.", **action_queue);
-        let actions = std::mem::take(&mut action_queue.0);
-        for mut action in actions {
-            action.on_remove(agent.into(), world);
-            action.on_drop(agent.into(), world, DropReason::Cleared);
+            let Some(mut action) = action_queue.pop_front() else {
+                break;
+            };
+
+            debug!("Clearing action {action:?} from the queue for agent {agent}.");
+            action.on_remove(Some(agent), world);
+            action.on_drop(Some(agent), world, DropReason::Cleared);
+
+            #[cfg(debug_assertions)]
+            {
+                counter += 1;
+                if counter == u16::MAX {
+                    panic!("infinite loop detected when clearing actions");
+                }
+            }
         }
     }
 }
