@@ -195,6 +195,7 @@ See the [examples](examples/) for more usage, specifically the [shared actions](
 
 | bevy | bevy-sequential-actions |
 | ---- | ----------------------- |
+| 0.19 | 0.16                    |
 | 0.18 | 0.15                    |
 | 0.17 | 0.14                    |
 | 0.16 | 0.13                    |
