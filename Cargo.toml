@@ -12,13 +12,13 @@ keywords = ["action", "bevy", "command", "gamedev", "sequence"]
 categories = ["game-development"]
 
 [dependencies]
-bevy_app = { version = "0.19", default-features = false }
-bevy_derive = { version = "0.19", default-features = false }
-bevy_ecs = { version = "0.19", default-features = false }
-bevy_log = { version = "0.19", default-features = false }
+bevy_app = { version = "0.20.0-rc.1", default-features = false }
+bevy_derive = { version = "0.20.0-rc.1", default-features = false }
+bevy_ecs = { version = "0.20.0-rc.1", default-features = false }
+bevy_log = { version = "0.20.0-rc.1", default-features = false }
 downcast-rs = { version = "2.0", default-features = false }
 variadics_please = { version = "2.0", default-features = false }
 
 [dev-dependencies]
-bevy = { version = "0.19", default-features = false, features = ["debug"] }
+bevy = { version = "0.20.0-rc.1", default-features = false, features = ["debug"] }
 shared = { path = "examples/shared" }
