@@ -323,7 +323,7 @@ impl CurrentAction {
 
     /// [`Observer`] for cleaning up the current action when an `agent` is despawned.
     pub fn on_remove_trigger<F: QueryFilter>(
-        remove: On<Remove, Self>,
+        remove: On<Remove<Self>>,
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
@@ -363,7 +363,7 @@ impl ActionQueue {
 
     /// [`Observer`] for cleaning up the action queue when an `agent` is despawned.
     pub fn on_remove_trigger<F: QueryFilter>(
-        remove: On<Remove, Self>,
+        remove: On<Remove<Self>>,
         mut query: Query<&mut Self, F>,
         mut commands: Commands,
     ) {
