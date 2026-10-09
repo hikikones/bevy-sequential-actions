@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::Deref, usize};
+use std::{marker::PhantomData, ops::Deref};
 
 use bevy_app::prelude::*;
 use bevy_derive::{Deref, DerefMut};
