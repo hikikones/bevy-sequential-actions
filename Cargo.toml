@@ -2,7 +2,7 @@
 name = "bevy-sequential-actions"
 version = "0.17.0-dev"
 edition = "2024"
-rust-version = "1.95.0"
+rust-version = "1.97.1"
 description = "A Bevy library for executing various actions in a sequence."
 readme = "README.md"
 homepage = "https://github.com/hikikones/bevy-sequential-actions"
